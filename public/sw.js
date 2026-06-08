@@ -1,6 +1,6 @@
 // Minimal offline-first service worker.
 // Caches the app shell so the PWA opens with no network (data lives in localStorage).
-const CACHE = "build-v3";
+const CACHE = "build-v4";
 const SHELL = ["/", "/exercises", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
