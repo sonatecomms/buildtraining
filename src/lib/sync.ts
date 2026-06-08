@@ -32,6 +32,22 @@ export function syncActive(): boolean {
   return Boolean(getSupabase() && coachId);
 }
 
+// Live updates: fire `onChange` whenever the coach's / athlete's rows change in
+// the cloud (so the other side updates without a refresh). Returns an unsubscribe.
+export function startRealtime(onChange: () => void): () => void {
+  const sb = getSupabase();
+  if (!sb || !coachId) return () => {};
+  const ch = sb
+    .channel("build-sync")
+    .on("postgres_changes", { event: "*", schema: "public", table: "clients" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "programs" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "workout_logs" }, onChange)
+    .subscribe();
+  return () => {
+    sb.removeChannel(ch);
+  };
+}
+
 // ---- row <-> type mappers --------------------------------------------------
 
 const clientRow = (c: Client) => ({

@@ -6,31 +6,7 @@ import { flushPush } from "@/lib/sync";
 import type { Client, GoalType } from "@/lib/types";
 import { ALL_GOALS, GOALS } from "@/lib/goals";
 import { Avatar, Button, Card } from "./ui";
-
-// Downscale an uploaded image to a square data URL so localStorage stays small.
-// With Supabase this would upload to Storage and save the public URL instead.
-function fileToAvatar(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = reject;
-    reader.onload = () => {
-      const img = new Image();
-      img.onload = () => {
-        const SIZE = 256;
-        const canvas = document.createElement("canvas");
-        canvas.width = SIZE;
-        canvas.height = SIZE;
-        const ctx = canvas.getContext("2d")!;
-        const min = Math.min(img.width, img.height);
-        ctx.drawImage(img, (img.width - min) / 2, (img.height - min) / 2, min, min, 0, 0, SIZE, SIZE);
-        resolve(canvas.toDataURL("image/jpeg", 0.82));
-      };
-      img.onerror = reject;
-      img.src = reader.result as string;
-    };
-    reader.readAsDataURL(file);
-  });
-}
+import AvatarCropper from "./AvatarCropper";
 
 export default function ProfileEditor({
   client,
@@ -40,7 +16,7 @@ export default function ProfileEditor({
   coachView?: boolean;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
-  const [busy, setBusy] = useState(false);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   const copyInvite = async () => {
@@ -69,15 +45,12 @@ export default function ProfileEditor({
     });
   };
 
-  const onFile = async (file?: File) => {
+  // read the picked file and open the cropper
+  const onFile = (file?: File) => {
     if (!file) return;
-    setBusy(true);
-    try {
-      const url = await fileToAvatar(file);
-      updateClient(client.id, { avatarUrl: url });
-    } finally {
-      setBusy(false);
-    }
+    const reader = new FileReader();
+    reader.onload = () => setCropSrc(reader.result as string);
+    reader.readAsDataURL(file);
   };
 
   const stat = (key: keyof Client["stats"], v: string) =>
@@ -92,7 +65,7 @@ export default function ProfileEditor({
         <button onClick={() => fileRef.current?.click()} className="relative">
           <Avatar src={client.avatarUrl} name={client.name} size={72} />
           <span className="absolute -bottom-1 -right-1 bg-forest text-bone rounded-full w-6 h-6 flex items-center justify-center text-xs border-2 border-surface">
-            {busy ? "…" : "📷"}
+            📷
           </span>
         </button>
         <input
@@ -100,8 +73,21 @@ export default function ProfileEditor({
           type="file"
           accept="image/*"
           className="hidden"
-          onChange={(e) => onFile(e.target.files?.[0])}
+          onChange={(e) => {
+            onFile(e.target.files?.[0]);
+            e.target.value = ""; // allow re-picking the same file
+          }}
         />
+        {cropSrc && (
+          <AvatarCropper
+            src={cropSrc}
+            onCancel={() => setCropSrc(null)}
+            onSave={(url) => {
+              updateClient(client.id, { avatarUrl: url });
+              setCropSrc(null);
+            }}
+          />
+        )}
         <div className="flex-1">
           <input
             defaultValue={client.name}

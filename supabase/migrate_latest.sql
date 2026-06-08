@@ -12,3 +12,8 @@ drop policy if exists "athlete updates own client" on clients;
 create policy "athlete updates own client" on clients
   for update using (lower(athlete_email) = lower(auth.jwt() ->> 'email'))
   with check (lower(athlete_email) = lower(auth.jwt() ->> 'email'));
+
+-- enable realtime (live updates between coach and athlete without refresh)
+do $$ begin alter publication supabase_realtime add table clients; exception when duplicate_object then null; end $$;
+do $$ begin alter publication supabase_realtime add table programs; exception when duplicate_object then null; end $$;
+do $$ begin alter publication supabase_realtime add table workout_logs; exception when duplicate_object then null; end $$;
