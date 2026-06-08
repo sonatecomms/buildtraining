@@ -283,7 +283,7 @@ export default function ProfileEditor({
                 ? formatPhone(phoneDigits(client.athleteEmail))
                 : client.athleteEmail}
             </b>{" "}
-            and the password you share.
+            and a password they create when they sign up.
           </p>
         ) : (
           <p className="text-[11px] text-slate mt-2">Add an email or phone above to enable the invite.</p>
