@@ -12,6 +12,7 @@ import {
 import { flushPush } from "@/lib/sync";
 import type { Client, Exercise, ItemResult, ProgramItem, Workout, WorkoutLog } from "@/lib/types";
 import { youtubeId } from "@/lib/youtube";
+import { runPace } from "@/lib/activities";
 import { DOW_LONG, isoDate, todayDow, weekDates } from "@/lib/week";
 import { Button, Card, Pill } from "./ui";
 import StreakHeader from "./StreakHeader";
@@ -328,6 +329,7 @@ function RunnerItem({
   const r = result ?? ({} as ItemResult);
   const bodyweight = ex?.equipment === "Bodyweight"; // coach-denoted → no weight field
   const activity = ex?.activity; // run/walk/yoga… → log duration + distance, not load
+  const pace = activity ? runPace(r.duration, r.distance) : null; // live min/mi readout
   const [open, setOpen] = useState<boolean>(true); // log panel open by default
   const [playing, setPlaying] = useState(false);
 
@@ -375,9 +377,16 @@ function RunnerItem({
       {open && (
         <div className="mt-2.5 space-y-2.5">
           {activity ? (
-            <div className="grid grid-cols-2 gap-2">
-              <LogField label="Duration" value={r.duration} placeholder="30 min" onChange={(v) => onChange({ duration: v })} />
-              <LogField label="Distance" value={r.distance} placeholder="3 mi" onChange={(v) => onChange({ distance: v })} />
+            <div className="space-y-1.5">
+              <div className="grid grid-cols-2 gap-2">
+                <LogField label="Duration" value={r.duration} placeholder="30 min" onChange={(v) => onChange({ duration: v })} />
+                <LogField label="Distance" value={r.distance} placeholder="3 mi" onChange={(v) => onChange({ distance: v })} />
+              </div>
+              {pace && (
+                <p className="text-xs text-slate text-right">
+                  Pace <span className="font-semibold text-forest">{pace}</span>
+                </p>
+              )}
             </div>
           ) : (
             <div className={`grid ${bodyweight ? "grid-cols-2" : "grid-cols-3"} gap-2`}>
