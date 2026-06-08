@@ -20,7 +20,8 @@ export type ExerciseCategory =
   | "Full Body"
   | "Olympic"
   | "Gymnastics"
-  | "Conditioning";
+  | "Conditioning"
+  | "Activity";
 
 export type Equipment =
   | "Barbell"
@@ -50,6 +51,8 @@ export interface Exercise {
   // implement/loading options the coach can pick per prescription
   // (e.g. ["Barbell", "Double DB", "Single DB"], ["Both", "Single arm"])
   variants?: string[];
+  // cardio/wellness (run, walk, yoga…) — logged with duration/distance, not load
+  activity?: boolean;
 }
 
 export type BlockType = "single" | "superset" | "circuit" | "note";
@@ -119,6 +122,8 @@ export interface ItemResult {
   weight?: string; // free text: "135", "BW", "red band"
   setsDone?: string;
   repsDone?: string;
+  duration?: string; // activities: "30 min", "1:05:00"
+  distance?: string; // activities: "3 mi", "5k"
   feeling?: number; // 1 (rough) … 5 (great)
   note?: string;
   extra?: boolean; // athlete-added movement, beyond what the coach programmed

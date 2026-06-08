@@ -96,7 +96,7 @@ export default function TrainView({ client }: { client: Client }) {
     extras.forEach((x) => (exOf[x.id] = x.exerciseId));
     // keep only results that actually carry data
     const entries = Object.values(results)
-      .filter((e) => e.weight || e.setsDone || e.repsDone || e.feeling || e.note)
+      .filter((e) => e.weight || e.setsDone || e.repsDone || e.duration || e.distance || e.feeling || e.note)
       .map((e) => ({ ...e, exerciseId: exOf[e.itemId], extra: extraIds.has(e.itemId) || undefined }));
     logWorkout({
       clientId: client.id,
@@ -192,14 +192,14 @@ export default function TrainView({ client }: { client: Client }) {
         )}
 
         <Button variant="outline" className="w-full" onClick={() => setPicking(true)}>
-          + Add a movement you did
+          + Add a movement or activity you did
         </Button>
 
         <Button className="w-full" onClick={finish}>Finish workout ({done.size}/{totalItems})</Button>
 
         {picking && (
           <ExercisePickerModal
-            title="Log a movement"
+            title="Log a movement or activity"
             onClose={() => setPicking(false)}
             onPick={(ex) => addExtra(ex)}
           />
@@ -265,7 +265,7 @@ export default function TrainView({ client }: { client: Client }) {
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold truncate">Your own work</p>
                   <p className="text-xs text-slate">
-                    {extraLog ? "✓ Logged — tap to review or add more" : "Log anything you did, on or off plan"}
+                    {extraLog ? "✓ Logged — tap to review or add more" : "Log a run, walk, yoga, lift — anything, on or off plan"}
                   </p>
                 </div>
                 <Button
@@ -327,6 +327,7 @@ function RunnerItem({
   const url = item.youtubeUrl ?? ex?.youtubeUrl;
   const r = result ?? ({} as ItemResult);
   const bodyweight = ex?.equipment === "Bodyweight"; // coach-denoted → no weight field
+  const activity = ex?.activity; // run/walk/yoga… → log duration + distance, not load
   const [open, setOpen] = useState<boolean>(true); // log panel open by default
   const [playing, setPlaying] = useState(false);
 
@@ -347,7 +348,9 @@ function RunnerItem({
             {item.variant && <span className="text-forest"> · {item.variant}</span>}
           </span>
           <span className="text-xs text-slate">
-            {isExtra ? (
+            {activity ? (
+              "log your time & distance"
+            ) : isExtra ? (
               "your own movement"
             ) : (
               <>
@@ -371,13 +374,20 @@ function RunnerItem({
 
       {open && (
         <div className="mt-2.5 space-y-2.5">
-          <div className={`grid ${bodyweight ? "grid-cols-2" : "grid-cols-3"} gap-2`}>
-            {!bodyweight && (
-              <LogField label="Weight" value={r.weight} placeholder="lbs" onChange={(v) => onChange({ weight: v })} />
-            )}
-            <LogField label="Sets" value={r.setsDone} placeholder={String(item.sets)} onChange={(v) => onChange({ setsDone: v })} />
-            <LogField label="Reps" value={r.repsDone} placeholder={item.reps} onChange={(v) => onChange({ repsDone: v })} />
-          </div>
+          {activity ? (
+            <div className="grid grid-cols-2 gap-2">
+              <LogField label="Duration" value={r.duration} placeholder="30 min" onChange={(v) => onChange({ duration: v })} />
+              <LogField label="Distance" value={r.distance} placeholder="3 mi" onChange={(v) => onChange({ distance: v })} />
+            </div>
+          ) : (
+            <div className={`grid ${bodyweight ? "grid-cols-2" : "grid-cols-3"} gap-2`}>
+              {!bodyweight && (
+                <LogField label="Weight" value={r.weight} placeholder="lbs" onChange={(v) => onChange({ weight: v })} />
+              )}
+              <LogField label="Sets" value={r.setsDone} placeholder={String(item.sets)} onChange={(v) => onChange({ setsDone: v })} />
+              <LogField label="Reps" value={r.repsDone} placeholder={item.reps} onChange={(v) => onChange({ repsDone: v })} />
+            </div>
+          )}
           <div>
             <span className="text-[10px] uppercase tracking-wide text-slate">How it felt</span>
             <div className="flex gap-1.5 mt-1">

@@ -18,6 +18,7 @@ const CATEGORIES: (ExerciseCategory | "All")[] = [
   "Full Body",
   "Cardio",
   "Mobility",
+  "Activity",
 ];
 
 // Shared browsable list. `onPick` turns each row into a tappable picker (used in

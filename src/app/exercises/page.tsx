@@ -6,7 +6,7 @@ import ExerciseList from "@/components/ExerciseList";
 import { Button, Card, PageHeader } from "@/components/ui";
 import type { Equipment, ExerciseCategory } from "@/lib/types";
 
-const CATS: ExerciseCategory[] = ["Lower Body", "Upper Body", "Push", "Pull", "Core", "Cardio", "Mobility", "Full Body", "Olympic", "Gymnastics", "Conditioning"];
+const CATS: ExerciseCategory[] = ["Lower Body", "Upper Body", "Push", "Pull", "Core", "Cardio", "Mobility", "Full Body", "Olympic", "Gymnastics", "Conditioning", "Activity"];
 const EQUIP: Equipment[] = ["Barbell", "Dumbbell", "Kettlebell", "Machine", "Cable", "Bodyweight", "Bands", "Cardio Machine", "Medicine Ball", "Rings", "Box", "Sandbag", "Sled", "Jump Rope", "Other"];
 
 export default function LibraryPage() {

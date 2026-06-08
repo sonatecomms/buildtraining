@@ -1,5 +1,6 @@
 import type { Client, DB, Exercise, Program } from "./types";
 import { CROSSFIT_EXERCISES } from "./crossfit";
+import { ACTIVITIES } from "./activities";
 import { isoDate } from "./week";
 
 // A starter exercise repository. YouTube links point at well-known form demos.
@@ -48,6 +49,7 @@ export const SEED_EXERCISES: Exercise[] = [
   { id: "ex-thruster", name: "Thruster", category: "Full Body", equipment: "Barbell", primaryMuscle: "Full Body", youtubeUrl: "https://www.youtube.com/watch?v=L219ltL15zk" },
   { id: "ex-burpee", name: "Burpee", category: "Full Body", equipment: "Bodyweight", primaryMuscle: "Full Body", youtubeUrl: "https://www.youtube.com/watch?v=dZgVxmf6jkA" },
   ...CROSSFIT_EXERCISES,
+  ...ACTIVITIES,
 ];
 
 function isoDaysAgo(n: number): string {
