@@ -210,8 +210,8 @@ function RunnerItem({
 }) {
   const url = item.youtubeUrl ?? ex?.youtubeUrl;
   const r = result ?? ({} as ItemResult);
-  const hasData = Boolean(r.weight || r.setsDone || r.repsDone || r.feeling || r.note);
-  const [open, setOpen] = useState<boolean>(checked || hasData);
+  const bodyweight = ex?.equipment === "Bodyweight"; // coach-denoted → no weight field
+  const [open, setOpen] = useState<boolean>(true); // log panel open by default
   const [playing, setPlaying] = useState(false);
 
   return (
@@ -243,8 +243,10 @@ function RunnerItem({
 
       {open && (
         <div className="mt-2.5 space-y-2.5">
-          <div className="grid grid-cols-3 gap-2">
-            <LogField label="Weight" value={r.weight} placeholder="60kg" onChange={(v) => onChange({ weight: v })} />
+          <div className={`grid ${bodyweight ? "grid-cols-2" : "grid-cols-3"} gap-2`}>
+            {!bodyweight && (
+              <LogField label="Weight" value={r.weight} placeholder="60kg" onChange={(v) => onChange({ weight: v })} />
+            )}
             <LogField label="Sets" value={r.setsDone} placeholder={String(item.sets)} onChange={(v) => onChange({ setsDone: v })} />
             <LogField label="Reps" value={r.repsDone} placeholder={item.reps} onChange={(v) => onChange({ repsDone: v })} />
           </div>

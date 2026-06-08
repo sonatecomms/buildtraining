@@ -243,10 +243,15 @@ async function syncTable(
 export async function pushNow(db: DB) {
   if (!syncActive()) return;
 
-  // Athletes only ever write their own workout logs.
+  // Athletes only ever write their own client profile + workout logs.
   if (mode === "athlete") {
     const sb = getSupabase();
     if (!sb || !athleteClientId) return;
+    const me = db.clients.find((c) => c.id === athleteClientId);
+    if (me) {
+      const { error } = await sb.from("clients").upsert(clientRow(me));
+      if (error) console.warn("athlete profile push failed", error);
+    }
     const rows = db.logs.filter((l) => l.clientId === athleteClientId).map(logRow);
     if (rows.length) {
       const { error } = await sb.from("workout_logs").upsert(rows);

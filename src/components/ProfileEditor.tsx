@@ -32,7 +32,13 @@ function fileToAvatar(file: File): Promise<string> {
   });
 }
 
-export default function ProfileEditor({ client }: { client: Client }) {
+export default function ProfileEditor({
+  client,
+  coachView = true,
+}: {
+  client: Client;
+  coachView?: boolean;
+}) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -167,6 +173,8 @@ export default function ProfileEditor({ client }: { client: Client }) {
         </div>
       </Card>
 
+      {coachView && (
+      <>
       {/* notes */}
       <Card className="p-4">
         <h3 className="font-semibold mb-2">Coach notes</h3>
@@ -216,6 +224,8 @@ export default function ProfileEditor({ client }: { client: Client }) {
       >
         Delete athlete
       </button>
+      </>
+      )}
     </div>
   );
 }

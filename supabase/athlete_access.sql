@@ -11,6 +11,12 @@ drop policy if exists "athlete reads own client" on clients;
 create policy "athlete reads own client" on clients
   for select using (lower(athlete_email) = lower(auth.jwt() ->> 'email'));
 
+-- Athlete can update their own profile (photo, stats, goals) but not reassign it.
+drop policy if exists "athlete updates own client" on clients;
+create policy "athlete updates own client" on clients
+  for update using (lower(athlete_email) = lower(auth.jwt() ->> 'email'))
+  with check (lower(athlete_email) = lower(auth.jwt() ->> 'email'));
+
 -- Athlete can read the program for their client.
 drop policy if exists "athlete reads own program" on programs;
 create policy "athlete reads own program" on programs
