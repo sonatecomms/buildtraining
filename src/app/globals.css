@@ -1,0 +1,87 @@
+@import "tailwindcss";
+
+/*
+  BUILD — light theme
+  Background #E2E6DA (bone)   Primary #19350C (forest)
+  Palette: #357836 green · #5C6F76 slate · #6FA9BB sky · #A12323 brick · #191918 ink
+  Type: League Spartan (Black) headers · Poppins body
+*/
+
+@theme {
+  /* brand palette */
+  --color-forest: #19350c;
+  --color-green: #357836;
+  --color-green-soft: #3f8c41;
+  --color-slate: #5c6f76;
+  --color-sky: #6fa9bb;
+  --color-brick: #a12323;
+  --color-bone: #e2e6da;
+  --color-ink: #191918;
+
+  /* light shell (token names kept from the original dark build, remapped to light) */
+  --color-surface: #ffffff; /* raised cards */
+  --color-surface-2: #f4f6f0;
+  --color-field: #eef1ea; /* inputs & nested wells */
+  --color-line: #cfd6c4; /* hairline borders */
+
+  --font-sans: var(--font-poppins), system-ui, sans-serif;
+  --font-display: var(--font-league), var(--font-poppins), system-ui, sans-serif;
+  --radius-xl2: 1.25rem;
+}
+
+:root {
+  --background: #e2e6da;
+  --foreground: #191918;
+  color-scheme: light;
+}
+
+html,
+body {
+  background: var(--background);
+  color: var(--foreground);
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: var(--font-sans);
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* headers use League Spartan Black */
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-display);
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+
+input,
+select,
+textarea {
+  min-width: 0;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@keyframes pop {
+  0% { transform: scale(0.85); opacity: 0; }
+  60% { transform: scale(1.06); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.animate-pop { animation: pop 0.28s cubic-bezier(0.2, 0.8, 0.3, 1) both; }
+
+@keyframes flame {
+  0%, 100% { transform: rotate(-3deg) scale(1); }
+  50% { transform: rotate(3deg) scale(1.08); }
+}
+.animate-flame { animation: flame 1.4s ease-in-out infinite; }

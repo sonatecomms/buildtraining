@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="112" fill="#19350C"/>
+  <g fill="none" stroke="#357836" stroke-width="34" stroke-linecap="round" stroke-linejoin="round">
+    <!-- dumbbell -->
+    <line x1="176" y1="336" x2="336" y2="176"/>
+    <rect x="120" y="288" width="56" height="96" rx="14" transform="rotate(-45 148 336)" stroke="#6FA9BB"/>
+    <rect x="336" y="128" width="56" height="96" rx="14" transform="rotate(-45 364 176)" stroke="#6FA9BB"/>
+  </g>
+  <!-- spark -->
+  <path d="M300 300 l40 -10 -22 34 30 8 -54 50 12 -44 -28 -6z" fill="#A12323"/>
+</svg>

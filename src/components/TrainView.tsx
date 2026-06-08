@@ -1,0 +1,303 @@
+"use client";
+
+import { useState } from "react";
+import {
+  computeStreak,
+  logWorkout,
+  useExercises,
+  useLogsForClient,
+  useProgramForClient,
+} from "@/lib/store";
+import type { Client, Exercise, ItemResult, ProgramItem, Workout } from "@/lib/types";
+import { youtubeId } from "@/lib/youtube";
+import { DOW_LONG, todayDow, weekDates } from "@/lib/week";
+import { Button, Card, Pill } from "./ui";
+import StreakHeader from "./StreakHeader";
+import WeekStrip from "./WeekStrip";
+
+const BLOCK_LABEL = { single: "", superset: "Superset", circuit: "Circuit", note: "Note" } as const;
+
+export const FEELINGS = ["😣", "😕", "😐", "🙂", "😄"]; // 1..5
+
+export default function TrainView({ client }: { client: Client }) {
+  const program = useProgramForClient(client.id);
+  const logs = useLogsForClient(client.id);
+  const exercises = useExercises();
+  const byId = Object.fromEntries(exercises.map((e) => [e.id, e]));
+  const streak = computeStreak(logs, client.intendedFrequency);
+
+  const [day, setDay] = useState<number>(todayDow());
+  const [running, setRunning] = useState<Workout | null>(null);
+  const [done, setDone] = useState<Set<string>>(new Set());
+  const [results, setResults] = useState<Record<string, ItemResult>>({});
+  const [celebrate, setCelebrate] = useState(false);
+
+  const workouts = program?.workouts ?? [];
+  const marked = new Set(workouts.map((w) => w.dow));
+  const dayWorkouts = workouts.filter((w) => w.dow === day);
+  const selectedDate = weekDates()[day].toISOString().slice(0, 10);
+  const loggedThatDay = new Set(logs.filter((l) => l.date === selectedDate).map((l) => l.workoutId));
+
+  const start = (w: Workout) => {
+    setRunning(w);
+    setDone(new Set());
+    setResults({});
+  };
+
+  const updateResult = (itemId: string, patch: Partial<ItemResult>) =>
+    setResults((r) => ({ ...r, [itemId]: { ...r[itemId], itemId, ...patch } }));
+
+  const totalItems = running
+    ? running.blocks.reduce((n, b) => n + (b.type === "note" ? 0 : b.items.length), 0)
+    : 0;
+
+  const finish = () => {
+    if (!running) return;
+    // keep only results that actually carry data
+    const entries = Object.values(results).filter(
+      (e) => e.weight || e.setsDone || e.repsDone || e.feeling || e.note,
+    );
+    logWorkout({
+      clientId: client.id,
+      workoutId: running.id,
+      workoutName: running.name,
+      date: selectedDate,
+      completedItemIds: [...done],
+      entries,
+    });
+    setRunning(null);
+    setCelebrate(true);
+    setTimeout(() => setCelebrate(false), 2200);
+  };
+
+  // ---- workout runner ----
+  if (running) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold">{running.name}</h2>
+          <button onClick={() => setRunning(null)} className="text-slate text-sm">Exit</button>
+        </div>
+        <div className="h-1.5 rounded-full bg-line overflow-hidden">
+          <div className="h-full bg-forest transition-all" style={{ width: `${totalItems ? (done.size / totalItems) * 100 : 0}%` }} />
+        </div>
+
+        {running.blocks.map((block) => {
+          if (block.type === "note") {
+            return (
+              <Card key={block.id} className="p-3 border-sky/40 bg-sky/5">
+                {block.title && <p className="font-semibold text-sm mb-1">{block.title}</p>}
+                {block.text && <p className="text-sm whitespace-pre-wrap text-ink/90">{block.text}</p>}
+              </Card>
+            );
+          }
+          return (
+            <Card key={block.id} className="p-3">
+              {block.type !== "single" && (
+                <Pill tone={block.type === "circuit" ? "brick" : "sky"} className="mb-2">
+                  {BLOCK_LABEL[block.type]}{block.type === "circuit" && block.rounds ? ` ×${block.rounds}` : ""}
+                </Pill>
+              )}
+              <div className="space-y-2">
+                {block.items.map((it) => (
+                  <RunnerItem
+                    key={it.id}
+                    item={it}
+                    ex={byId[it.exerciseId]}
+                    checked={done.has(it.id)}
+                    result={results[it.id]}
+                    onToggle={() =>
+                      setDone((prev) => {
+                        const next = new Set(prev);
+                        next.has(it.id) ? next.delete(it.id) : next.add(it.id);
+                        return next;
+                      })
+                    }
+                    onChange={(patch) => updateResult(it.id, patch)}
+                  />
+                ))}
+              </div>
+            </Card>
+          );
+        })}
+
+        <Button className="w-full" onClick={finish}>Finish workout ({done.size}/{totalItems})</Button>
+      </div>
+    );
+  }
+
+  // ---- overview ----
+  return (
+    <div className="space-y-5">
+      {celebrate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+          <div className="animate-pop text-center bg-surface border border-green/40 rounded-3xl px-8 py-6 shadow-2xl">
+            <div className="text-5xl animate-flame">🔥</div>
+            <p className="font-bold text-lg mt-2">Logged!</p>
+            <p className="text-slate text-sm">Streak: {streak.current} day{streak.current === 1 ? "" : "s"}</p>
+          </div>
+        </div>
+      )}
+
+      <WeekStrip selected={day} onSelect={setDay} marked={marked} />
+
+      <div>
+        <p className="text-sm font-semibold text-slate mb-2">{DOW_LONG[day]}</p>
+        {dayWorkouts.length === 0 ? (
+          <Card className="p-6 text-center">
+            <div className="text-3xl mb-1">🧘</div>
+            <p className="font-semibold">Rest day</p>
+            <p className="text-slate text-sm">Recover and come back strong.</p>
+          </Card>
+        ) : (
+          <div className="space-y-2">
+            {dayWorkouts.map((w) => {
+              const count = w.blocks.reduce((n, b) => n + b.items.length, 0);
+              const isDone = loggedThatDay.has(w.id);
+              return (
+                <Card key={w.id} className="p-4 flex items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold truncate">{w.name}</p>
+                    <p className="text-xs text-slate">{count} movements</p>
+                  </div>
+                  {isDone ? <Pill tone="green">✓ Done</Pill> : <Button size="sm" onClick={() => start(w)}>Start</Button>}
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <StreakHeader streak={streak} />
+
+      <div>
+        <h3 className="font-semibold mb-2">Recent activity</h3>
+        {logs.length === 0 ? (
+          <p className="text-slate text-sm">No sessions logged yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {logs.slice(0, 8).map((l) => (
+              <div key={l.id} className="flex items-center gap-3 text-sm">
+                <span className="text-forest">✅</span>
+                <span className="flex-1">{l.workoutName}</span>
+                <span className="text-slate text-xs">{l.date}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// A single movement in the workout runner: check it off and log what you did
+// (weight, sets/reps completed, a 1–5 feeling, and a note).
+function RunnerItem({
+  item,
+  ex,
+  checked,
+  result,
+  onToggle,
+  onChange,
+}: {
+  item: ProgramItem;
+  ex?: Exercise;
+  checked: boolean;
+  result?: ItemResult;
+  onToggle: () => void;
+  onChange: (patch: Partial<ItemResult>) => void;
+}) {
+  const url = item.youtubeUrl ?? ex?.youtubeUrl;
+  const r = result ?? ({} as ItemResult);
+  const hasData = Boolean(r.weight || r.setsDone || r.repsDone || r.feeling || r.note);
+  const [open, setOpen] = useState<boolean>(checked || hasData);
+
+  return (
+    <div className={`rounded-xl border p-2.5 ${checked ? "border-forest bg-green/10" : "border-line bg-field"}`}>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onToggle}
+          className={`w-6 h-6 rounded-full border-2 grid place-items-center text-xs shrink-0 ${
+            checked ? "bg-forest border-forest text-bone" : "border-slate"
+          }`}
+        >
+          {checked ? "✓" : ""}
+        </button>
+        <button onClick={() => setOpen((o) => !o)} className="flex-1 min-w-0 text-left">
+          <span className={`block font-medium text-sm truncate ${checked ? "line-through text-slate" : ""}`}>
+            {ex?.name}
+          </span>
+          <span className="text-xs text-slate">
+            {item.sets} × {item.reps} · {item.restSec}s rest
+          </span>
+        </button>
+        {youtubeId(url) && (
+          <a href={url} target="_blank" rel="noreferrer" className="text-sky text-xs shrink-0">▶</a>
+        )}
+        <button onClick={() => setOpen((o) => !o)} className="text-slate text-xs shrink-0 font-medium">
+          {open ? "▲" : "＋ log"}
+        </button>
+      </div>
+
+      {open && (
+        <div className="mt-2.5 space-y-2.5">
+          <div className="grid grid-cols-3 gap-2">
+            <LogField label="Weight" value={r.weight} placeholder="60kg" onChange={(v) => onChange({ weight: v })} />
+            <LogField label="Sets" value={r.setsDone} placeholder={String(item.sets)} onChange={(v) => onChange({ setsDone: v })} />
+            <LogField label="Reps" value={r.repsDone} placeholder={item.reps} onChange={(v) => onChange({ repsDone: v })} />
+          </div>
+          <div>
+            <span className="text-[10px] uppercase tracking-wide text-slate">How it felt</span>
+            <div className="flex gap-1.5 mt-1">
+              {FEELINGS.map((f, i) => {
+                const val = i + 1;
+                return (
+                  <button
+                    key={i}
+                    onClick={() => onChange({ feeling: r.feeling === val ? undefined : val })}
+                    className={`text-xl rounded-lg px-1.5 py-0.5 transition-all ${
+                      r.feeling === val ? "bg-forest/15 ring-1 ring-forest scale-110" : "opacity-45 hover:opacity-80"
+                    }`}
+                    aria-label={`Felt ${val} of 5`}
+                  >
+                    {f}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <input
+            value={r.note ?? ""}
+            onChange={(e) => onChange({ note: e.target.value })}
+            placeholder="Notes — how it went, tweaks, PRs…"
+            className="w-full rounded-lg bg-surface border border-line px-2.5 py-1.5 text-sm outline-none focus:border-forest"
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LogField({
+  label,
+  value,
+  placeholder,
+  onChange,
+}: {
+  label: string;
+  value?: string;
+  placeholder?: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <label className="block min-w-0">
+      <span className="text-[10px] uppercase tracking-wide text-slate">{label}</span>
+      <input
+        value={value ?? ""}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full min-w-0 mt-0.5 rounded-lg bg-surface border border-line px-2 py-1.5 text-sm outline-none focus:border-forest"
+      />
+    </label>
+  );
+}
