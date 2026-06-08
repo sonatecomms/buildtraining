@@ -70,7 +70,7 @@ export default function TrainView({ client }: { client: Client }) {
     // logging real data implicitly checks the movement off — so an athlete who
     // fills in their sets never has to remember to also tap the circle.
     const meaningful =
-      patch.weight || patch.setsDone || patch.repsDone || patch.duration || patch.distance || patch.feeling || patch.note;
+      patch.weight || patch.setsDone || patch.repsDone || patch.duration || patch.distance || patch.intensity || patch.feeling || patch.note;
     if (meaningful) setDone((d) => (d.has(itemId) ? d : new Set(d).add(itemId)));
   };
 
@@ -103,7 +103,7 @@ export default function TrainView({ client }: { client: Client }) {
     extras.forEach((x) => (exOf[x.id] = x.exerciseId));
     // keep only results that actually carry data
     const entries = Object.values(results)
-      .filter((e) => e.weight || e.setsDone || e.repsDone || e.duration || e.distance || e.feeling || e.note)
+      .filter((e) => e.weight || e.setsDone || e.repsDone || e.duration || e.distance || e.intensity || e.feeling || e.note)
       .map((e) => ({ ...e, exerciseId: exOf[e.itemId], extra: extraIds.has(e.itemId) || undefined }));
     const allDone = totalItems > 0 && done.size >= totalItems;
     logWorkout({
@@ -386,7 +386,7 @@ function RunnerItem({
     : null;
   // Collapse by default so the runner reads as a scannable checklist instead of a
   // wall of inputs; auto-open extras (just added) and anything already logged.
-  const hasData = !!(r.weight || r.setsDone || r.repsDone || r.duration || r.distance || r.feeling || r.note);
+  const hasData = !!(r.weight || r.setsDone || r.repsDone || r.duration || r.distance || r.intensity || r.feeling || r.note);
   const [open, setOpen] = useState<boolean>(isExtra || hasData);
   const [playing, setPlaying] = useState(false);
 
@@ -437,7 +437,11 @@ function RunnerItem({
             <div className="space-y-1.5">
               <div className="grid grid-cols-2 gap-2">
                 <LogField label="Duration" value={r.duration} placeholder="30 min" onChange={(v) => onChange({ duration: v })} />
-                <LogField label="Distance" value={r.distance} placeholder="3 mi" onChange={(v) => onChange({ distance: v })} />
+                {ex?.intensity ? (
+                  <LogField label="Intensity" value={r.intensity} placeholder="Easy / Hard" onChange={(v) => onChange({ intensity: v })} />
+                ) : (
+                  <LogField label="Distance" value={r.distance} placeholder="3 mi" onChange={(v) => onChange({ distance: v })} />
+                )}
               </div>
               {speed && (
                 <p className="text-xs text-slate text-right">

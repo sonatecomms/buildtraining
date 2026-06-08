@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -62,6 +62,30 @@ const BLOCK_DESC: Record<"superset" | "circuit", string> = {
 
 function exMap(list: Exercise[]) {
   return Object.fromEntries(list.map((e) => [e.id, e]));
+}
+
+// On-brand two-tap delete: first tap arms ("Delete?"), second within 3s confirms.
+// Replaces jarring native confirm() and protects the silent ✕ deletes.
+function ConfirmX({ onConfirm, title = "Delete" }: { onConfirm: () => void; title?: string }) {
+  const [armed, setArmed] = useState(false);
+  useEffect(() => {
+    if (!armed) return;
+    const t = setTimeout(() => setArmed(false), 3000);
+    return () => clearTimeout(t);
+  }, [armed]);
+  return armed ? (
+    <button onClick={onConfirm} className="text-brick text-xs font-semibold shrink-0 px-1.5 py-1 -my-1 rounded-md bg-brick/10">
+      {title}?
+    </button>
+  ) : (
+    <button
+      onClick={() => setArmed(true)}
+      aria-label={title}
+      className="text-slate hover:text-brick text-sm shrink-0 p-2 -m-1 leading-none"
+    >
+      ✕
+    </button>
+  );
 }
 
 type PickerState =
@@ -195,6 +219,13 @@ function WorkoutCard({
   );
 
   const [dragLabel, setDragLabel] = useState<string | null>(null);
+  const [copiedTo, setCopiedTo] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (copiedTo == null) return;
+    const t = setTimeout(() => setCopiedTo(null), 2000);
+    return () => clearTimeout(t);
+  }, [copiedTo]);
 
   const onDragStart = (e: DragStartEvent) => {
     const d = e.active.data.current;
@@ -259,21 +290,19 @@ function WorkoutCard({
             <option key={i} value={i}>{d}</option>
           ))}
         </select>
-        <button
-          onClick={() => {
-            if (confirm(`Delete "${workout.name}"?`)) deleteWorkout(clientId, workout.id);
-          }}
-          className="text-slate hover:text-brick text-sm shrink-0"
-        >
-          ✕
-        </button>
+        <ConfirmX title="Delete workout" onConfirm={() => deleteWorkout(clientId, workout.id)} />
       </div>
 
       <div className="flex items-center gap-2 mb-3 -mt-1">
         <span className="text-[11px] text-slate">Copy this day to:</span>
         <select
           value=""
-          onChange={(e) => e.target.value !== "" && duplicateWorkout(clientId, workout.id, +e.target.value)}
+          onChange={(e) => {
+            if (e.target.value === "") return;
+            const d = +e.target.value;
+            duplicateWorkout(clientId, workout.id, d);
+            setCopiedTo(d);
+          }}
           className="text-xs bg-surface border border-line rounded-lg px-2 py-1 outline-none text-forest font-medium"
         >
           <option value="">choose a day…</option>
@@ -285,6 +314,9 @@ function WorkoutCard({
             ),
           )}
         </select>
+        {copiedTo != null && (
+          <span className="text-[11px] text-forest font-medium">✓ Copied to {DOW_LONG[copiedTo]}</span>
+        )}
       </div>
 
       <DndContext
@@ -301,6 +333,7 @@ function WorkoutCard({
                 clientId={clientId}
                 workoutId={workout.id}
                 block={block}
+                allBlocks={workout.blocks}
                 byId={byId}
                 onAddToBlock={() => onPickAdd(block.id)}
                 onEditVideo={(itemId) => onEditVideo(block.id, itemId)}
@@ -333,6 +366,7 @@ function SortableBlock({
   clientId,
   workoutId,
   block,
+  allBlocks,
   byId,
   onAddToBlock,
   onEditVideo,
@@ -340,14 +374,23 @@ function SortableBlock({
   clientId: string;
   workoutId: string;
   block: Block;
+  allBlocks: Block[];
   byId: Record<string, Exercise>;
   onAddToBlock: () => void;
   onEditVideo: (itemId: string) => void;
 }) {
+  const [grouping, setGrouping] = useState(false);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: block.id,
     data: { type: "block" },
   });
+  // movements in other blocks this single can be paired with (tap = make a superset)
+  const groupTargets =
+    block.type === "single"
+      ? allBlocks
+          .filter((b) => b.id !== block.id && b.type !== "note")
+          .flatMap((b) => b.items.map((it) => ({ id: it.id, name: byId[it.exerciseId]?.name ?? "Movement" })))
+      : [];
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -375,12 +418,7 @@ function SortableBlock({
             className="flex-1 min-w-0 bg-transparent font-semibold text-sm outline-none focus:text-forest placeholder:text-slate"
           />
           <span className="text-[10px] uppercase tracking-wide text-sky font-semibold">Note</span>
-          <button
-            onClick={() => removeBlock(clientId, workoutId, block.id)}
-            className="text-slate hover:text-brick text-sm shrink-0"
-          >
-            ✕
-          </button>
+          <ConfirmX title="Delete note" onConfirm={() => removeBlock(clientId, workoutId, block.id)} />
         </div>
         <textarea
           defaultValue={block.text ?? ""}
@@ -473,6 +511,37 @@ function SortableBlock({
           + add movement to {BLOCK_LABEL[block.type].toLowerCase()}
         </button>
       )}
+
+      {block.type === "single" && groupTargets.length > 0 && (
+        <div className="mt-2">
+          {grouping ? (
+            <div className="rounded-lg border border-line bg-field/60 p-2">
+              <p className="text-[11px] text-slate mb-1.5 px-0.5">Pair with… (creates a superset)</p>
+              <div className="flex flex-wrap gap-1.5">
+                {groupTargets.map((m) => (
+                  <button
+                    key={m.id}
+                    onClick={() => {
+                      moveItemToBlock(clientId, workoutId, m.id, block.id);
+                      setGrouping(false);
+                    }}
+                    className="text-xs bg-surface border border-line rounded-full px-2.5 py-1 hover:border-forest"
+                  >
+                    {m.name}
+                  </button>
+                ))}
+                <button onClick={() => setGrouping(false)} className="text-xs text-slate px-2 py-1">
+                  cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button onClick={() => setGrouping(true)} className="text-xs text-sky font-semibold pl-1">
+              ⊕ group into superset
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -503,6 +572,15 @@ function ItemRow({
   };
   const effectiveUrl = item.youtubeUrl ?? ex?.youtubeUrl;
   const thumb = youtubeThumb(effectiveUrl);
+  const [showNote, setShowNote] = useState<boolean>(!!item.notes);
+
+  // persist the displayed default variant so the athlete view matches what the
+  // coach sees (the select shows variants[0] but never saved it otherwise)
+  useEffect(() => {
+    if (ex?.variants && ex.variants.length > 0 && !item.variant) {
+      updateItem(clientId, workoutId, blockId, item.id, { variant: ex.variants[0] });
+    }
+  }, [ex, item.variant, clientId, workoutId, blockId, item.id]);
 
   return (
     <div ref={setNodeRef} style={style} className="rounded-lg bg-surface border border-line p-2.5">
@@ -538,12 +616,7 @@ function ItemRow({
           <p className="font-medium text-sm truncate">{ex?.name ?? "Unknown"}</p>
           <p className="text-[11px] text-slate">{ex?.primaryMuscle}</p>
         </div>
-        <button
-          onClick={() => removeItem(clientId, workoutId, blockId, item.id)}
-          className="text-slate hover:text-brick text-sm shrink-0"
-        >
-          ✕
-        </button>
+        <ConfirmX title="Remove" onConfirm={() => removeItem(clientId, workoutId, blockId, item.id)} />
       </div>
 
       {ex?.variants && ex.variants.length > 0 && (
@@ -563,13 +636,23 @@ function ItemRow({
         <Field label="Reps" value={item.reps} onChange={(v) => updateItem(clientId, workoutId, blockId, item.id, { reps: v })} />
         <Field label="Rest" value={item.rest} onChange={(v) => updateItem(clientId, workoutId, blockId, item.id, { rest: v })} />
       </div>
-      <textarea
-        defaultValue={item.notes ?? ""}
-        onBlur={(e) => updateItem(clientId, workoutId, blockId, item.id, { notes: e.target.value })}
-        placeholder="Cue / note (optional)"
-        rows={2}
-        className="w-full mt-2 rounded-lg bg-field border border-line px-2.5 py-1.5 text-xs outline-none focus:border-forest resize-y"
-      />
+      {showNote ? (
+        <textarea
+          defaultValue={item.notes ?? ""}
+          autoFocus={!item.notes}
+          onBlur={(e) => updateItem(clientId, workoutId, blockId, item.id, { notes: e.target.value })}
+          placeholder="Cue / note (optional)"
+          rows={2}
+          className="w-full mt-2 rounded-lg bg-field border border-line px-2.5 py-1.5 text-xs outline-none focus:border-forest resize-y"
+        />
+      ) : (
+        <button
+          onClick={() => setShowNote(true)}
+          className="text-xs text-slate hover:text-forest font-medium mt-2 pl-0.5"
+        >
+          ＋ cue / note
+        </button>
+      )}
     </div>
   );
 }
@@ -585,14 +668,25 @@ function Field({
   onChange: (v: string) => void;
   type?: string;
 }) {
+  const [saved, setSaved] = useState(false);
+  useEffect(() => {
+    if (!saved) return;
+    const t = setTimeout(() => setSaved(false), 800);
+    return () => clearTimeout(t);
+  }, [saved]);
   return (
     <label className="block min-w-0">
       <span className="text-[10px] uppercase tracking-wide text-slate">{label}</span>
       <input
         type={type}
         defaultValue={value}
-        onBlur={(e) => onChange(e.target.value)}
-        className="w-full min-w-0 rounded-lg bg-field border border-line px-2 py-1.5 text-sm outline-none focus:border-forest"
+        onBlur={(e) => {
+          onChange(e.target.value);
+          setSaved(true);
+        }}
+        className={`w-full min-w-0 rounded-lg bg-field border px-2 py-1.5 text-sm outline-none focus:border-forest transition-colors ${
+          saved ? "border-green-soft" : "border-line"
+        }`}
       />
     </label>
   );

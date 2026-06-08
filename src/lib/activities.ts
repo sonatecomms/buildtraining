@@ -11,13 +11,13 @@ export const ACTIVITIES: Exercise[] = [
   { id: "act-ruck", name: "Rucking", category: "Activity", equipment: "Other", primaryMuscle: "Full Body / Cardio", activity: true },
   { id: "act-bike", name: "Cycling (Outdoor)", category: "Activity", equipment: "Other", primaryMuscle: "Legs / Cardio", activity: true, speedUnit: "mph" },
   { id: "act-swim", name: "Swim", category: "Activity", equipment: "Other", primaryMuscle: "Full Body / Cardio", activity: true },
-  { id: "act-yoga", name: "Yoga", category: "Activity", equipment: "Bodyweight", primaryMuscle: "Mobility", activity: true },
-  { id: "act-pilates", name: "Pilates", category: "Activity", equipment: "Bodyweight", primaryMuscle: "Core / Mobility", activity: true },
-  { id: "act-mobility", name: "Stretching / Mobility", category: "Activity", equipment: "Bodyweight", primaryMuscle: "Mobility", activity: true },
+  { id: "act-yoga", name: "Yoga", category: "Activity", equipment: "Bodyweight", primaryMuscle: "Mobility", activity: true, intensity: true },
+  { id: "act-pilates", name: "Pilates", category: "Activity", equipment: "Bodyweight", primaryMuscle: "Core / Mobility", activity: true, intensity: true },
+  { id: "act-mobility", name: "Stretching / Mobility", category: "Activity", equipment: "Bodyweight", primaryMuscle: "Mobility", activity: true, intensity: true },
   { id: "act-elliptical", name: "Elliptical", category: "Activity", equipment: "Cardio Machine", primaryMuscle: "Cardio", activity: true },
   { id: "act-stairs", name: "Stair Climber", category: "Activity", equipment: "Cardio Machine", primaryMuscle: "Legs / Cardio", activity: true },
   { id: "act-row-cardio", name: "Rowing (Cardio)", category: "Activity", equipment: "Cardio Machine", primaryMuscle: "Full Body / Cardio", activity: true },
-  { id: "act-sport", name: "Sport / Pickup Game", category: "Activity", equipment: "Other", primaryMuscle: "Full Body", activity: true },
+  { id: "act-sport", name: "Sport / Pickup Game", category: "Activity", equipment: "Other", primaryMuscle: "Full Body", activity: true, intensity: true },
 ];
 
 // ---- pace math for logged activities -------------------------------------
