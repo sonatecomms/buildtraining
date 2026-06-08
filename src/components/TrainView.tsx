@@ -13,6 +13,7 @@ import { flushPush } from "@/lib/sync";
 import type { Client, Exercise, ItemResult, ProgramItem, Workout, WorkoutLog } from "@/lib/types";
 import { youtubeId } from "@/lib/youtube";
 import { runPace, speedMph } from "@/lib/activities";
+import { pushRecent } from "@/lib/recents";
 import { DOW_LONG, isoDate, todayDow, weekDates, relativeDate } from "@/lib/week";
 import { Button, Card, Pill } from "./ui";
 import StreakHeader from "./StreakHeader";
@@ -229,7 +230,10 @@ export default function TrainView({ client }: { client: Client }) {
           <ExercisePickerModal
             title="Log a movement or activity"
             onClose={() => setPicking(false)}
-            onPick={(ex) => addExtra(ex)}
+            onPick={(ex) => {
+              pushRecent(ex.id);
+              addExtra(ex);
+            }}
           />
         )}
       </div>

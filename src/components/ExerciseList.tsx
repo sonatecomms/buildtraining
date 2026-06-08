@@ -3,8 +3,11 @@
 import { useMemo, useState } from "react";
 import type { Exercise, ExerciseCategory } from "@/lib/types";
 import { youtubeThumb } from "@/lib/youtube";
+import { useRecents } from "@/lib/recents";
 import { Card, Pill } from "./ui";
 import VideoModal from "./VideoModal";
+
+type Filter = ExerciseCategory | "All" | "Recent";
 
 const CATEGORIES: (ExerciseCategory | "All")[] = [
   "All",
@@ -30,14 +33,26 @@ export default function ExerciseList({
   exercises: Exercise[];
   onPick?: (ex: Exercise) => void;
 }) {
+  const recents = useRecents();
+  // "Recent" is only useful when picking (program builder / logging an extra)
+  const showRecent = !!onPick && recents.length > 0;
   const [q, setQ] = useState("");
-  const [cat, setCat] = useState<(typeof CATEGORIES)[number]>("All");
+  const [cat, setCat] = useState<Filter>(showRecent ? "Recent" : "All");
   const [playing, setPlaying] = useState<{ url: string; name: string } | null>(null);
+
+  const cats: Filter[] = showRecent ? ["Recent", ...CATEGORIES] : CATEGORIES;
+
+  // recents resolved to exercises, newest first, dropping any that no longer exist
+  const recentList = useMemo(() => {
+    const map = new Map(exercises.map((e) => [e.id, e]));
+    return recents.map((id) => map.get(id)).filter(Boolean) as Exercise[];
+  }, [exercises, recents]);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    return exercises.filter((e) => {
-      const matchCat = cat === "All" || e.category === cat;
+    const base = cat === "Recent" ? recentList : exercises;
+    return base.filter((e) => {
+      const matchCat = cat === "All" || cat === "Recent" || e.category === cat;
       const matchQ =
         !needle ||
         e.name.toLowerCase().includes(needle) ||
@@ -45,7 +60,7 @@ export default function ExerciseList({
         e.equipment.toLowerCase().includes(needle);
       return matchCat && matchQ;
     });
-  }, [exercises, q, cat]);
+  }, [exercises, recentList, q, cat]);
 
   return (
     <div>
@@ -66,7 +81,7 @@ export default function ExerciseList({
           className="w-full rounded-xl bg-surface border border-line px-4 py-2.5 text-sm outline-none focus:border-forest"
         />
         <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 mt-2.5">
-          {CATEGORIES.map((c) => (
+          {cats.map((c) => (
             <button
               key={c}
               onClick={() => setCat(c)}
@@ -74,7 +89,7 @@ export default function ExerciseList({
                 cat === c ? "bg-forest text-bone" : "bg-surface border border-line text-slate"
               }`}
             >
-              {c}
+              {c === "Recent" ? "⭐ Recent" : c}
             </button>
           ))}
         </div>

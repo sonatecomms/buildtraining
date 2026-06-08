@@ -9,6 +9,7 @@ import { formatPhone, isPhoneLogin, phoneDigits, toLoginId } from "@/lib/login";
 import { APP_VERSION } from "@/lib/version";
 import { Avatar, Button, Card } from "./ui";
 import AvatarCropper from "./AvatarCropper";
+import BiometricLockCard from "./BiometricLockCard";
 
 export default function ProfileEditor({
   client,
@@ -182,7 +183,7 @@ export default function ProfileEditor({
           max={7}
           value={client.intendedFrequency}
           onChange={(e) => updateClient(client.id, { intendedFrequency: +e.target.value })}
-          className="w-full accent-[#19350C]"
+          className="w-full accent-forest"
         />
         <div className="flex justify-between text-[10px] text-slate mt-1">
           {[1, 2, 3, 4, 5, 6, 7].map((n) => <span key={n}>{n}</span>)}
@@ -211,6 +212,9 @@ export default function ProfileEditor({
           })}
         </div>
       </Card>
+
+      {/* athlete's own device security (their settings, not the coach's) */}
+      {!coachView && <BiometricLockCard />}
 
       {coachView && (
       <>

@@ -129,6 +129,10 @@ export function PageHeader({
   );
 }
 
+export function Skeleton({ className = "" }: { className?: string }) {
+  return <div className={`animate-pulse rounded-xl bg-line/60 ${className}`} />;
+}
+
 export function EmptyState({ icon, title, hint }: { icon: string; title: string; hint?: string }) {
   return (
     <div className="text-center py-12 px-6">

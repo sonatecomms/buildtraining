@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useClients, useLogsForClient, addClient, setClientArchived } from "@/lib/store";
-import { Avatar, Button, Card, EmptyState, PageHeader, Pill } from "@/components/ui";
+import { Avatar, Button, Card, EmptyState, PageHeader, Pill, Skeleton } from "@/components/ui";
 import { GOALS } from "@/lib/goals";
 import { relativeDate, daysAgo, weekDates, isoDate } from "@/lib/week";
 import type { Client } from "@/lib/types";
@@ -49,6 +49,10 @@ export default function CoachHome() {
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
   const [showArchived, setShowArchived] = useState(false);
+  // gate the roster on mount so we never flash the SSR seed data before the
+  // real (localStorage / cloud-pulled) roster is in hand
+  const [ready, setReady] = useState(false);
+  useEffect(() => setReady(true), []);
 
   const active = clients.filter((c) => !c.archived);
   const archived = clients.filter((c) => c.archived);
@@ -90,7 +94,19 @@ export default function CoachHome() {
         </Card>
       )}
 
-      {active.length === 0 ? (
+      {!ready ? (
+        <div className="space-y-3">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="flex items-center gap-3 p-4 rounded-2xl border border-line bg-surface">
+              <Skeleton className="w-12 h-12 rounded-full" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-3.5 w-32" />
+                <Skeleton className="h-3 w-20" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : active.length === 0 ? (
         <EmptyState icon="🏋️" title="No active athletes" hint="Add an athlete, or recover one from the archive below." />
       ) : (
         <div className="space-y-3">

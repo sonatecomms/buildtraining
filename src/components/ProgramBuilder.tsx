@@ -41,6 +41,7 @@ import {
   useProgramForClient,
 } from "@/lib/store";
 import type { Block, BlockType, Exercise, ProgramItem, Workout } from "@/lib/types";
+import { pushRecent } from "@/lib/recents";
 import { youtubeId, youtubeThumb } from "@/lib/youtube";
 import { DOW_LONG, todayDow } from "@/lib/week";
 import { Button, Card, EmptyState, Pill } from "./ui";
@@ -179,6 +180,7 @@ export default function ProgramBuilder({ clientId }: { clientId: string }) {
           title={picker.kind === "addToBlock" ? "Add to group" : "Add movement"}
           onClose={() => setPicker(null)}
           onPick={(ex) => {
+            pushRecent(ex.id);
             if (picker.kind === "newBlock") addExerciseBlock(clientId, picker.workoutId, ex.id);
             else addItemToBlock(clientId, picker.workoutId, picker.blockId, ex.id);
           }}
