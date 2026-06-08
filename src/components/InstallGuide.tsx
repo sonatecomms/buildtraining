@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { biometricSupported, disableLock, enrollBiometric, isLockEnabled } from "@/lib/biometric";
+import { useSession } from "./SessionProvider";
 import { Button, Card, PageHeader } from "./ui";
 
 // `beforeinstallprompt` fires on installable Android/desktop Chrome. iOS Safari
@@ -14,10 +16,16 @@ export default function InstallGuide() {
   const [deferred, setDeferred] = useState<BIPEvent | null>(null);
   const [installed, setInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+  const [bioOk, setBioOk] = useState(false);
+  const [locked, setLocked] = useState(false);
+  const [bioBusy, setBioBusy] = useState(false);
+  const { session } = useSession();
 
   useEffect(() => {
     setIsIOS(/iphone|ipad|ipod/i.test(window.navigator.userAgent));
     setInstalled(window.matchMedia("(display-mode: standalone)").matches);
+    setLocked(isLockEnabled());
+    biometricSupported().then(setBioOk);
     const onPrompt = (e: Event) => {
       e.preventDefault();
       setDeferred(e as BIPEvent);
@@ -32,6 +40,21 @@ export default function InstallGuide() {
     await deferred.prompt();
     await deferred.userChoice;
     setDeferred(null);
+  };
+
+  const toggleLock = async () => {
+    if (locked) {
+      disableLock();
+      setLocked(false);
+      return;
+    }
+    setBioBusy(true);
+    const ok = await enrollBiometric(
+      session?.user.id ?? "build-user",
+      session?.user.email ?? "BUILD",
+    );
+    setBioBusy(false);
+    setLocked(ok);
   };
 
   return (
@@ -73,6 +96,33 @@ export default function InstallGuide() {
           </Card>
         </div>
       )}
+
+      {/* Face ID app lock */}
+      <Card className="p-4 mt-6">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="font-semibold">Face ID lock</p>
+            <p className="text-xs text-slate mt-0.5">
+              {bioOk
+                ? "Require Face ID / Touch ID to open BUILD on this device."
+                : "Not available on this device or browser."}
+            </p>
+          </div>
+          {bioOk && (
+            <Button
+              size="sm"
+              variant={locked ? "outline" : "primary"}
+              onClick={toggleLock}
+              disabled={bioBusy}
+            >
+              {bioBusy ? "…" : locked ? "Turn off" : "Turn on"}
+            </Button>
+          )}
+        </div>
+        <p className="text-[11px] text-slate mt-2">
+          You stay signed in — this just locks the screen until you unlock.
+        </p>
+      </Card>
     </div>
   );
 }

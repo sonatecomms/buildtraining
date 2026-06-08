@@ -17,6 +17,7 @@ import { hydrate } from "@/lib/store";
 import { buildSeedDB } from "@/lib/seed";
 import AuthGate from "./AuthGate";
 import AthleteApp from "./AthleteApp";
+import BiometricLock from "./BiometricLock";
 
 type Status = "loading" | "signedout" | "ready";
 type Role = "coach" | "athlete";
@@ -156,7 +157,9 @@ export default function SessionProvider({ children }: { children: React.ReactNod
 
   return (
     <SessionCtx.Provider value={{ session, cloud, role }}>
-      {role === "athlete" ? <AthleteApp clientId={athleteClientId ?? ""} /> : children}
+      <BiometricLock>
+        {role === "athlete" ? <AthleteApp clientId={athleteClientId ?? ""} /> : children}
+      </BiometricLock>
     </SessionCtx.Provider>
   );
 }
