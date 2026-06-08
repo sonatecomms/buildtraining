@@ -145,16 +145,28 @@ const rowExercise = (r: Record<string, unknown>): Exercise => ({
 // own row; athlete updates theirs). Returns the error message if it fails.
 export async function saveClientNow(c: Client): Promise<{ ok: boolean; error?: string }> {
   const sb = getSupabase();
-  if (!sb || !coachId) return { ok: true }; // local mode — already in localStorage
+  if (!sb) return { ok: true }; // local mode — already in localStorage
+  if (!coachId) return { ok: false, error: "not synced yet — reload and try again" };
   lastWriteAt = Date.now();
   const row = clientRow(c);
+  // .select() returns the affected rows — 0 rows means a permission/identity
+  // mismatch silently dropped the write (the "Saved but resets" bug).
   const res =
     mode === "athlete"
-      ? await sb.from("clients").update(row).eq("id", c.id)
-      : await sb.from("clients").upsert(row);
+      ? await sb.from("clients").update(row).eq("id", c.id).select()
+      : await sb.from("clients").upsert(row).select();
   if (res.error) {
     console.warn("saveClientNow failed", res.error);
     return { ok: false, error: res.error.message };
+  }
+  if (!res.data || res.data.length === 0) {
+    return {
+      ok: false,
+      error:
+        mode === "athlete"
+          ? "saved 0 rows — your login doesn't match this profile's athlete login"
+          : "saved 0 rows — this profile isn't under your coach account",
+    };
   }
   return { ok: true };
 }
