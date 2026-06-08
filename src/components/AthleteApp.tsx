@@ -1,27 +1,46 @@
 "use client";
 
 import { useState } from "react";
-import { useClient } from "@/lib/store";
+import { useClient, useExercises } from "@/lib/store";
 import { getSupabase } from "@/lib/supabase";
+import { flushPush } from "@/lib/sync";
 import { Avatar, Button, Card } from "./ui";
 import TrainView from "./TrainView";
 import ProfileEditor from "./ProfileEditor";
 import AthleteOnboard from "./AthleteOnboard";
+import PRsView from "./PRsView";
+import InstallGuide from "./InstallGuide";
+import ExerciseList from "./ExerciseList";
 import { useSession } from "./SessionProvider";
 
-// The athlete's whole experience: their training plus a profile/settings screen.
-// No builder, no client list. Data is loaded scoped to this client.
+type View = "train" | "prs" | "library" | "install" | "profile";
+
+const NAV: { id: View; label: string; icon: string }[] = [
+  { id: "train", label: "Train", icon: "🔥" },
+  { id: "prs", label: "PRs", icon: "🏆" },
+  { id: "library", label: "Library", icon: "📚" },
+  { id: "install", label: "Install", icon: "📲" },
+];
+
 export default function AthleteApp({ clientId }: { clientId: string }) {
   const client = useClient(clientId);
+  const exercises = useExercises();
   const { session } = useSession();
   const [justSet, setJustSet] = useState(false);
-  const [view, setView] = useState<"train" | "profile">("train");
+  const [view, setView] = useState<View>("train");
+  const [saved, setSaved] = useState(false);
 
   // First sign-in (coach set a temp password) → make them set their own.
   const needsPassword = Boolean(session && !session.user.user_metadata?.password_set);
   if (needsPassword && !justSet) {
     return <AthleteOnboard firstName={client?.name?.split(" ")[0]} onDone={() => setJustSet(true)} />;
   }
+
+  const saveProfile = async () => {
+    await flushPush(); // force the cloud sync now
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -32,17 +51,17 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
           </button>
           <div className="flex-1" />
           <button
-            onClick={() => setView((v) => (v === "train" ? "profile" : "train"))}
-            className="flex items-center gap-2"
+            onClick={() => setView(view === "profile" ? "train" : "profile")}
+            className={`flex items-center gap-2 ${view === "profile" ? "text-forest" : ""}`}
             aria-label="Profile & settings"
           >
             {client && <Avatar src={client.avatarUrl} name={client.name} size={32} />}
-            <span className="text-slate text-xs font-medium">{view === "train" ? "Profile" : "Training"}</span>
+            <span className="text-xs font-medium">{view === "profile" ? "Done" : "Profile"}</span>
           </button>
         </div>
       </header>
 
-      <main className="flex-1 w-full max-w-2xl mx-auto px-4 pb-12 pt-4">
+      <main className="flex-1 w-full max-w-2xl mx-auto px-4 pb-28 pt-4">
         {!client ? (
           <div className="min-h-[50vh] grid place-items-center text-slate text-sm text-center px-6">
             <div>
@@ -60,23 +79,51 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
             </div>
             <TrainView client={client} />
           </>
+        ) : view === "prs" ? (
+          <PRsView client={client} />
+        ) : view === "library" ? (
+          <>
+            <h1 className="text-2xl font-bold mb-4">Movement library</h1>
+            <ExerciseList exercises={exercises} />
+          </>
+        ) : view === "install" ? (
+          <InstallGuide />
         ) : (
           <>
             <h1 className="text-2xl font-bold mb-4">Profile & settings</h1>
             <ProfileEditor client={client} coachView={false} />
-            <div className="mt-4 space-y-4">
+            <div className="mt-4 space-y-3">
+              <Button className="w-full" onClick={saveProfile}>
+                {saved ? "✓ Saved" : "Save changes"}
+              </Button>
               <ChangePasswordCard />
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => getSupabase()?.auth.signOut()}
-              >
+              <Button variant="outline" className="w-full" onClick={() => getSupabase()?.auth.signOut()}>
                 Sign out
               </Button>
             </div>
           </>
         )}
       </main>
+
+      <nav className="fixed bottom-0 inset-x-0 z-40 border-t border-line bg-surface/95 backdrop-blur">
+        <div className="max-w-2xl mx-auto grid grid-cols-4" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+          {NAV.map((t) => {
+            const active = view === t.id;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setView(t.id)}
+                className={`flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
+                  active ? "text-forest" : "text-slate"
+                }`}
+              >
+                <span className="text-lg leading-none">{t.icon}</span>
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
+      </nav>
     </div>
   );
 }

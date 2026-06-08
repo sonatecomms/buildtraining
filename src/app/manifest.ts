@@ -9,12 +9,12 @@ export default function manifest(): MetadataRoute.Manifest {
       "Coach-built training programs, workout logging, and streaks — in your pocket.",
     start_url: "/",
     display: "standalone",
-    background_color: "#191918",
+    background_color: "#E2E6DA",
     theme_color: "#19350C",
     orientation: "portrait",
     icons: [
-      { src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
-      { src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "maskable" },
+      { src: "/logo-icon.png", sizes: "600x600", type: "image/png", purpose: "any" },
+      { src: "/logo-icon.png", sizes: "600x600", type: "image/png", purpose: "maskable" },
     ],
   };
 }

@@ -24,6 +24,7 @@ import {
   addNoteBlock,
   addWorkout,
   deleteWorkout,
+  duplicateWorkout,
   moveItemToBlock,
   removeBlock,
   removeItem,
@@ -265,6 +266,24 @@ function WorkoutCard({
         >
           ✕
         </button>
+      </div>
+
+      <div className="flex items-center gap-2 mb-3 -mt-1">
+        <span className="text-[11px] text-slate">Copy this day to:</span>
+        <select
+          value=""
+          onChange={(e) => e.target.value !== "" && duplicateWorkout(clientId, workout.id, +e.target.value)}
+          className="text-xs bg-surface border border-line rounded-lg px-2 py-1 outline-none text-forest font-medium"
+        >
+          <option value="">choose a day…</option>
+          {DOW_LONG.map((d, i) =>
+            i === workout.dow ? null : (
+              <option key={i} value={i}>
+                {d}
+              </option>
+            ),
+          )}
+        </select>
       </div>
 
       <DndContext
@@ -526,16 +545,29 @@ function ItemRow({
         </button>
       </div>
 
+      {ex?.variants && ex.variants.length > 0 && (
+        <select
+          value={item.variant ?? ex.variants[0]}
+          onChange={(e) => updateItem(clientId, workoutId, blockId, item.id, { variant: e.target.value })}
+          className="w-full mt-2 rounded-lg bg-field border border-line px-2 py-1.5 text-xs outline-none focus:border-forest text-forest font-medium"
+          title="Implement / side"
+        >
+          {ex.variants.map((v) => (
+            <option key={v} value={v}>{v}</option>
+          ))}
+        </select>
+      )}
       <div className="grid grid-cols-3 gap-2 mt-2">
         <Field label="Sets" value={item.sets} onChange={(v) => updateItem(clientId, workoutId, blockId, item.id, { sets: Math.max(1, +v || 1) })} type="number" />
         <Field label="Reps" value={item.reps} onChange={(v) => updateItem(clientId, workoutId, blockId, item.id, { reps: v })} />
-        <Field label="Rest (s)" value={item.restSec} onChange={(v) => updateItem(clientId, workoutId, blockId, item.id, { restSec: Math.max(0, +v || 0) })} type="number" />
+        <Field label="Rest" value={item.rest} onChange={(v) => updateItem(clientId, workoutId, blockId, item.id, { rest: v })} />
       </div>
-      <input
+      <textarea
         defaultValue={item.notes ?? ""}
         onBlur={(e) => updateItem(clientId, workoutId, blockId, item.id, { notes: e.target.value })}
         placeholder="Cue / note (optional)"
-        className="w-full mt-2 rounded-lg bg-field border border-line px-2.5 py-1.5 text-xs outline-none focus:border-forest"
+        rows={2}
+        className="w-full mt-2 rounded-lg bg-field border border-line px-2.5 py-1.5 text-xs outline-none focus:border-forest resize-y"
       />
     </div>
   );

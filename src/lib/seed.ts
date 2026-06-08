@@ -1,4 +1,5 @@
 import type { Client, DB, Exercise, Program } from "./types";
+import { CROSSFIT_EXERCISES } from "./crossfit";
 
 // A starter exercise repository. YouTube links point at well-known form demos.
 // Coaches can add their own on top of these.
@@ -45,6 +46,7 @@ export const SEED_EXERCISES: Exercise[] = [
   { id: "ex-kbswing", name: "Kettlebell Swing", category: "Full Body", equipment: "Kettlebell", primaryMuscle: "Posterior Chain", youtubeUrl: "https://www.youtube.com/watch?v=YSxHifyI6s8" },
   { id: "ex-thruster", name: "Thruster", category: "Full Body", equipment: "Barbell", primaryMuscle: "Full Body", youtubeUrl: "https://www.youtube.com/watch?v=L219ltL15zk" },
   { id: "ex-burpee", name: "Burpee", category: "Full Body", equipment: "Bodyweight", primaryMuscle: "Full Body", youtubeUrl: "https://www.youtube.com/watch?v=dZgVxmf6jkA" },
+  ...CROSSFIT_EXERCISES,
 ];
 
 function isoDaysAgo(n: number): string {
@@ -77,14 +79,14 @@ const demoProgram: Program = {
         {
           id: "b1",
           type: "single",
-          items: [{ id: "i1", exerciseId: "ex-backsquat", sets: 4, reps: "5", restSec: 180, notes: "Build to a hard 5." }],
+          items: [{ id: "i1", exerciseId: "ex-backsquat", sets: 4, reps: "5", rest: "180s", notes: "Build to a hard 5." }],
         },
         {
           id: "b2",
           type: "superset",
           items: [
-            { id: "i2", exerciseId: "ex-rdl", sets: 3, reps: "8", restSec: 90 },
-            { id: "i3", exerciseId: "ex-legcurl", sets: 3, reps: "12", restSec: 60 },
+            { id: "i2", exerciseId: "ex-rdl", sets: 3, reps: "8", rest: "90s" },
+            { id: "i3", exerciseId: "ex-legcurl", sets: 3, reps: "12", rest: "60s" },
           ],
         },
         {
@@ -92,9 +94,9 @@ const demoProgram: Program = {
           type: "circuit",
           rounds: 3,
           items: [
-            { id: "i4", exerciseId: "ex-plank", sets: 1, reps: "45s", restSec: 30 },
-            { id: "i5", exerciseId: "ex-pallof", sets: 1, reps: "10/side", restSec: 30 },
-            { id: "i6", exerciseId: "ex-calfraise", sets: 1, reps: "15", restSec: 30 },
+            { id: "i4", exerciseId: "ex-plank", sets: 1, reps: "45s", rest: "30s" },
+            { id: "i5", exerciseId: "ex-pallof", sets: 1, reps: "10/side", rest: "30s" },
+            { id: "i6", exerciseId: "ex-calfraise", sets: 1, reps: "15", rest: "30s" },
           ],
         },
       ],
@@ -104,16 +106,16 @@ const demoProgram: Program = {
       name: "Push",
       dow: 3, // Wednesday
       blocks: [
-        { id: "b4", type: "single", items: [{ id: "i7", exerciseId: "ex-bench", sets: 4, reps: "6", restSec: 150 }] },
+        { id: "b4", type: "single", items: [{ id: "i7", exerciseId: "ex-bench", sets: 4, reps: "6", rest: "150s" }] },
         {
           id: "b5",
           type: "superset",
           items: [
-            { id: "i8", exerciseId: "ex-inclinedb", sets: 3, reps: "10", restSec: 75 },
-            { id: "i9", exerciseId: "ex-lateralraise", sets: 3, reps: "15", restSec: 45 },
+            { id: "i8", exerciseId: "ex-inclinedb", sets: 3, reps: "10", rest: "75s" },
+            { id: "i9", exerciseId: "ex-lateralraise", sets: 3, reps: "15", rest: "45s" },
           ],
         },
-        { id: "b6", type: "single", items: [{ id: "i10", exerciseId: "ex-pushdown", sets: 3, reps: "12", restSec: 60 }] },
+        { id: "b6", type: "single", items: [{ id: "i10", exerciseId: "ex-pushdown", sets: 3, reps: "12", rest: "60s" }] },
       ],
     },
     {
@@ -121,16 +123,16 @@ const demoProgram: Program = {
       name: "Pull",
       dow: 5, // Friday
       blocks: [
-        { id: "b7", type: "single", items: [{ id: "i11", exerciseId: "ex-deadlift", sets: 3, reps: "3", restSec: 210 }] },
+        { id: "b7", type: "single", items: [{ id: "i11", exerciseId: "ex-deadlift", sets: 3, reps: "3", rest: "210s" }] },
         {
           id: "b8",
           type: "superset",
           items: [
-            { id: "i12", exerciseId: "ex-pullup", sets: 4, reps: "AMRAP", restSec: 90 },
-            { id: "i13", exerciseId: "ex-row", sets: 4, reps: "8", restSec: 90 },
+            { id: "i12", exerciseId: "ex-pullup", sets: 4, reps: "AMRAP", rest: "90s" },
+            { id: "i13", exerciseId: "ex-row", sets: 4, reps: "8", rest: "90s" },
           ],
         },
-        { id: "b9", type: "single", items: [{ id: "i14", exerciseId: "ex-curl", sets: 3, reps: "12", restSec: 60 }] },
+        { id: "b9", type: "single", items: [{ id: "i14", exerciseId: "ex-curl", sets: 3, reps: "12", rest: "60s" }] },
       ],
     },
   ],

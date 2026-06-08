@@ -8,14 +8,16 @@ import VideoModal from "./VideoModal";
 
 const CATEGORIES: (ExerciseCategory | "All")[] = [
   "All",
+  "Olympic",
+  "Gymnastics",
+  "Conditioning",
   "Lower Body",
   "Push",
   "Pull",
   "Core",
+  "Full Body",
   "Cardio",
   "Mobility",
-  "Full Body",
-  "Olympic",
 ];
 
 // Shared browsable list. `onPick` turns each row into a tappable picker (used in

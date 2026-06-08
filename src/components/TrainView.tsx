@@ -54,10 +54,13 @@ export default function TrainView({ client }: { client: Client }) {
 
   const finish = () => {
     if (!running) return;
+    // map each logged item back to its exercise so PRs survive program edits
+    const exOf: Record<string, string> = {};
+    running.blocks.forEach((b) => b.items.forEach((it) => (exOf[it.id] = it.exerciseId)));
     // keep only results that actually carry data
-    const entries = Object.values(results).filter(
-      (e) => e.weight || e.setsDone || e.repsDone || e.feeling || e.note,
-    );
+    const entries = Object.values(results)
+      .filter((e) => e.weight || e.setsDone || e.repsDone || e.feeling || e.note)
+      .map((e) => ({ ...e, exerciseId: exOf[e.itemId] }));
     logWorkout({
       clientId: client.id,
       workoutId: running.id,
@@ -228,9 +231,11 @@ function RunnerItem({
         <button onClick={() => setOpen((o) => !o)} className="flex-1 min-w-0 text-left">
           <span className={`block font-medium text-sm truncate ${checked ? "line-through text-slate" : ""}`}>
             {ex?.name}
+            {item.variant && <span className="text-forest"> · {item.variant}</span>}
           </span>
           <span className="text-xs text-slate">
-            {item.sets} × {item.reps} · {item.restSec}s rest
+            {item.sets} × {item.reps}
+            {item.rest ? ` · ${item.rest} rest` : ""}
           </span>
         </button>
         {youtubeId(url) && (
@@ -270,11 +275,12 @@ function RunnerItem({
               })}
             </div>
           </div>
-          <input
+          <textarea
             value={r.note ?? ""}
             onChange={(e) => onChange({ note: e.target.value })}
             placeholder="Notes — how it went, tweaks, PRs…"
-            className="w-full rounded-lg bg-surface border border-line px-2.5 py-1.5 text-sm outline-none focus:border-forest"
+            rows={2}
+            className="w-full rounded-lg bg-surface border border-line px-2.5 py-1.5 text-sm outline-none focus:border-forest resize-y"
           />
         </div>
       )}

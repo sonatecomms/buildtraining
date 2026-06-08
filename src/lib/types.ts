@@ -18,7 +18,9 @@ export type ExerciseCategory =
   | "Cardio"
   | "Mobility"
   | "Full Body"
-  | "Olympic";
+  | "Olympic"
+  | "Gymnastics"
+  | "Conditioning";
 
 export type Equipment =
   | "Barbell"
@@ -29,6 +31,12 @@ export type Equipment =
   | "Bodyweight"
   | "Bands"
   | "Cardio Machine"
+  | "Medicine Ball"
+  | "Rings"
+  | "Box"
+  | "Sandbag"
+  | "Sled"
+  | "Jump Rope"
   | "Other";
 
 export interface Exercise {
@@ -39,6 +47,9 @@ export interface Exercise {
   primaryMuscle: string;
   youtubeUrl?: string;
   custom?: boolean; // coach-added vs seeded
+  // implement/loading options the coach can pick per prescription
+  // (e.g. ["Barbell", "Double DB", "Single DB"], ["Both", "Single arm"])
+  variants?: string[];
 }
 
 export type BlockType = "single" | "superset" | "circuit" | "note";
@@ -48,10 +59,11 @@ export interface ProgramItem {
   exerciseId: string;
   sets: number;
   reps: string; // free text so "8-10", "30s", "AMRAP" all work
-  restSec: number;
+  rest: string; // free text: "90s", "2 min", "1:1", "2:1"…
   tempo?: string;
   notes?: string;
   youtubeUrl?: string; // per-use override; falls back to the exercise's demo
+  variant?: string; // chosen implement/side (from the exercise's variants)
 }
 
 export interface Block {
@@ -102,6 +114,7 @@ export interface Client {
 // What the athlete actually did for one movement during a session.
 export interface ItemResult {
   itemId: string;
+  exerciseId?: string; // captured at log time so PRs survive program edits
   weight?: string; // free text: "135", "BW", "red band"
   setsDone?: string;
   repsDone?: string;

@@ -85,3 +85,10 @@ textarea {
   50% { transform: rotate(3deg) scale(1.08); }
 }
 .animate-flame { animation: flame 1.4s ease-in-out infinite; }
+
+/* splash / load screen: the logo bobs like it's being lifted */
+@keyframes lift {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-10px) scale(1.05); }
+}
+.animate-lift { animation: lift 1.3s ease-in-out infinite; }

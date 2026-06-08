@@ -200,6 +200,24 @@ export function renameWorkout(clientId: string, workoutId: string, name: string)
   });
 }
 
+// Copy a whole workout (all blocks/movements) to another weekday.
+export function duplicateWorkout(clientId: string, workoutId: string, toDow: number) {
+  const prog = ensureProgram(clientId);
+  const w = prog.workouts.find((x) => x.id === workoutId);
+  if (!w) return;
+  const clone = {
+    ...w,
+    id: uid("w"),
+    dow: toDow,
+    blocks: w.blocks.map((b) => ({
+      ...b,
+      id: uid("b"),
+      items: b.items.map((it) => ({ ...it, id: uid("i") })),
+    })),
+  };
+  saveProgram({ ...prog, workouts: [...prog.workouts, clone] });
+}
+
 export function setWorkoutDow(clientId: string, workoutId: string, dow: number) {
   const prog = ensureProgram(clientId);
   saveProgram({
@@ -245,8 +263,13 @@ export function setBlockText(
   }));
 }
 
+function defaultVariant(exerciseId: string): string | undefined {
+  return getDB().exercises.find((e) => e.id === exerciseId)?.variants?.[0];
+}
+
 // Add an exercise to a workout as its own single block.
 export function addExerciseBlock(clientId: string, workoutId: string, exerciseId: string) {
+  const variant = defaultVariant(exerciseId);
   mutateWorkout(clientId, workoutId, (w) => ({
     ...w,
     blocks: [
@@ -254,7 +277,7 @@ export function addExerciseBlock(clientId: string, workoutId: string, exerciseId
       {
         id: uid("b"),
         type: "single",
-        items: [{ id: uid("i"), exerciseId, sets: 3, reps: "10", restSec: 60 }],
+        items: [{ id: uid("i"), exerciseId, sets: 3, reps: "10", rest: "60s", variant }],
       },
     ],
   }));
@@ -266,13 +289,14 @@ export function addItemToBlock(
   blockId: string,
   exerciseId: string,
 ) {
+  const variant = defaultVariant(exerciseId);
   mutateWorkout(clientId, workoutId, (w) => ({
     ...w,
     blocks: w.blocks.map((b) =>
       b.id === blockId
         ? {
             ...b,
-            items: [...b.items, { id: uid("i"), exerciseId, sets: 3, reps: "10", restSec: 60 }],
+            items: [...b.items, { id: uid("i"), exerciseId, sets: 3, reps: "10", rest: "60s", variant }],
           }
         : b,
     ),
@@ -312,7 +336,7 @@ export function updateItem(
   workoutId: string,
   blockId: string,
   itemId: string,
-  patch: Partial<{ sets: number; reps: string; restSec: number; notes: string; tempo: string; youtubeUrl: string | undefined }>,
+  patch: Partial<{ sets: number; reps: string; rest: string; notes: string; tempo: string; youtubeUrl: string | undefined; variant: string }>,
 ) {
   mutateWorkout(clientId, workoutId, (w) => ({
     ...w,
