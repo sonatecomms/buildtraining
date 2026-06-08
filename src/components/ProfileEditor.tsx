@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { deleteClient, setClientArchived, updateClient } from "@/lib/store";
 import { flushPush } from "@/lib/sync";
 import type { Client, GoalType } from "@/lib/types";
@@ -18,6 +18,10 @@ export default function ProfileEditor({
   const fileRef = useRef<HTMLInputElement>(null);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+
+  // Flush any pending edits to the cloud when leaving the profile, so changes
+  // made right before navigating/refreshing aren't lost to the save debounce.
+  useEffect(() => () => void flushPush(), []);
 
   const copyInvite = async () => {
     if (!client.athleteEmail) return;
@@ -85,6 +89,7 @@ export default function ProfileEditor({
             onSave={(url) => {
               updateClient(client.id, { avatarUrl: url });
               setCropSrc(null);
+              void flushPush(); // photo is a deliberate action — save it now
             }}
           />
         )}

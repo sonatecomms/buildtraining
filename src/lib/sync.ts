@@ -214,9 +214,17 @@ export async function pullAthlete(
 
 let timer: ReturnType<typeof setTimeout> | null = null;
 let pending: DB | null = null;
+let lastWriteAt = 0;
+
+// How long since the user last changed something locally. Used to keep realtime
+// re-pulls from clobbering an in-progress / just-saved edit.
+export function msSinceLocalWrite(): number {
+  return Date.now() - lastWriteAt;
+}
 
 export function schedulePush(db: DB) {
   if (!syncActive()) return;
+  lastWriteAt = Date.now();
   pending = db;
   if (timer) clearTimeout(timer);
   timer = setTimeout(() => {

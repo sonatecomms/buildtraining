@@ -8,6 +8,7 @@ import {
   pullAthlete,
   pullDB,
   pushNow,
+  msSinceLocalWrite,
   setAthleteRole,
   setCoachId,
   startRealtime,
@@ -44,8 +45,14 @@ export default function SessionProvider({ children }: { children: React.ReactNod
   useEffect(() => {
     if (!sb) return; // local mode
 
-    // re-pull the current role's data from the cloud (live updates), debounced
+    // re-pull the current role's data from the cloud (live updates), debounced.
+    // Defer while the user is actively editing so a live update never reverts an
+    // in-progress or just-saved change (local is authoritative for ~6s).
     const repull = async () => {
+      if (msSinceLocalWrite() < 6000) {
+        scheduleRepull();
+        return;
+      }
       if (roleRef.current === "athlete") {
         const ath = emailRef.current ? await pullAthlete(emailRef.current) : null;
         if (ath) hydrate(ath.db);
@@ -56,7 +63,7 @@ export default function SessionProvider({ children }: { children: React.ReactNod
     };
     const scheduleRepull = () => {
       if (repullTimer.current) clearTimeout(repullTimer.current);
-      repullTimer.current = setTimeout(() => void repull(), 600);
+      repullTimer.current = setTimeout(() => void repull(), 800);
     };
 
     const handle = async (s: Session | null) => {
