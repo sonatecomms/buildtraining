@@ -132,7 +132,7 @@ export default function SessionProvider({ children }: { children: React.ReactNod
     return (
       <div className="min-h-screen grid place-items-center bg-bone">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo-icon.png?v=5" alt="BUILD" className="w-24 h-24 animate-lift" />
+        <img src="/logo-icon.png?v=9" alt="BUILD" className="w-24 h-24 animate-lift" />
       </div>
     );
   }
