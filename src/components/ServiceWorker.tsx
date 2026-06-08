@@ -2,15 +2,20 @@
 
 import { useEffect } from "react";
 
-// Registers the service worker once, on the client, after load.
+// The old service worker was caching stale app code (cache-first), which pinned
+// devices on outdated builds. Until we ship a smarter SW, actively unregister
+// any existing one and clear its caches so every load gets fresh code.
 export default function ServiceWorker() {
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (!("serviceWorker" in navigator)) return;
-    if (process.env.NODE_ENV !== "production") return; // avoid caching during dev
-    const onLoad = () => navigator.serviceWorker.register("/sw.js").catch(() => {});
-    window.addEventListener("load", onLoad);
-    return () => window.removeEventListener("load", onLoad);
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.getRegistrations().then((regs) => {
+        regs.forEach((r) => r.unregister());
+      });
+    }
+    if ("caches" in window) {
+      caches.keys().then((keys) => keys.forEach((k) => caches.delete(k)));
+    }
   }, []);
   return null;
 }

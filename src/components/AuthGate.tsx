@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
 import { toLoginId } from "@/lib/login";
+import { APP_VERSION } from "@/lib/version";
 import { Button, Card } from "./ui";
 
 // Email + password sign in (testing phase — no emails sent, so no rate limits).
@@ -108,6 +109,7 @@ export default function AuthGate() {
           {mode === "signin" ? "No account yet? Create one" : "Have an account? Sign in"}
         </button>
       </Card>
+      <p className="text-[10px] text-slate mt-4">build {APP_VERSION}</p>
     </div>
   );
 }
