@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
+import { toLoginId } from "@/lib/login";
 import { Button, Card } from "./ui";
 
 // Email + password sign in (testing phase — no emails sent, so no rate limits).
@@ -31,8 +32,11 @@ export default function AuthGate() {
     setError(null);
     setNotice(null);
 
+    // accept an email OR a phone number (phone → synthetic email, no SMS needed)
+    const id = toLoginId(email);
+
     if (mode === "signin") {
-      const { error } = await sb.auth.signInWithPassword({ email: email.trim(), password });
+      const { error } = await sb.auth.signInWithPassword({ email: id, password });
       setBusy(false);
       if (error) setError(error.message);
       // success → SessionProvider's auth listener takes over
@@ -40,7 +44,7 @@ export default function AuthGate() {
     }
 
     // sign up
-    const { data, error } = await sb.auth.signUp({ email: email.trim(), password });
+    const { data, error } = await sb.auth.signUp({ email: id, password });
     setBusy(false);
     if (error) {
       setError(error.message);
@@ -66,13 +70,13 @@ export default function AuthGate() {
       </p>
 
       <Card className="p-5 w-full max-w-sm text-left">
-        <label className="text-xs text-slate font-medium">Email</label>
+        <label className="text-xs text-slate font-medium">Email or phone</label>
         <input
           autoFocus
-          type="email"
+          type="text"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@example.com"
+          placeholder="you@example.com or (555) 123-4567"
           className="w-full mt-1.5 mb-3 rounded-xl bg-field border border-line px-3 py-2.5 text-sm outline-none focus:border-forest"
         />
 

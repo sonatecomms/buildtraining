@@ -5,6 +5,7 @@ import { deleteClient, getClient, setClientArchived, updateClient } from "@/lib/
 import { flushPush, saveClientNow, setRealtimePaused } from "@/lib/sync";
 import type { Client, GoalType } from "@/lib/types";
 import { ALL_GOALS, GOALS } from "@/lib/goals";
+import { formatPhone, isPhoneLogin, phoneDigits, toLoginId } from "@/lib/login";
 import { Avatar, Button, Card } from "./ui";
 import AvatarCropper from "./AvatarCropper";
 
@@ -20,6 +21,9 @@ export default function ProfileEditor({
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
+  const [loginMode, setLoginMode] = useState<"email" | "phone">(
+    isPhoneLogin(client.athleteEmail) ? "phone" : "email",
+  );
 
   // While editing the profile, pause live re-pulls so a background update can't
   // revert an in-progress change; flush + resume on leave.
@@ -48,10 +52,13 @@ export default function ProfileEditor({
   const copyInvite = async () => {
     if (!client.athleteEmail) return;
     const origin = window.location.origin;
+    const loginLine = isPhoneLogin(client.athleteEmail)
+      ? `2. Sign in with this phone: ${formatPhone(phoneDigits(client.athleteEmail))}`
+      : `2. Sign in with this email: ${client.athleteEmail}`;
     const msg =
       `You're invited to train on BUILD 💪\n\n` +
       `1. Open ${origin}/?role=athlete\n` +
-      `2. Sign in with this email: ${client.athleteEmail}\n` +
+      `${loginLine}\n` +
       `3. Use the password I'll share with you — your program is ready.\n\n` +
       `Tip: add BUILD to your home screen to use it like an app.`;
     try {
@@ -221,15 +228,43 @@ export default function ProfileEditor({
       <Card className="p-4">
         <h3 className="font-semibold mb-1">Athlete login</h3>
         <p className="text-xs text-slate mb-2">
-          Add the athlete&apos;s email so they can sign in and see only their own training.
+          Set an email or phone so the athlete can sign in and see only their own training.
         </p>
-        <input
-          type="email"
-          defaultValue={client.athleteEmail ?? ""}
-          onBlur={(e) => updateClient(client.id, { athleteEmail: e.target.value.trim() || undefined })}
-          placeholder="athlete@example.com"
-          className="w-full rounded-xl bg-field border border-line px-3 py-2.5 text-sm outline-none focus:border-forest"
-        />
+        <div className="flex gap-1 mb-2">
+          {(["email", "phone"] as const).map((m) => (
+            <button
+              key={m}
+              onClick={() => setLoginMode(m)}
+              className={`flex-1 rounded-lg py-1.5 text-xs font-semibold ${
+                loginMode === m ? "bg-forest text-bone" : "bg-field text-slate border border-line"
+              }`}
+            >
+              {m === "email" ? "Email" : "Phone"}
+            </button>
+          ))}
+        </div>
+        {loginMode === "email" ? (
+          <input
+            key="email"
+            type="email"
+            defaultValue={isPhoneLogin(client.athleteEmail) ? "" : (client.athleteEmail ?? "")}
+            onBlur={(e) => updateClient(client.id, { athleteEmail: e.target.value.trim().toLowerCase() || undefined })}
+            placeholder="athlete@example.com"
+            className="w-full rounded-xl bg-field border border-line px-3 py-2.5 text-sm outline-none focus:border-forest"
+          />
+        ) : (
+          <input
+            key="phone"
+            type="tel"
+            defaultValue={formatPhone(phoneDigits(client.athleteEmail))}
+            onBlur={(e) => {
+              const digits = e.target.value.replace(/\D/g, "");
+              updateClient(client.id, { athleteEmail: digits ? toLoginId(digits) : undefined });
+            }}
+            placeholder="(555) 123-4567"
+            className="w-full rounded-xl bg-field border border-line px-3 py-2.5 text-sm outline-none focus:border-forest"
+          />
+        )}
         <Button
           className="w-full mt-2"
           variant={copied ? "outline" : "primary"}
@@ -238,8 +273,18 @@ export default function ProfileEditor({
         >
           {copied ? "✓ Invite copied — paste it to them" : "📋 Copy athlete invite"}
         </Button>
-        {!client.athleteEmail && (
-          <p className="text-[11px] text-slate mt-2">Add an email above to enable the invite.</p>
+        {client.athleteEmail ? (
+          <p className="text-[11px] text-slate mt-2">
+            They sign in with{" "}
+            <b className="text-ink">
+              {isPhoneLogin(client.athleteEmail)
+                ? formatPhone(phoneDigits(client.athleteEmail))
+                : client.athleteEmail}
+            </b>{" "}
+            and the password you share.
+          </p>
+        ) : (
+          <p className="text-[11px] text-slate mt-2">Add an email or phone above to enable the invite.</p>
         )}
       </Card>
 
