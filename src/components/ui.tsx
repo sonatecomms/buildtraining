@@ -50,7 +50,7 @@ export function Button({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={`rounded-xl font-semibold transition-colors disabled:opacity-40 disabled:pointer-events-none ${variants[variant]} ${sizes[size]} ${className}`}
+      className={`rounded-xl font-semibold transition-all duration-150 active:scale-[0.97] disabled:opacity-40 disabled:pointer-events-none disabled:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest/50 focus-visible:ring-offset-2 focus-visible:ring-offset-bone ${variants[variant]} ${sizes[size]} ${className}`}
     >
       {children}
     </button>
@@ -68,7 +68,7 @@ export function Pill({
 }) {
   const tones = {
     green: "bg-green/15 text-forest",
-    sky: "bg-sky/15 text-sky",
+    sky: "bg-sky/20 text-[#2f5563]", // darker text than the sky token for legible contrast
     brick: "bg-brick/15 text-brick",
     slate: "bg-slate/15 text-slate",
   };
@@ -132,9 +132,9 @@ export function PageHeader({
 export function EmptyState({ icon, title, hint }: { icon: string; title: string; hint?: string }) {
   return (
     <div className="text-center py-12 px-6">
-      <div className="text-4xl mb-3">{icon}</div>
+      <div className="w-16 h-16 rounded-2xl bg-field grid place-items-center mx-auto mb-3 text-3xl">{icon}</div>
       <p className="font-semibold">{title}</p>
-      {hint && <p className="text-slate text-sm mt-1">{hint}</p>}
+      {hint && <p className="text-slate text-sm mt-1 max-w-xs mx-auto">{hint}</p>}
     </div>
   );
 }

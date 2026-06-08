@@ -49,27 +49,38 @@ export default function ExerciseList({
 
   return (
     <div>
-      <input
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        placeholder="Search movement, muscle, equipment…"
-        className="w-full rounded-xl bg-surface border border-line px-4 py-2.5 text-sm outline-none focus:border-forest mb-3"
-      />
-      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 mb-3 -mx-1 px-1">
-        {CATEGORIES.map((c) => (
-          <button
-            key={c}
-            onClick={() => setCat(c)}
-            className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-              cat === c ? "bg-forest text-bone" : "bg-surface border border-line text-slate"
-            }`}
-          >
-            {c}
-          </button>
-        ))}
+      {/* Pinned so the search field + filters stay put while results scroll
+          (and never slip behind the on-screen keyboard). */}
+      <div className="sticky top-0 z-10 bg-bone pt-3 pb-2 -mx-1 px-1">
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          type="search"
+          inputMode="search"
+          enterKeyHint="search"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          aria-label="Search movements"
+          placeholder="Search movement, muscle, equipment…"
+          className="w-full rounded-xl bg-surface border border-line px-4 py-2.5 text-sm outline-none focus:border-forest"
+        />
+        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 mt-2.5">
+          {CATEGORIES.map((c) => (
+            <button
+              key={c}
+              onClick={() => setCat(c)}
+              className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                cat === c ? "bg-forest text-bone" : "bg-surface border border-line text-slate"
+              }`}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-2 pt-1">
         {filtered.map((ex) => {
           const thumb = youtubeThumb(ex.youtubeUrl);
           // pick mode → choose the exercise; browse mode → play the demo in-app

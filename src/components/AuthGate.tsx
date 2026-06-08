@@ -6,6 +6,16 @@ import { toLoginId } from "@/lib/login";
 import { APP_VERSION } from "@/lib/version";
 import { Button, Card } from "./ui";
 
+// Turn raw Supabase auth errors into plain, reassuring language for end users.
+function friendlyAuthError(msg: string): string {
+  const m = msg.toLowerCase();
+  if (m.includes("invalid login")) return "That email/phone and password don't match. Check both and try again.";
+  if (m.includes("already registered") || m.includes("already exists")) return "You already have an account — switch to Sign in.";
+  if (m.includes("email not confirmed")) return "Your account isn't active yet. Ask your coach to finish setting you up.";
+  if (m.includes("network") || m.includes("fetch")) return "Something went wrong. Check your connection and try again.";
+  return "Something went wrong. Please try again.";
+}
+
 // Email + password sign in (testing phase — no emails sent, so no rate limits).
 // Create the coach/athlete user here or in Supabase → Authentication → Users.
 // The same screen serves coaches and athletes; the role is resolved after auth,
@@ -21,10 +31,34 @@ export default function AuthGate() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [isAthlete, setIsAthlete] = useState(false);
+  const [showPw, setShowPw] = useState(false);
 
   useEffect(() => {
     setIsAthlete(new URLSearchParams(window.location.search).get("role") === "athlete");
   }, []);
+
+  const looksLikePhone = email.trim().length > 0 && !email.includes("@");
+
+  const resetPassword = async () => {
+    const sb = getSupabase();
+    setNotice(null);
+    setError(null);
+    if (!sb || !email.trim()) {
+      setError("Enter your email above first, then tap “Forgot password?”.");
+      return;
+    }
+    if (looksLikePhone) {
+      setNotice("Signing in by phone? Only your coach can reset your password — ask them to resend your invite.");
+      return;
+    }
+    const { error } = await sb.auth.resetPasswordForEmail(toLoginId(email));
+    if (error) {
+      console.warn(error.message);
+      setError(friendlyAuthError(error.message));
+    } else {
+      setNotice("If that email has an account, a reset link is on its way.");
+    }
+  };
 
   const submit = async () => {
     const sb = getSupabase();
@@ -39,7 +73,10 @@ export default function AuthGate() {
     if (mode === "signin") {
       const { error } = await sb.auth.signInWithPassword({ email: id, password });
       setBusy(false);
-      if (error) setError(error.message);
+      if (error) {
+        console.warn(error.message);
+        setError(friendlyAuthError(error.message));
+      }
       // success → SessionProvider's auth listener takes over
       return;
     }
@@ -53,14 +90,14 @@ export default function AuthGate() {
     });
     setBusy(false);
     if (error) {
-      setError(error.message);
+      console.warn(error.message);
+      if (error.message.toLowerCase().includes("already")) setMode("signin");
+      setError(friendlyAuthError(error.message));
     } else if (data.session) {
       // confirmation disabled → already signed in
     } else {
       setMode("signin");
-      setNotice(
-        "Account created. If it won't sign in, turn off Authentication → Providers → Email → “Confirm email” in Supabase for testing.",
-      );
+      setNotice("Account created — you can sign in now.");
     }
   };
 
@@ -87,20 +124,39 @@ export default function AuthGate() {
         />
 
         <label className="text-xs text-slate font-medium">Password</label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && canSubmit && submit()}
-          placeholder="At least 6 characters"
-          className="w-full mt-1.5 rounded-xl bg-field border border-line px-3 py-2.5 text-sm outline-none focus:border-forest"
-        />
+        <div className="relative mt-1.5">
+          <input
+            type={showPw ? "text" : "password"}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && canSubmit && submit()}
+            placeholder="At least 6 characters"
+            className="w-full rounded-xl bg-field border border-line px-3 py-2.5 pr-14 text-sm outline-none focus:border-forest"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPw((s) => !s)}
+            className="absolute right-1 inset-y-0 px-3 text-xs text-slate font-medium"
+            aria-label={showPw ? "Hide password" : "Show password"}
+          >
+            {showPw ? "Hide" : "Show"}
+          </button>
+        </div>
+
+        {mode === "signin" && (
+          <button onClick={resetPassword} className="text-sky text-xs mt-2 font-medium">
+            Forgot password?
+          </button>
+        )}
+        {looksLikePhone && (
+          <p className="text-[11px] text-slate mt-1">Signing in by phone? Only your coach can reset your password.</p>
+        )}
 
         {error && <p className="text-brick text-xs mt-2">{error}</p>}
         {notice && <p className="text-slate text-xs mt-2">{notice}</p>}
 
         <Button className="w-full mt-4" onClick={submit} disabled={busy || !canSubmit}>
-          {busy ? "…" : mode === "signin" ? "Sign in" : "Create account"}
+          {busy ? (mode === "signin" ? "Signing in…" : "Creating…") : mode === "signin" ? "Sign in" : "Create account"}
         </Button>
 
         <button

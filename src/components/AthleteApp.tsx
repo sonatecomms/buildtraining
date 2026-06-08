@@ -55,12 +55,16 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
 
       <main className="flex-1 w-full max-w-2xl mx-auto px-4 pb-28 pt-4">
         {!client ? (
-          <div className="min-h-[50vh] grid place-items-center text-slate text-sm text-center px-6">
-            <div>
-              <div className="text-3xl mb-2">🤷</div>
-              No program is linked to this login yet.
-              <br />
-              Ask your coach to add your email to your athlete profile.
+          <div className="min-h-[55vh] grid place-items-center px-6">
+            <div className="text-center max-w-xs">
+              <div className="w-16 h-16 rounded-2xl bg-field grid place-items-center mx-auto mb-3 text-3xl">🌱</div>
+              <p className="font-semibold text-lg">You&apos;re in! 🎉</p>
+              <p className="text-slate text-sm mt-1">
+                Your coach is setting up your program. This page fills in the moment they add your workouts — check back soon.
+              </p>
+              <Button variant="outline" className="mt-4" onClick={() => location.reload()}>
+                Refresh
+              </Button>
             </div>
           </div>
         ) : view === "train" ? (
@@ -132,8 +136,10 @@ function ChangePasswordCard() {
     setMsg(null);
     const { error } = await sb.auth.updateUser({ password: pw, data: { password_set: true } });
     setBusy(false);
-    if (error) setMsg(error.message);
-    else {
+    if (error) {
+      console.warn(error.message);
+      setMsg("Couldn't update password. Please try again.");
+    } else {
       setMsg("Password updated ✓");
       setPw("");
       setConfirm("");

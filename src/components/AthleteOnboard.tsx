@@ -31,8 +31,10 @@ export default function AthleteOnboard({
       data: { password_set: true },
     });
     setBusy(false);
-    if (error) setError(error.message);
-    else onDone();
+    if (error) {
+      console.warn(error.message);
+      setError("Couldn't save your password. Please try again.");
+    } else onDone();
   };
 
   return (
@@ -49,9 +51,13 @@ export default function AthleteOnboard({
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="At least 6 characters"
-          className="w-full mt-1.5 mb-3 rounded-xl bg-field border border-line px-3 py-2.5 text-sm outline-none focus:border-forest"
+          className="w-full mt-1.5 rounded-xl bg-field border border-line px-3 py-2.5 text-sm outline-none focus:border-forest"
         />
-        <label className="text-xs text-slate font-medium">Confirm password</label>
+        {password.length > 0 && password.length < 6 && (
+          <p className="text-slate text-xs mt-1 mb-2">{6 - password.length} more character{6 - password.length === 1 ? "" : "s"}</p>
+        )}
+        {password.length >= 6 && <p className="text-forest text-xs mt-1 mb-2">Looks good ✓</p>}
+        <label className="text-xs text-slate font-medium mt-1 block">Confirm password</label>
         <input
           type="password"
           value={confirm}
@@ -65,7 +71,7 @@ export default function AthleteOnboard({
         )}
         {error && <p className="text-brick text-xs mt-2">{error}</p>}
         <Button className="w-full mt-4" onClick={save} disabled={busy || !canSubmit}>
-          {busy ? "Saving…" : "Set password & continue"}
+          {busy ? "Saving…" : "Set password"}
         </Button>
       </Card>
     </div>

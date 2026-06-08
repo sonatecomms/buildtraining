@@ -5,17 +5,26 @@ import Link from "next/link";
 import { useClients, useLogsForClient, addClient, setClientArchived } from "@/lib/store";
 import { Avatar, Button, Card, EmptyState, PageHeader, Pill } from "@/components/ui";
 import { GOALS } from "@/lib/goals";
+import { relativeDate, daysAgo, weekDates, isoDate } from "@/lib/week";
 import type { Client } from "@/lib/types";
 
 function ClientRow({ client }: { client: Client }) {
   const logs = useLogsForClient(client.id);
   const last = logs[0];
+  const stale = last ? daysAgo(last.date) > 7 : true;
+  // how many sessions logged so far this calendar week vs. the target
+  const weekStart = isoDate(weekDates()[0]);
+  const thisWeek = logs.filter((l) => l.date >= weekStart).length;
+  const behind = thisWeek < client.intendedFrequency;
   return (
     <Link href={`/clients/${client.id}`}>
       <Card className="p-4 flex items-center gap-3">
         <Avatar src={client.avatarUrl} name={client.name} size={48} />
         <div className="min-w-0 flex-1">
-          <p className="font-semibold truncate">{client.name}</p>
+          <div className="flex items-center gap-2">
+            {behind && <span className="w-2 h-2 rounded-full bg-brick shrink-0" title="Behind this week" />}
+            <p className="font-semibold truncate">{client.name}</p>
+          </div>
           <div className="flex flex-wrap gap-1.5 mt-1.5">
             {client.goals.slice(0, 3).map((g) => (
               <Pill key={g} tone="green">
@@ -25,9 +34,9 @@ function ClientRow({ client }: { client: Client }) {
           </div>
         </div>
         <div className="text-right shrink-0">
-          <p className="text-xs text-slate">{client.intendedFrequency}×/wk</p>
-          <p className="text-xs text-slate mt-1">
-            {last ? `Last: ${last.date.slice(5)}` : "No sessions"}
+          <p className="text-xs text-slate">{thisWeek}/{client.intendedFrequency} this wk</p>
+          <p className={`text-xs mt-1 ${stale ? "text-brick" : "text-slate"}`}>
+            {last ? relativeDate(last.date) : "No sessions"}
           </p>
         </div>
       </Card>

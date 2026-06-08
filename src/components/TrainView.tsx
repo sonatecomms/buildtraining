@@ -13,7 +13,7 @@ import { flushPush } from "@/lib/sync";
 import type { Client, Exercise, ItemResult, ProgramItem, Workout, WorkoutLog } from "@/lib/types";
 import { youtubeId } from "@/lib/youtube";
 import { runPace, speedMph } from "@/lib/activities";
-import { DOW_LONG, isoDate, todayDow, weekDates } from "@/lib/week";
+import { DOW_LONG, isoDate, todayDow, weekDates, relativeDate } from "@/lib/week";
 import { Button, Card, Pill } from "./ui";
 import StreakHeader from "./StreakHeader";
 import WeekStrip from "./WeekStrip";
@@ -38,7 +38,7 @@ export default function TrainView({ client }: { client: Client }) {
   // movements the athlete adds beyond the program: { id, exerciseId }
   const [extras, setExtras] = useState<{ id: string; exerciseId: string }[]>([]);
   const [picking, setPicking] = useState(false);
-  const [celebrate, setCelebrate] = useState(false);
+  const [celebrate, setCelebrate] = useState<{ title: string; sub: string } | null>(null);
 
   const workouts = program?.workouts ?? [];
   const marked = new Set(workouts.map((w) => w.dow));
@@ -65,8 +65,14 @@ export default function TrainView({ client }: { client: Client }) {
     );
   };
 
-  const updateResult = (itemId: string, patch: Partial<ItemResult>) =>
+  const updateResult = (itemId: string, patch: Partial<ItemResult>) => {
     setResults((r) => ({ ...r, [itemId]: { ...r[itemId], itemId, ...patch } }));
+    // logging real data implicitly checks the movement off — so an athlete who
+    // fills in their sets never has to remember to also tap the circle.
+    const meaningful =
+      patch.weight || patch.setsDone || patch.repsDone || patch.duration || patch.distance || patch.feeling || patch.note;
+    if (meaningful) setDone((d) => (d.has(itemId) ? d : new Set(d).add(itemId)));
+  };
 
   const addExtra = (ex: Exercise) =>
     setExtras((xs) => [...xs, { id: uid("x"), exerciseId: ex.id }]);
@@ -99,6 +105,7 @@ export default function TrainView({ client }: { client: Client }) {
     const entries = Object.values(results)
       .filter((e) => e.weight || e.setsDone || e.repsDone || e.duration || e.distance || e.feeling || e.note)
       .map((e) => ({ ...e, exerciseId: exOf[e.itemId], extra: extraIds.has(e.itemId) || undefined }));
+    const allDone = totalItems > 0 && done.size >= totalItems;
     logWorkout({
       clientId: client.id,
       workoutId: running.id,
@@ -108,9 +115,18 @@ export default function TrainView({ client }: { client: Client }) {
       entries,
     });
     void flushPush(); // persist the session to the cloud right away
+    // project the streak with this session included so the toast isn't one behind
+    const projected = logs.some((l) => l.date === selectedDate)
+      ? logs
+      : [{ id: "_proj", clientId: client.id, workoutId: running.id, workoutName: running.name, date: selectedDate, completedItemIds: [] } as WorkoutLog, ...logs];
+    const n = computeStreak(projected, client.intendedFrequency).current;
+    const milestone = n > 0 && n % 7 === 0;
     setRunning(null);
-    setCelebrate(true);
-    setTimeout(() => setCelebrate(false), 2200);
+    setCelebrate({
+      title: allDone ? "Workout complete! 💪" : "Logged! 🔥",
+      sub: milestone ? `🔥 ${n}-day streak — keep it rolling!` : `Streak: ${n} day${n === 1 ? "" : "s"}`,
+    });
+    setTimeout(() => setCelebrate(null), 2600);
   };
 
   // ---- workout runner ----
@@ -193,10 +209,21 @@ export default function TrainView({ client }: { client: Client }) {
         )}
 
         <Button variant="outline" className="w-full" onClick={() => setPicking(true)}>
-          + Add a movement or activity you did
+          + Add an extra movement
         </Button>
 
-        <Button className="w-full" onClick={finish}>Finish workout ({done.size}/{totalItems})</Button>
+        <Button className="w-full" onClick={finish}>
+          {totalItems > 0 && done.size >= totalItems ? (
+            "Finish workout ✓"
+          ) : (
+            <span className="flex flex-col leading-tight">
+              <span>Finish workout</span>
+              {totalItems > 0 && (
+                <span className="text-xs font-normal opacity-80">{totalItems - done.size} not checked off</span>
+              )}
+            </span>
+          )}
+        </Button>
 
         {picking && (
           <ExercisePickerModal
@@ -213,13 +240,17 @@ export default function TrainView({ client }: { client: Client }) {
   return (
     <div className="space-y-5">
       {celebrate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
-          <div className="animate-pop text-center bg-surface border border-green/40 rounded-3xl px-8 py-6 shadow-2xl">
-            <div className="text-5xl animate-flame">🔥</div>
-            <p className="font-bold text-lg mt-2">Logged!</p>
-            <p className="text-slate text-sm">Streak: {streak.current} day{streak.current === 1 ? "" : "s"}</p>
+        <button
+          onClick={() => setCelebrate(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/10"
+          aria-label="Dismiss"
+        >
+          <div className="animate-pop text-center bg-surface border border-green/40 rounded-2xl px-8 py-6 shadow-[0_12px_40px_-8px_rgba(25,53,12,0.35)]">
+            <div className="text-5xl animate-flame">🎉</div>
+            <p className="font-bold text-lg mt-2">{celebrate.title}</p>
+            <p className="text-slate text-sm">{celebrate.sub}</p>
           </div>
-        </div>
+        </button>
       )}
 
       <WeekStrip selected={day} onSelect={setDay} marked={marked} />
@@ -227,13 +258,24 @@ export default function TrainView({ client }: { client: Client }) {
       <div>
         <p className="text-sm font-semibold text-slate mb-2">{DOW_LONG[day]}</p>
         <div className="space-y-2">
-          {dayWorkouts.length === 0 && (
-            <Card className="p-6 text-center">
-              <div className="text-3xl mb-1">🧘</div>
-              <p className="font-semibold">Rest day</p>
-              <p className="text-slate text-sm">Recover, or log your own work below.</p>
-            </Card>
-          )}
+          {dayWorkouts.length === 0 && (() => {
+            // find the next scheduled day so a rest day still answers "what's next?"
+            const nextDow = marked.size
+              ? Array.from({ length: 7 }, (_, i) => (day + 1 + i) % 7).find((d) => marked.has(d))
+              : undefined;
+            return (
+              <Card className="p-6 text-center">
+                <div className="text-3xl mb-1">🧘</div>
+                <p className="font-semibold">Rest day</p>
+                <p className="text-slate text-sm">Recover, or log your own work below.</p>
+                {nextDow != null && (
+                  <Button size="sm" variant="outline" className="mt-3" onClick={() => setDay(nextDow)}>
+                    Next: {DOW_LONG[nextDow]} →
+                  </Button>
+                )}
+              </Card>
+            );
+          })()}
           {dayWorkouts.map((w) => {
             const count = w.blocks.reduce((n, b) => n + b.items.length, 0);
             const logged = logByWorkout[w.id];
@@ -290,13 +332,19 @@ export default function TrainView({ client }: { client: Client }) {
           <p className="text-slate text-sm">No sessions logged yet.</p>
         ) : (
           <div className="space-y-2">
-            {logs.slice(0, 8).map((l) => (
-              <div key={l.id} className="flex items-center gap-3 text-sm">
-                <span className="text-forest">✅</span>
-                <span className="flex-1">{l.workoutName}</span>
-                <span className="text-slate text-xs">{l.date}</span>
-              </div>
-            ))}
+            {logs.slice(0, 8).map((l) => {
+              const count = l.entries?.length ?? 0;
+              const feeling = l.entries?.find((e) => e.feeling)?.feeling;
+              return (
+                <div key={l.id} className="flex items-center gap-3 text-sm">
+                  <span>{feeling ? FEELINGS[feeling - 1] : "✅"}</span>
+                  <span className="flex-1 truncate">{l.workoutName}</span>
+                  <span className="text-slate text-xs shrink-0">
+                    {count > 0 ? `${count} logged · ` : ""}{relativeDate(l.date)}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -336,7 +384,10 @@ function RunnerItem({
       ? speedMph(r.duration, r.distance)
       : runPace(r.duration, r.distance)
     : null;
-  const [open, setOpen] = useState<boolean>(true); // log panel open by default
+  // Collapse by default so the runner reads as a scannable checklist instead of a
+  // wall of inputs; auto-open extras (just added) and anything already logged.
+  const hasData = !!(r.weight || r.setsDone || r.repsDone || r.duration || r.distance || r.feeling || r.note);
+  const [open, setOpen] = useState<boolean>(isExtra || hasData);
   const [playing, setPlaying] = useState(false);
 
   return (
@@ -404,8 +455,9 @@ function RunnerItem({
             </div>
           )}
           <div>
-            <span className="text-[10px] uppercase tracking-wide text-slate">How it felt</span>
-            <div className="flex gap-1.5 mt-1">
+            <span className="text-[10px] uppercase tracking-wide text-slate">How it felt (effort)</span>
+            <div className="flex items-center gap-1.5 mt-1">
+              <span className="text-[10px] text-slate shrink-0">Brutal</span>
               {FEELINGS.map((f, i) => {
                 const val = i + 1;
                 return (
@@ -413,7 +465,7 @@ function RunnerItem({
                     key={i}
                     onClick={() => onChange({ feeling: r.feeling === val ? undefined : val })}
                     className={`text-xl rounded-lg px-1.5 py-0.5 transition-all ${
-                      r.feeling === val ? "bg-forest/15 ring-1 ring-forest scale-110" : "opacity-45 hover:opacity-80"
+                      r.feeling === val ? "bg-green/10 ring-1 ring-forest scale-110" : "opacity-60 hover:opacity-100"
                     }`}
                     aria-label={`Felt ${val} of 5`}
                   >
@@ -421,6 +473,7 @@ function RunnerItem({
                   </button>
                 );
               })}
+              <span className="text-[10px] text-slate shrink-0">Great</span>
             </div>
           </div>
           <textarea

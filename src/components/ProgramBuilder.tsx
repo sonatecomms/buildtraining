@@ -246,7 +246,8 @@ function WorkoutCard({
         <input
           defaultValue={workout.name}
           onBlur={(e) => renameWorkout(clientId, workout.id, e.target.value.trim() || "Workout")}
-          className="font-semibold bg-transparent outline-none flex-1 min-w-0 focus:text-forest"
+          aria-label="Workout name"
+          className="font-semibold bg-transparent outline-none flex-1 min-w-0 border-b border-transparent hover:border-line focus:border-forest focus:text-forest transition-colors"
         />
         <select
           value={workout.dow}

@@ -2,7 +2,8 @@
 
 import { useExercises, useLogsForClient } from "@/lib/store";
 import type { Client } from "@/lib/types";
-import { Card, EmptyState } from "./ui";
+import { relativeDate, daysAgo } from "@/lib/week";
+import { Card, EmptyState, Pill } from "./ui";
 
 // Personal records from the athlete's logged weights: the heaviest load recorded
 // per movement (parsed from the free-text weight field), with reps and date.
@@ -30,12 +31,13 @@ export default function PRsView({ client }: { client: Client }) {
 
   const prs = Object.values(best)
     .filter((p) => exById[p.exId])
-    .sort((a, b) => exById[a.exId].name.localeCompare(exById[b.exId].name));
+    // newest first so a PR set today rises to the top; name as tiebreaker
+    .sort((a, b) => b.date.localeCompare(a.date) || exById[a.exId].name.localeCompare(exById[b.exId].name));
 
   return (
     <div>
       <h1 className="text-2xl font-bold mb-1">Personal records</h1>
-      <p className="text-slate text-sm mb-4">Your heaviest logged load per movement.</p>
+      <p className="text-slate text-sm mb-4">Your heaviest logged load per movement — newest first.</p>
 
       {prs.length === 0 ? (
         <EmptyState
@@ -45,19 +47,25 @@ export default function PRsView({ client }: { client: Client }) {
         />
       ) : (
         <div className="space-y-2">
-          {prs.map((p) => (
-            <Card key={p.exId} className="p-3 flex items-center gap-3">
-              <span className="text-xl">🏆</span>
-              <div className="min-w-0 flex-1">
-                <p className="font-semibold text-sm truncate">{exById[p.exId].name}</p>
-                <p className="text-xs text-slate">{p.date}{p.reps ? ` · ${p.reps} reps` : ""}</p>
-              </div>
-              <div className="text-right shrink-0">
-                <span className="text-lg font-bold text-forest">{p.weight}</span>
-                <span className="text-xs text-slate"> lbs</span>
-              </div>
-            </Card>
-          ))}
+          {prs.map((p) => {
+            const fresh = daysAgo(p.date) <= 7;
+            return (
+              <Card key={p.exId} className={`p-3 flex items-center gap-3 ${fresh ? "border-green/50" : ""}`}>
+                <span className="text-xl">🏆</span>
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-sm truncate">
+                    {exById[p.exId].name}
+                    {fresh && <Pill tone="green" className="ml-2 align-middle">New</Pill>}
+                  </p>
+                  <p className="text-xs text-slate">{relativeDate(p.date)}{p.reps ? ` · ${p.reps} reps` : ""}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <span className="text-lg font-bold text-forest">{p.weight}</span>
+                  <span className="text-xs text-slate"> lbs</span>
+                </div>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>
