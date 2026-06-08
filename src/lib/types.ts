@@ -121,6 +121,7 @@ export interface ItemResult {
   repsDone?: string;
   feeling?: number; // 1 (rough) … 5 (great)
   note?: string;
+  extra?: boolean; // athlete-added movement, beyond what the coach programmed
 }
 
 export interface WorkoutLog {

@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   computeStreak,
   logWorkout,
+  uid,
   useExercises,
   useLogsForClient,
   useProgramForClient,
@@ -16,6 +17,7 @@ import { Button, Card, Pill } from "./ui";
 import StreakHeader from "./StreakHeader";
 import WeekStrip from "./WeekStrip";
 import VideoModal from "./VideoModal";
+import ExercisePickerModal from "./ExercisePickerModal";
 
 const BLOCK_LABEL = { single: "", superset: "Superset", circuit: "Circuit", note: "Note" } as const;
 
@@ -32,6 +34,9 @@ export default function TrainView({ client }: { client: Client }) {
   const [running, setRunning] = useState<Workout | null>(null);
   const [done, setDone] = useState<Set<string>>(new Set());
   const [results, setResults] = useState<Record<string, ItemResult>>({});
+  // movements the athlete adds beyond the program: { id, exerciseId }
+  const [extras, setExtras] = useState<{ id: string; exerciseId: string }[]>([]);
+  const [picking, setPicking] = useState(false);
   const [celebrate, setCelebrate] = useState(false);
 
   const workouts = program?.workouts ?? [];
@@ -45,17 +50,41 @@ export default function TrainView({ client }: { client: Client }) {
   // Start fresh, or re-open a completed session pre-filled with what was logged.
   const start = (w: Workout, existing?: WorkoutLog) => {
     setRunning(w);
+    setPicking(false);
     setDone(new Set(existing?.completedItemIds ?? []));
     const r: Record<string, ItemResult> = {};
     for (const e of existing?.entries ?? []) r[e.itemId] = e;
     setResults(r);
+    // rebuild athlete-added movements: any logged entry not in the program
+    const programIds = new Set(w.blocks.flatMap((b) => b.items.map((i) => i.id)));
+    setExtras(
+      (existing?.entries ?? [])
+        .filter((e) => e.exerciseId && (e.extra || !programIds.has(e.itemId)))
+        .map((e) => ({ id: e.itemId, exerciseId: e.exerciseId! })),
+    );
   };
 
   const updateResult = (itemId: string, patch: Partial<ItemResult>) =>
     setResults((r) => ({ ...r, [itemId]: { ...r[itemId], itemId, ...patch } }));
 
+  const addExtra = (ex: Exercise) =>
+    setExtras((xs) => [...xs, { id: uid("x"), exerciseId: ex.id }]);
+  const removeExtra = (id: string) => {
+    setExtras((xs) => xs.filter((x) => x.id !== id));
+    setResults((r) => {
+      const next = { ...r };
+      delete next[id];
+      return next;
+    });
+    setDone((d) => {
+      const next = new Set(d);
+      next.delete(id);
+      return next;
+    });
+  };
+
   const totalItems = running
-    ? running.blocks.reduce((n, b) => n + (b.type === "note" ? 0 : b.items.length), 0)
+    ? running.blocks.reduce((n, b) => n + (b.type === "note" ? 0 : b.items.length), 0) + extras.length
     : 0;
 
   const finish = () => {
@@ -63,10 +92,12 @@ export default function TrainView({ client }: { client: Client }) {
     // map each logged item back to its exercise so PRs survive program edits
     const exOf: Record<string, string> = {};
     running.blocks.forEach((b) => b.items.forEach((it) => (exOf[it.id] = it.exerciseId)));
+    const extraIds = new Set(extras.map((x) => x.id));
+    extras.forEach((x) => (exOf[x.id] = x.exerciseId));
     // keep only results that actually carry data
     const entries = Object.values(results)
       .filter((e) => e.weight || e.setsDone || e.repsDone || e.feeling || e.note)
-      .map((e) => ({ ...e, exerciseId: exOf[e.itemId] }));
+      .map((e) => ({ ...e, exerciseId: exOf[e.itemId], extra: extraIds.has(e.itemId) || undefined }));
     logWorkout({
       clientId: client.id,
       workoutId: running.id,
@@ -132,7 +163,47 @@ export default function TrainView({ client }: { client: Client }) {
           );
         })}
 
+        {/* athlete-added movements, beyond the program */}
+        {extras.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate mb-2">Added by you</p>
+            <div className="space-y-2">
+              {extras.map((x) => (
+                <RunnerItem
+                  key={x.id}
+                  item={{ id: x.id, exerciseId: x.exerciseId, sets: 3, reps: "", rest: "" }}
+                  ex={byId[x.exerciseId]}
+                  checked={done.has(x.id)}
+                  result={results[x.id]}
+                  isExtra
+                  onRemove={() => removeExtra(x.id)}
+                  onToggle={() =>
+                    setDone((prev) => {
+                      const next = new Set(prev);
+                      next.has(x.id) ? next.delete(x.id) : next.add(x.id);
+                      return next;
+                    })
+                  }
+                  onChange={(patch) => updateResult(x.id, patch)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        <Button variant="outline" className="w-full" onClick={() => setPicking(true)}>
+          + Add a movement you did
+        </Button>
+
         <Button className="w-full" onClick={finish}>Finish workout ({done.size}/{totalItems})</Button>
+
+        {picking && (
+          <ExercisePickerModal
+            title="Log a movement"
+            onClose={() => setPicking(false)}
+            onPick={(ex) => addExtra(ex)}
+          />
+        )}
       </div>
     );
   }
@@ -154,37 +225,60 @@ export default function TrainView({ client }: { client: Client }) {
 
       <div>
         <p className="text-sm font-semibold text-slate mb-2">{DOW_LONG[day]}</p>
-        {dayWorkouts.length === 0 ? (
-          <Card className="p-6 text-center">
-            <div className="text-3xl mb-1">🧘</div>
-            <p className="font-semibold">Rest day</p>
-            <p className="text-slate text-sm">Recover and come back strong.</p>
-          </Card>
-        ) : (
-          <div className="space-y-2">
-            {dayWorkouts.map((w) => {
-              const count = w.blocks.reduce((n, b) => n + b.items.length, 0);
-              const logged = logByWorkout[w.id];
-              return (
-                <Card key={w.id} className="p-4 flex items-center gap-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold truncate">{w.name}</p>
-                    <p className="text-xs text-slate">
-                      {logged ? "✓ Completed — tap to review or revise" : `${count} movements`}
-                    </p>
-                  </div>
-                  {logged ? (
-                    <Button size="sm" variant="outline" onClick={() => start(w, logged)}>
-                      View / edit
-                    </Button>
-                  ) : (
-                    <Button size="sm" onClick={() => start(w)}>Start</Button>
-                  )}
-                </Card>
-              );
-            })}
-          </div>
-        )}
+        <div className="space-y-2">
+          {dayWorkouts.length === 0 && (
+            <Card className="p-6 text-center">
+              <div className="text-3xl mb-1">🧘</div>
+              <p className="font-semibold">Rest day</p>
+              <p className="text-slate text-sm">Recover, or log your own work below.</p>
+            </Card>
+          )}
+          {dayWorkouts.map((w) => {
+            const count = w.blocks.reduce((n, b) => n + b.items.length, 0);
+            const logged = logByWorkout[w.id];
+            return (
+              <Card key={w.id} className="p-4 flex items-center gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold truncate">{w.name}</p>
+                  <p className="text-xs text-slate">
+                    {logged ? "✓ Completed — tap to review or revise" : `${count} movements`}
+                  </p>
+                </div>
+                {logged ? (
+                  <Button size="sm" variant="outline" onClick={() => start(w, logged)}>
+                    View / edit
+                  </Button>
+                ) : (
+                  <Button size="sm" onClick={() => start(w)}>Start</Button>
+                )}
+              </Card>
+            );
+          })}
+
+          {/* log your own session, any day */}
+          {(() => {
+            const extraId = `extra-${selectedDate}`;
+            const extraLog = logByWorkout[extraId];
+            const extraWorkout: Workout = { id: extraId, name: "Your own work", dow: day, blocks: [] };
+            return (
+              <Card className="p-4 flex items-center gap-3 border-dashed">
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold truncate">Your own work</p>
+                  <p className="text-xs text-slate">
+                    {extraLog ? "✓ Logged — tap to review or add more" : "Log anything you did, on or off plan"}
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  variant={extraLog ? "outline" : "primary"}
+                  onClick={() => start(extraWorkout, extraLog)}
+                >
+                  {extraLog ? "View / edit" : "+ Log"}
+                </Button>
+              </Card>
+            );
+          })()}
+        </div>
       </div>
 
       <StreakHeader streak={streak} />
@@ -218,6 +312,8 @@ function RunnerItem({
   result,
   onToggle,
   onChange,
+  isExtra,
+  onRemove,
 }: {
   item: ProgramItem;
   ex?: Exercise;
@@ -225,6 +321,8 @@ function RunnerItem({
   result?: ItemResult;
   onToggle: () => void;
   onChange: (patch: Partial<ItemResult>) => void;
+  isExtra?: boolean;
+  onRemove?: () => void;
 }) {
   const url = item.youtubeUrl ?? ex?.youtubeUrl;
   const r = result ?? ({} as ItemResult);
@@ -249,16 +347,26 @@ function RunnerItem({
             {item.variant && <span className="text-forest"> · {item.variant}</span>}
           </span>
           <span className="text-xs text-slate">
-            {item.sets} × {item.reps}
-            {item.rest ? ` · ${item.rest} rest` : ""}
+            {isExtra ? (
+              "your own movement"
+            ) : (
+              <>
+                {item.sets} × {item.reps}
+                {item.rest ? ` · ${item.rest} rest` : ""}
+              </>
+            )}
           </span>
         </button>
         {youtubeId(url) && (
           <button onClick={() => setPlaying(true)} className="text-sky text-xs shrink-0" aria-label="Play demo">▶</button>
         )}
-        <button onClick={() => setOpen((o) => !o)} className="text-slate text-xs shrink-0 font-medium">
-          {open ? "▲" : "＋ log"}
-        </button>
+        {isExtra && onRemove ? (
+          <button onClick={onRemove} className="text-slate hover:text-brick text-sm shrink-0" aria-label="Remove">✕</button>
+        ) : (
+          <button onClick={() => setOpen((o) => !o)} className="text-slate text-xs shrink-0 font-medium">
+            {open ? "▲" : "＋ log"}
+          </button>
+        )}
       </div>
 
       {open && (
