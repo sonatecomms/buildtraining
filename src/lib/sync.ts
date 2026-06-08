@@ -140,6 +140,25 @@ const rowExercise = (r: Record<string, unknown>): Exercise => ({
   custom: true,
 });
 
+// Save one client's profile directly and report the result. Bypasses the
+// debounced whole-DB push so a "Save" tap reliably persists (coach upserts their
+// own row; athlete updates theirs). Returns the error message if it fails.
+export async function saveClientNow(c: Client): Promise<{ ok: boolean; error?: string }> {
+  const sb = getSupabase();
+  if (!sb || !coachId) return { ok: true }; // local mode — already in localStorage
+  lastWriteAt = Date.now();
+  const row = clientRow(c);
+  const res =
+    mode === "athlete"
+      ? await sb.from("clients").update(row).eq("id", c.id)
+      : await sb.from("clients").upsert(row);
+  if (res.error) {
+    console.warn("saveClientNow failed", res.error);
+    return { ok: false, error: res.error.message };
+  }
+  return { ok: true };
+}
+
 // ---- pull ------------------------------------------------------------------
 
 // Returns the coach's cloud DB, or null when empty / unavailable.

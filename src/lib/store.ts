@@ -124,6 +124,11 @@ export function addClient(partial: Partial<Client>): Client {
   return c;
 }
 
+// Non-hook read of the latest client (for an explicit save that must use current data).
+export function getClient(id: string): Client | undefined {
+  return getDB().clients.find((c) => c.id === id);
+}
+
 export function updateClient(id: string, patch: Partial<Client>) {
   const cur = getDB();
   commit({

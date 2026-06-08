@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useClient, useExercises } from "@/lib/store";
 import { getSupabase } from "@/lib/supabase";
-import { flushPush } from "@/lib/sync";
 import { Avatar, Button, Card } from "./ui";
 import TrainView from "./TrainView";
 import ProfileEditor from "./ProfileEditor";
@@ -28,19 +27,12 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
   const { session } = useSession();
   const [justSet, setJustSet] = useState(false);
   const [view, setView] = useState<View>("train");
-  const [saved, setSaved] = useState(false);
 
   // First sign-in (coach set a temp password) → make them set their own.
   const needsPassword = Boolean(session && !session.user.user_metadata?.password_set);
   if (needsPassword && !justSet) {
     return <AthleteOnboard firstName={client?.name?.split(" ")[0]} onDone={() => setJustSet(true)} />;
   }
-
-  const saveProfile = async () => {
-    await flushPush(); // force the cloud sync now
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -93,9 +85,6 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
             <h1 className="text-2xl font-bold mb-4">Profile & settings</h1>
             <ProfileEditor client={client} coachView={false} />
             <div className="mt-4 space-y-3">
-              <Button className="w-full" onClick={saveProfile}>
-                {saved ? "✓ Saved" : "Save changes"}
-              </Button>
               <ChangePasswordCard />
               <Button variant="outline" className="w-full" onClick={() => getSupabase()?.auth.signOut()}>
                 Sign out

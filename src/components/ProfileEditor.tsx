@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { deleteClient, setClientArchived, updateClient } from "@/lib/store";
-import { flushPush } from "@/lib/sync";
+import { deleteClient, getClient, setClientArchived, updateClient } from "@/lib/store";
+import { flushPush, saveClientNow } from "@/lib/sync";
 import type { Client, GoalType } from "@/lib/types";
 import { ALL_GOALS, GOALS } from "@/lib/goals";
 import { Avatar, Button, Card } from "./ui";
@@ -18,10 +18,26 @@ export default function ProfileEditor({
   const fileRef = useRef<HTMLInputElement>(null);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState("");
 
   // Flush any pending edits to the cloud when leaving the profile, so changes
   // made right before navigating/refreshing aren't lost to the save debounce.
   useEffect(() => () => void flushPush(), []);
+
+  // Explicit save: commit the focused field, then write this profile directly
+  // and report the real result (success or the actual error).
+  const saveProfile = async () => {
+    (document.activeElement as HTMLElement | null)?.blur();
+    setSaving(true);
+    setSaveMsg("");
+    await new Promise((r) => setTimeout(r, 60)); // let onBlur land in the store
+    const latest = getClient(client.id);
+    const res = latest ? await saveClientNow(latest) : { ok: false, error: "not found" };
+    setSaving(false);
+    setSaveMsg(res.ok ? "Saved ✓" : `Couldn't save — ${res.error}`);
+    setTimeout(() => setSaveMsg(""), 4000);
+  };
 
   const copyInvite = async () => {
     if (!client.athleteEmail) return;
@@ -64,6 +80,16 @@ export default function ProfileEditor({
 
   return (
     <div className="space-y-4">
+      {/* explicit save */}
+      <div className="sticky top-0 z-20 -mx-4 px-4 py-2 bg-bone/95 backdrop-blur flex items-center justify-end gap-3">
+        {saveMsg && (
+          <span className={`text-xs ${saveMsg.startsWith("Saved") ? "text-forest" : "text-brick"}`}>{saveMsg}</span>
+        )}
+        <Button size="sm" onClick={saveProfile} disabled={saving}>
+          {saving ? "Saving…" : "Save profile"}
+        </Button>
+      </div>
+
       {/* avatar + name */}
       <Card className="p-4 flex items-center gap-4">
         <button onClick={() => fileRef.current?.click()} className="relative">
