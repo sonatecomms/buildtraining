@@ -59,7 +59,7 @@ export default function AuthGate() {
   return (
     <div className="min-h-[70vh] flex flex-col items-center justify-center px-6 text-center">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/logo-icon.png?v=4" alt="BUILD" className="w-20 h-20 mb-2" />
+      <img src="/logo-icon.png?v=5" alt="BUILD" className="w-20 h-20 mb-2" />
       <h1 className="text-2xl font-bold">BUILD</h1>
       <p className="text-slate text-sm mt-1 mb-6">
         {isAthlete ? "Sign in to see your training" : mode === "signup" ? "Create your account" : "Sign in"}
