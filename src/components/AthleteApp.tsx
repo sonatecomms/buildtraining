@@ -1,14 +1,30 @@
 "use client";
 
+import { useState } from "react";
 import { useClient } from "@/lib/store";
 import { getSupabase } from "@/lib/supabase";
 import { Avatar } from "./ui";
 import TrainView from "./TrainView";
+import AthleteOnboard from "./AthleteOnboard";
+import { useSession } from "./SessionProvider";
 
 // The athlete's whole experience: just their training. No builder, no client
 // list. Data was loaded scoped to this client by SessionProvider.
 export default function AthleteApp({ clientId }: { clientId: string }) {
   const client = useClient(clientId);
+  const { session } = useSession();
+  const [justSet, setJustSet] = useState(false);
+
+  // First sign-in (coach set a temp password) → make them set their own.
+  const needsPassword = Boolean(session && !session.user.user_metadata?.password_set);
+  if (needsPassword && !justSet) {
+    return (
+      <AthleteOnboard
+        firstName={client?.name?.split(" ")[0]}
+        onDone={() => setJustSet(true)}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">

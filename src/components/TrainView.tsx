@@ -14,6 +14,7 @@ import { DOW_LONG, todayDow, weekDates } from "@/lib/week";
 import { Button, Card, Pill } from "./ui";
 import StreakHeader from "./StreakHeader";
 import WeekStrip from "./WeekStrip";
+import VideoModal from "./VideoModal";
 
 const BLOCK_LABEL = { single: "", superset: "Superset", circuit: "Circuit", note: "Note" } as const;
 
@@ -211,6 +212,7 @@ function RunnerItem({
   const r = result ?? ({} as ItemResult);
   const hasData = Boolean(r.weight || r.setsDone || r.repsDone || r.feeling || r.note);
   const [open, setOpen] = useState<boolean>(checked || hasData);
+  const [playing, setPlaying] = useState(false);
 
   return (
     <div className={`rounded-xl border p-2.5 ${checked ? "border-forest bg-green/10" : "border-line bg-field"}`}>
@@ -232,7 +234,7 @@ function RunnerItem({
           </span>
         </button>
         {youtubeId(url) && (
-          <a href={url} target="_blank" rel="noreferrer" className="text-sky text-xs shrink-0">▶</a>
+          <button onClick={() => setPlaying(true)} className="text-sky text-xs shrink-0" aria-label="Play demo">▶</button>
         )}
         <button onClick={() => setOpen((o) => !o)} className="text-slate text-xs shrink-0 font-medium">
           {open ? "▲" : "＋ log"}
@@ -274,6 +276,8 @@ function RunnerItem({
           />
         </div>
       )}
+
+      {playing && <VideoModal url={url} title={ex?.name} onClose={() => setPlaying(false)} />}
     </div>
   );
 }

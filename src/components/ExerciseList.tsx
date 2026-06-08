@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import type { Exercise, ExerciseCategory } from "@/lib/types";
 import { youtubeThumb } from "@/lib/youtube";
 import { Card, Pill } from "./ui";
+import VideoModal from "./VideoModal";
 
 const CATEGORIES: (ExerciseCategory | "All")[] = [
   "All",
@@ -28,6 +29,7 @@ export default function ExerciseList({
 }) {
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<(typeof CATEGORIES)[number]>("All");
+  const [playing, setPlaying] = useState<{ url: string; name: string } | null>(null);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -67,8 +69,14 @@ export default function ExerciseList({
       <div className="space-y-2">
         {filtered.map((ex) => {
           const thumb = youtubeThumb(ex.youtubeUrl);
-          const body = (
-            <Card className="p-2.5 flex items-center gap-3" onClick={onPick ? () => onPick(ex) : undefined}>
+          // pick mode → choose the exercise; browse mode → play the demo in-app
+          const onClick = onPick
+            ? () => onPick(ex)
+            : ex.youtubeUrl
+              ? () => setPlaying({ url: ex.youtubeUrl!, name: ex.name })
+              : undefined;
+          return (
+            <Card key={ex.id} className="p-2.5 flex items-center gap-3" onClick={onClick}>
               <div className="w-20 h-14 rounded-lg overflow-hidden bg-field shrink-0 flex items-center justify-center">
                 {thumb ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -92,20 +100,15 @@ export default function ExerciseList({
               )}
             </Card>
           );
-          // In browse mode, wrap in a link to the video; in pick mode the card handles taps.
-          if (!onPick && ex.youtubeUrl) {
-            return (
-              <a key={ex.id} href={ex.youtubeUrl} target="_blank" rel="noreferrer">
-                {body}
-              </a>
-            );
-          }
-          return <div key={ex.id}>{body}</div>;
         })}
         {filtered.length === 0 && (
           <p className="text-center text-slate text-sm py-8">No movements match.</p>
         )}
       </div>
+
+      {playing && (
+        <VideoModal url={playing.url} title={playing.name} onClose={() => setPlaying(null)} />
+      )}
     </div>
   );
 }
