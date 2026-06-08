@@ -8,7 +8,8 @@ import {
   useLogsForClient,
   useProgramForClient,
 } from "@/lib/store";
-import type { Client, Exercise, ItemResult, ProgramItem, Workout } from "@/lib/types";
+import { flushPush } from "@/lib/sync";
+import type { Client, Exercise, ItemResult, ProgramItem, Workout, WorkoutLog } from "@/lib/types";
 import { youtubeId } from "@/lib/youtube";
 import { DOW_LONG, todayDow, weekDates } from "@/lib/week";
 import { Button, Card, Pill } from "./ui";
@@ -37,12 +38,17 @@ export default function TrainView({ client }: { client: Client }) {
   const marked = new Set(workouts.map((w) => w.dow));
   const dayWorkouts = workouts.filter((w) => w.dow === day);
   const selectedDate = weekDates()[day].toISOString().slice(0, 10);
-  const loggedThatDay = new Set(logs.filter((l) => l.date === selectedDate).map((l) => l.workoutId));
+  const logByWorkout = Object.fromEntries(
+    logs.filter((l) => l.date === selectedDate).map((l) => [l.workoutId, l]),
+  );
 
-  const start = (w: Workout) => {
+  // Start fresh, or re-open a completed session pre-filled with what was logged.
+  const start = (w: Workout, existing?: WorkoutLog) => {
     setRunning(w);
-    setDone(new Set());
-    setResults({});
+    setDone(new Set(existing?.completedItemIds ?? []));
+    const r: Record<string, ItemResult> = {};
+    for (const e of existing?.entries ?? []) r[e.itemId] = e;
+    setResults(r);
   };
 
   const updateResult = (itemId: string, patch: Partial<ItemResult>) =>
@@ -69,6 +75,7 @@ export default function TrainView({ client }: { client: Client }) {
       completedItemIds: [...done],
       entries,
     });
+    void flushPush(); // persist the session to the cloud right away
     setRunning(null);
     setCelebrate(true);
     setTimeout(() => setCelebrate(false), 2200);
@@ -157,14 +164,22 @@ export default function TrainView({ client }: { client: Client }) {
           <div className="space-y-2">
             {dayWorkouts.map((w) => {
               const count = w.blocks.reduce((n, b) => n + b.items.length, 0);
-              const isDone = loggedThatDay.has(w.id);
+              const logged = logByWorkout[w.id];
               return (
                 <Card key={w.id} className="p-4 flex items-center gap-3">
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold truncate">{w.name}</p>
-                    <p className="text-xs text-slate">{count} movements</p>
+                    <p className="text-xs text-slate">
+                      {logged ? "✓ Completed — tap to review or revise" : `${count} movements`}
+                    </p>
                   </div>
-                  {isDone ? <Pill tone="green">✓ Done</Pill> : <Button size="sm" onClick={() => start(w)}>Start</Button>}
+                  {logged ? (
+                    <Button size="sm" variant="outline" onClick={() => start(w, logged)}>
+                      View / edit
+                    </Button>
+                  ) : (
+                    <Button size="sm" onClick={() => start(w)}>Start</Button>
+                  )}
                 </Card>
               );
             })}
