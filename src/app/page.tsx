@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useClients, useLogsForClient, addClient } from "@/lib/store";
+import { useClients, useLogsForClient, addClient, setClientArchived } from "@/lib/store";
 import { Avatar, Button, Card, EmptyState, PageHeader, Pill } from "@/components/ui";
 import { GOALS } from "@/lib/goals";
 import type { Client } from "@/lib/types";
@@ -39,6 +39,10 @@ export default function CoachHome() {
   const clients = useClients();
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
+  const [showArchived, setShowArchived] = useState(false);
+
+  const active = clients.filter((c) => !c.archived);
+  const archived = clients.filter((c) => c.archived);
 
   const create = () => {
     const trimmed = name.trim();
@@ -52,7 +56,7 @@ export default function CoachHome() {
     <div>
       <PageHeader
         title="Your Athletes"
-        subtitle={`${clients.length} active`}
+        subtitle={`${active.length} active`}
         action={
           <Button size="sm" onClick={() => setAdding((v) => !v)}>
             + Add
@@ -77,13 +81,41 @@ export default function CoachHome() {
         </Card>
       )}
 
-      {clients.length === 0 ? (
-        <EmptyState icon="🏋️" title="No athletes yet" hint="Add your first client to start programming." />
+      {active.length === 0 ? (
+        <EmptyState icon="🏋️" title="No active athletes" hint="Add an athlete, or recover one from the archive below." />
       ) : (
         <div className="space-y-3">
-          {clients.map((c) => (
+          {active.map((c) => (
             <ClientRow key={c.id} client={c} />
           ))}
+        </div>
+      )}
+
+      {archived.length > 0 && (
+        <div className="mt-8 border-t border-line pt-4">
+          <button
+            onClick={() => setShowArchived((v) => !v)}
+            className="flex items-center gap-2 text-sm font-semibold text-slate"
+          >
+            <span>{showArchived ? "▼" : "▶"}</span>
+            Archived ({archived.length})
+          </button>
+          {showArchived && (
+            <div className="space-y-2 mt-3">
+              {archived.map((c) => (
+                <Card key={c.id} className="p-3 flex items-center gap-3">
+                  <Avatar src={c.avatarUrl} name={c.name} size={40} />
+                  <Link href={`/clients/${c.id}`} className="flex-1 min-w-0">
+                    <p className="font-semibold truncate">{c.name}</p>
+                    <p className="text-xs text-slate">Archived</p>
+                  </Link>
+                  <Button size="sm" variant="outline" onClick={() => setClientArchived(c.id, false)}>
+                    Recover
+                  </Button>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

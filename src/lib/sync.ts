@@ -44,6 +44,7 @@ const clientRow = (c: Client) => ({
   intended_frequency: c.intendedFrequency,
   notes: c.notes ?? null,
   athlete_email: c.athleteEmail ?? null,
+  archived: c.archived ?? false,
   created_at: c.createdAt,
 });
 
@@ -56,6 +57,7 @@ const rowClient = (r: Record<string, unknown>): Client => ({
   intendedFrequency: (r.intended_frequency as number) ?? 3,
   notes: (r.notes as string) ?? undefined,
   athleteEmail: (r.athlete_email as string) ?? undefined,
+  archived: (r.archived as boolean) ?? false,
   createdAt: r.created_at as string,
 });
 
@@ -249,7 +251,8 @@ export async function pushNow(db: DB) {
     if (!sb || !athleteClientId) return;
     const me = db.clients.find((c) => c.id === athleteClientId);
     if (me) {
-      const { error } = await sb.from("clients").upsert(clientRow(me));
+      // update only — athletes have no INSERT right on clients, so upsert would fail
+      const { error } = await sb.from("clients").update(clientRow(me)).eq("id", athleteClientId);
       if (error) console.warn("athlete profile push failed", error);
     }
     const rows = db.logs.filter((l) => l.clientId === athleteClientId).map(logRow);

@@ -132,6 +132,10 @@ export function updateClient(id: string, patch: Partial<Client>) {
   });
 }
 
+export function setClientArchived(id: string, archived: boolean) {
+  updateClient(id, { archived });
+}
+
 export function deleteClient(id: string) {
   const cur = getDB();
   commit({

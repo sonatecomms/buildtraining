@@ -108,6 +108,7 @@ export interface Client {
   intendedFrequency: number; // sessions / week
   notes?: string;
   athleteEmail?: string; // login email so the athlete can sign in to their own view
+  archived?: boolean; // hidden from the active roster, recoverable
   createdAt: string;
 }
 

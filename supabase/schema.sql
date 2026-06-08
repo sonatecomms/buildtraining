@@ -14,6 +14,7 @@ create table if not exists clients (
   goals text[] not null default '{}',
   intended_frequency int not null default 3,
   notes text,
+  archived boolean not null default false,
   created_at text not null default to_char(now(), 'YYYY-MM-DD')
 );
 

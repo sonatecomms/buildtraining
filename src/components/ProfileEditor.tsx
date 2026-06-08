@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { deleteClient, updateClient } from "@/lib/store";
+import { deleteClient, setClientArchived, updateClient } from "@/lib/store";
 import { flushPush } from "@/lib/sync";
 import type { Client, GoalType } from "@/lib/types";
 import { ALL_GOALS, GOALS } from "@/lib/goals";
@@ -220,16 +220,31 @@ export default function ProfileEditor({
         )}
       </Card>
 
+      <Button
+        variant="outline"
+        className="w-full"
+        onClick={async () => {
+          setClientArchived(client.id, true);
+          await flushPush();
+          window.location.href = "/";
+        }}
+      >
+        📦 Archive athlete
+      </Button>
+      <p className="text-[11px] text-slate text-center -mt-1">
+        Archiving hides them from your roster — you can recover them anytime.
+      </p>
+
       <button
         onClick={async () => {
-          if (!confirm(`Delete ${client.name} and all their data?`)) return;
+          if (!confirm(`Permanently delete ${client.name} and all their data? This can't be undone.`)) return;
           deleteClient(client.id);
           await flushPush(); // sync the deletion to the cloud before leaving
           window.location.href = "/";
         }}
         className="w-full text-center text-brick text-sm py-2"
       >
-        Delete athlete
+        Delete permanently
       </button>
       </>
       )}
