@@ -56,7 +56,7 @@ function isoDaysAgo(n: number): string {
 const demoClient: Client = {
   id: "client-jordan",
   name: "Jordan Rivera",
-  stats: { heightCm: 178, weightKg: 82, age: 31, bodyfatPct: 18 },
+  stats: { heightFt: 5, heightIn: 10, weightLb: 181, age: 31, bodyfatPct: 18 },
   goals: ["strength", "muscle_gain", "mobility"],
   intendedFrequency: 4,
   notes: "Right shoulder tweaks on heavy overhead — keep volume moderate.",

@@ -116,11 +116,18 @@ export default function ProfileEditor({
       <Card className="p-4">
         <h3 className="font-semibold mb-3">Stats</h3>
         <div className="grid grid-cols-2 gap-3">
-          <Labeled label="Height (cm)">
-            <input type="number" className={inputCls} defaultValue={client.stats.heightCm ?? ""} onBlur={(e) => stat("heightCm", e.target.value)} />
-          </Labeled>
-          <Labeled label="Weight (kg)">
-            <input type="number" className={inputCls} defaultValue={client.stats.weightKg ?? ""} onBlur={(e) => stat("weightKg", e.target.value)} />
+          <div className="col-span-2">
+            <Labeled label="Height">
+              <div className="flex items-center gap-2">
+                <input type="number" className={inputCls} placeholder="5" defaultValue={client.stats.heightFt ?? ""} onBlur={(e) => stat("heightFt", e.target.value)} />
+                <span className="text-slate text-sm">ft</span>
+                <input type="number" className={inputCls} placeholder="10" defaultValue={client.stats.heightIn ?? ""} onBlur={(e) => stat("heightIn", e.target.value)} />
+                <span className="text-slate text-sm">in</span>
+              </div>
+            </Labeled>
+          </div>
+          <Labeled label="Weight (lbs)">
+            <input type="number" className={inputCls} defaultValue={client.stats.weightLb ?? ""} onBlur={(e) => stat("weightLb", e.target.value)} />
           </Labeled>
           <Labeled label="Age">
             <input type="number" className={inputCls} defaultValue={client.stats.age ?? ""} onBlur={(e) => stat("age", e.target.value)} />

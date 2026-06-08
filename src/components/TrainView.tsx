@@ -245,7 +245,7 @@ function RunnerItem({
         <div className="mt-2.5 space-y-2.5">
           <div className={`grid ${bodyweight ? "grid-cols-2" : "grid-cols-3"} gap-2`}>
             {!bodyweight && (
-              <LogField label="Weight" value={r.weight} placeholder="60kg" onChange={(v) => onChange({ weight: v })} />
+              <LogField label="Weight" value={r.weight} placeholder="lbs" onChange={(v) => onChange({ weight: v })} />
             )}
             <LogField label="Sets" value={r.setsDone} placeholder={String(item.sets)} onChange={(v) => onChange({ setsDone: v })} />
             <LogField label="Reps" value={r.repsDone} placeholder={item.reps} onChange={(v) => onChange({ repsDone: v })} />

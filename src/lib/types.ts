@@ -80,8 +80,9 @@ export interface Program {
 }
 
 export interface ClientStats {
-  heightCm?: number;
-  weightKg?: number;
+  heightFt?: number;
+  heightIn?: number;
+  weightLb?: number;
   age?: number;
   bodyfatPct?: number;
 }
@@ -101,7 +102,7 @@ export interface Client {
 // What the athlete actually did for one movement during a session.
 export interface ItemResult {
   itemId: string;
-  weight?: string; // free text: "60kg", "BW", "red band"
+  weight?: string; // free text: "135", "BW", "red band"
   setsDone?: string;
   repsDone?: string;
   feeling?: number; // 1 (rough) … 5 (great)
