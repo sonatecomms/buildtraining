@@ -8,9 +8,9 @@ import {
   pullAthlete,
   pullDB,
   pushNow,
-  msSinceLocalWrite,
   setAthleteRole,
   setCoachId,
+  shouldDeferRepull,
   startRealtime,
 } from "@/lib/sync";
 import { hydrate } from "@/lib/store";
@@ -49,7 +49,7 @@ export default function SessionProvider({ children }: { children: React.ReactNod
     // Defer while the user is actively editing so a live update never reverts an
     // in-progress or just-saved change (local is authoritative for ~6s).
     const repull = async () => {
-      if (msSinceLocalWrite() < 6000) {
+      if (shouldDeferRepull()) {
         scheduleRepull();
         return;
       }

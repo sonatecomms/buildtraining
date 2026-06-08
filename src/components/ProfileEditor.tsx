@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { deleteClient, getClient, setClientArchived, updateClient } from "@/lib/store";
-import { flushPush, saveClientNow } from "@/lib/sync";
+import { flushPush, saveClientNow, setRealtimePaused } from "@/lib/sync";
 import type { Client, GoalType } from "@/lib/types";
 import { ALL_GOALS, GOALS } from "@/lib/goals";
 import { Avatar, Button, Card } from "./ui";
@@ -21,9 +21,15 @@ export default function ProfileEditor({
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
 
-  // Flush any pending edits to the cloud when leaving the profile, so changes
-  // made right before navigating/refreshing aren't lost to the save debounce.
-  useEffect(() => () => void flushPush(), []);
+  // While editing the profile, pause live re-pulls so a background update can't
+  // revert an in-progress change; flush + resume on leave.
+  useEffect(() => {
+    setRealtimePaused(true);
+    return () => {
+      setRealtimePaused(false);
+      void flushPush();
+    };
+  }, []);
 
   // Explicit save: commit the focused field, then write this profile directly
   // and report the real result (success or the actual error).

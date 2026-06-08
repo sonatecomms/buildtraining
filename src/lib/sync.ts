@@ -235,10 +235,15 @@ let timer: ReturnType<typeof setTimeout> | null = null;
 let pending: DB | null = null;
 let lastWriteAt = 0;
 
-// How long since the user last changed something locally. Used to keep realtime
-// re-pulls from clobbering an in-progress / just-saved edit.
-export function msSinceLocalWrite(): number {
-  return Date.now() - lastWriteAt;
+// Keep realtime re-pulls from clobbering an in-progress / just-saved edit:
+// pause entirely while editing a profile, and defer for a few seconds after any
+// local write.
+let realtimePaused = false;
+export function setRealtimePaused(p: boolean) {
+  realtimePaused = p;
+}
+export function shouldDeferRepull(): boolean {
+  return realtimePaused || Date.now() - lastWriteAt < 6000;
 }
 
 export function schedulePush(db: DB) {
