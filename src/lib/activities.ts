@@ -9,7 +9,7 @@ export const ACTIVITIES: Exercise[] = [
   { id: "act-walk", name: "Walk", category: "Activity", equipment: "Other", primaryMuscle: "Cardio", activity: true },
   { id: "act-hike", name: "Hike", category: "Activity", equipment: "Other", primaryMuscle: "Cardio / Legs", activity: true },
   { id: "act-ruck", name: "Rucking", category: "Activity", equipment: "Other", primaryMuscle: "Full Body / Cardio", activity: true },
-  { id: "act-bike", name: "Cycling (Outdoor)", category: "Activity", equipment: "Other", primaryMuscle: "Legs / Cardio", activity: true },
+  { id: "act-bike", name: "Cycling (Outdoor)", category: "Activity", equipment: "Other", primaryMuscle: "Legs / Cardio", activity: true, speedUnit: "mph" },
   { id: "act-swim", name: "Swim", category: "Activity", equipment: "Other", primaryMuscle: "Full Body / Cardio", activity: true },
   { id: "act-yoga", name: "Yoga", category: "Activity", equipment: "Bodyweight", primaryMuscle: "Mobility", activity: true },
   { id: "act-pilates", name: "Pilates", category: "Activity", equipment: "Bodyweight", primaryMuscle: "Core / Mobility", activity: true },
@@ -68,4 +68,14 @@ export function runPace(duration?: string, distance?: string): string | null {
   let sec = Math.round((paceMin - m) * 60);
   if (sec === 60) { m += 1; sec = 0; }
   return `${m}:${String(sec).padStart(2, "0")} / mi`;
+}
+
+// Average speed as "X.X mph" from a duration + distance, or null if not derivable.
+export function speedMph(duration?: string, distance?: string): string | null {
+  const min = parseDurationMin(duration);
+  const mi = parseDistanceMi(distance);
+  if (min == null || mi == null || min <= 0 || mi <= 0) return null;
+  const mph = mi / (min / 60);
+  if (!Number.isFinite(mph) || mph <= 0 || mph > 80) return null; // sanity guard
+  return `${mph.toFixed(1)} mph`;
 }

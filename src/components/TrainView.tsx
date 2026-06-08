@@ -12,7 +12,7 @@ import {
 import { flushPush } from "@/lib/sync";
 import type { Client, Exercise, ItemResult, ProgramItem, Workout, WorkoutLog } from "@/lib/types";
 import { youtubeId } from "@/lib/youtube";
-import { runPace } from "@/lib/activities";
+import { runPace, speedMph } from "@/lib/activities";
 import { DOW_LONG, isoDate, todayDow, weekDates } from "@/lib/week";
 import { Button, Card, Pill } from "./ui";
 import StreakHeader from "./StreakHeader";
@@ -329,7 +329,13 @@ function RunnerItem({
   const r = result ?? ({} as ItemResult);
   const bodyweight = ex?.equipment === "Bodyweight"; // coach-denoted → no weight field
   const activity = ex?.activity; // run/walk/yoga… → log duration + distance, not load
-  const pace = activity ? runPace(r.duration, r.distance) : null; // live min/mi readout
+  // live speed readout: mph for cycling, pace (min/mi) for everything else
+  const speedLabel = ex?.speedUnit === "mph" ? "Speed" : "Pace";
+  const speed = activity
+    ? ex?.speedUnit === "mph"
+      ? speedMph(r.duration, r.distance)
+      : runPace(r.duration, r.distance)
+    : null;
   const [open, setOpen] = useState<boolean>(true); // log panel open by default
   const [playing, setPlaying] = useState(false);
 
@@ -382,9 +388,9 @@ function RunnerItem({
                 <LogField label="Duration" value={r.duration} placeholder="30 min" onChange={(v) => onChange({ duration: v })} />
                 <LogField label="Distance" value={r.distance} placeholder="3 mi" onChange={(v) => onChange({ distance: v })} />
               </div>
-              {pace && (
+              {speed && (
                 <p className="text-xs text-slate text-right">
-                  Pace <span className="font-semibold text-forest">{pace}</span>
+                  {speedLabel} <span className="font-semibold text-forest">{speed}</span>
                 </p>
               )}
             </div>

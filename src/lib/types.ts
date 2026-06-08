@@ -53,6 +53,8 @@ export interface Exercise {
   variants?: string[];
   // cardio/wellness (run, walk, yoga…) — logged with duration/distance, not load
   activity?: boolean;
+  // which speed readout fits this activity: "mph" (cycling) vs default pace (min/mi)
+  speedUnit?: "mph";
 }
 
 export type BlockType = "single" | "superset" | "circuit" | "note";
