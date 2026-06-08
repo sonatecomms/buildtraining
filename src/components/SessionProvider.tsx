@@ -85,6 +85,12 @@ export default function SessionProvider({ children }: { children: React.ReactNod
       try {
         const email = s.user.email ?? "";
         emailRef.current = email;
+        // Did this user sign up as an athlete? (metadata is durable; the URL
+        // param covers the very first sign-up before metadata is readable.)
+        const athleteIntent =
+          s.user.user_metadata?.intent === "athlete" ||
+          new URLSearchParams(window.location.search).get("role") === "athlete";
+
         // Coach if they own clients; otherwise an athlete if their email is
         // assigned to a client; otherwise a brand-new coach (seed their account).
         if (await coachHasClients(s.user.id)) {
@@ -101,6 +107,12 @@ export default function SessionProvider({ children }: { children: React.ReactNod
             setAthleteClientId(ath.clientId);
             roleRef.current = "athlete";
             setRole("athlete");
+          } else if (athleteIntent) {
+            // Athlete signed up but the coach hasn't linked their email/phone yet.
+            // Do NOT seed them a coach account — show the "ask your coach" state.
+            setAthleteClientId(null);
+            roleRef.current = "athlete";
+            setRole("athlete");
           } else {
             setCoachId(s.user.id);
             const seed = buildSeedDB();
@@ -114,6 +126,7 @@ export default function SessionProvider({ children }: { children: React.ReactNod
         if (!realtimeOff.current) realtimeOff.current = startRealtime(scheduleRepull);
       } catch (e) {
         console.warn("sign-in sync failed", e);
+        resolvedFor.current = null; // allow a retry on the next auth event
       }
       setStatus("ready");
     };
@@ -143,7 +156,7 @@ export default function SessionProvider({ children }: { children: React.ReactNod
 
   return (
     <SessionCtx.Provider value={{ session, cloud, role }}>
-      {role === "athlete" && athleteClientId ? <AthleteApp clientId={athleteClientId} /> : children}
+      {role === "athlete" ? <AthleteApp clientId={athleteClientId ?? ""} /> : children}
     </SessionCtx.Provider>
   );
 }

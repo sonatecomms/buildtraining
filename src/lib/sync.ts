@@ -250,12 +250,24 @@ let lastWriteAt = 0;
 // Keep realtime re-pulls from clobbering an in-progress / just-saved edit:
 // pause entirely while editing a profile, and defer for a few seconds after any
 // local write.
-let realtimePaused = false;
+// Refcounted so overlapping editors (or StrictMode double-invoke) can't leave
+// realtime stuck paused/resumed.
+let pauseCount = 0;
 export function setRealtimePaused(p: boolean) {
-  realtimePaused = p;
+  pauseCount = Math.max(0, pauseCount + (p ? 1 : -1));
 }
 export function shouldDeferRepull(): boolean {
-  return realtimePaused || Date.now() - lastWriteAt < 6000;
+  return pauseCount > 0 || Date.now() - lastWriteAt < 6000;
+}
+
+// Cancel any debounced push (called after a hydrate from the cloud, which is now
+// authoritative — pushing the pre-hydrate snapshot would prune newer cloud rows).
+export function cancelPendingPush() {
+  if (timer) {
+    clearTimeout(timer);
+    timer = null;
+  }
+  pending = null;
 }
 
 export function schedulePush(db: DB) {
@@ -295,10 +307,16 @@ async function syncTable(
     const { error } = await sb.from(table).upsert(rows);
     if (error) console.warn(`upsert ${table} failed`, error);
   }
-  // remove rows that no longer exist locally
-  let del = sb.from(table).delete().eq("coach_id", coachId);
-  if (ids.length) del = del.not("id", "in", `(${ids.map((i) => `"${i}"`).join(",")})`);
-  const { error } = await del;
+  // Remove rows that no longer exist locally. CRITICAL: never prune when the
+  // local id list is empty — that would delete every row the coach owns in this
+  // table (data loss on an empty/partial snapshot). Only prune against a
+  // non-empty, known set.
+  if (ids.length === 0) return;
+  const { error } = await sb
+    .from(table)
+    .delete()
+    .eq("coach_id", coachId)
+    .not("id", "in", `(${ids.map((i) => `"${i}"`).join(",")})`);
   if (error) console.warn(`prune ${table} failed`, error);
 }
 

@@ -5,12 +5,19 @@
 
 const PHONE_DOMAIN = "@phone.build";
 
+// Canonicalize a phone to a single form so different formats resolve to the same
+// login: drop a US leading "1" on 11-digit numbers ("1 555…" == "555…").
+function canonicalDigits(input: string): string {
+  let d = input.replace(/\D/g, "");
+  if (d.length === 11 && d[0] === "1") d = d.slice(1);
+  return d;
+}
+
 // Turn whatever the user typed (email or phone) into the auth identifier.
 export function toLoginId(input: string): string {
   const v = input.trim();
   if (v.includes("@")) return v.toLowerCase();
-  const digits = v.replace(/\D/g, "");
-  return `${digits}${PHONE_DOMAIN}`;
+  return `${canonicalDigits(v)}${PHONE_DOMAIN}`;
 }
 
 export function isPhoneLogin(id?: string): boolean {

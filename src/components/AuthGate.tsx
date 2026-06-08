@@ -44,11 +44,12 @@ export default function AuthGate() {
       return;
     }
 
-    // sign up — they chose their own password, so no first-login reset needed
+    // sign up — record athlete intent so we never seed them a coach account, and
+    // skip the first-login password reset (they chose their own password)
     const { data, error } = await sb.auth.signUp({
       email: id,
       password,
-      options: { data: { password_set: true } },
+      options: { data: { password_set: true, intent: isAthlete ? "athlete" : "coach" } },
     });
     setBusy(false);
     if (error) {

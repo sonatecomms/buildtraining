@@ -11,7 +11,8 @@ import type {
   WorkoutLog,
 } from "./types";
 import { buildSeedDB } from "./seed";
-import { schedulePush } from "./sync";
+import { cancelPendingPush, schedulePush } from "./sync";
+import { isoDate } from "./week";
 
 const KEY = "fitcoach.db.v2";
 
@@ -56,6 +57,7 @@ function commit(next: DB) {
 // login). Persists locally and notifies, but does not push back.
 export function hydrate(next: DB) {
   db = next;
+  cancelPendingPush(); // cloud is now authoritative — drop any stale debounced push
   if (typeof window !== "undefined") {
     window.localStorage.setItem(KEY, JSON.stringify(next));
   }
@@ -79,7 +81,7 @@ export function uid(prefix = "id"): string {
 }
 
 function today(): string {
-  return new Date().toISOString().slice(0, 10);
+  return isoDate(); // local calendar date, not UTC
 }
 
 // ---- read hooks ------------------------------------------------------------
@@ -408,11 +410,15 @@ export function moveItemToBlock(
 ) {
   mutateWorkout(clientId, workoutId, (w) => {
     let moved: (typeof w.blocks)[number]["items"][number] | undefined;
-    // pull the item out of whichever block holds it
+    // pull the item out of whichever block holds it; if a superset/circuit drops
+    // to a single movement, demote it back to a plain "single" block
     const stripped = w.blocks.map((b) => {
       const found = b.items.find((it) => it.id === itemId);
-      if (found) moved = found;
-      return found ? { ...b, items: b.items.filter((it) => it.id !== itemId) } : b;
+      if (!found) return b;
+      moved = found;
+      const items = b.items.filter((it) => it.id !== itemId);
+      const type = b.type !== "note" && items.length <= 1 ? "single" : b.type;
+      return { ...b, items, type };
     });
     if (!moved) return w;
 
@@ -446,13 +452,16 @@ export function setItemVideo(
 // ---- logging ---------------------------------------------------------------
 
 export function logWorkout(log: Omit<WorkoutLog, "id">): WorkoutLog {
-  const created: WorkoutLog = { ...log, id: uid("log") };
   const cur = getDB();
-  // one log per workout per day — replace if re-logged
-  const sameDay = cur.logs.filter(
-    (l) => !(l.clientId === log.clientId && l.workoutId === log.workoutId && l.date === log.date),
+  // one log per workout per day. Reuse the existing row's id when re-logging so
+  // the cloud upsert updates in place (the DB has a unique (client,workout,date)
+  // constraint — a fresh id would collide instead of replacing).
+  const existing = cur.logs.find(
+    (l) => l.clientId === log.clientId && l.workoutId === log.workoutId && l.date === log.date,
   );
-  commit({ ...cur, logs: [...sameDay, created] });
+  const created: WorkoutLog = { ...log, id: existing?.id ?? uid("log") };
+  const others = cur.logs.filter((l) => l.id !== created.id);
+  commit({ ...cur, logs: [...others, created] });
   return created;
 }
 
@@ -511,7 +520,7 @@ export function computeStreak(logs: WorkoutLog[], weeklyTarget: number): StreakI
   // current streak counts back from today (allowing today to be a rest day)
   let current = 0;
   if (days.length) {
-    const todayStr = new Date().toISOString().slice(0, 10);
+    const todayStr = isoDate();
     const last = days[days.length - 1];
     const gap = dayDiff(todayStr, last);
     if (gap <= 1) {

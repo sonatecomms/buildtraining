@@ -11,7 +11,7 @@ import {
 import { flushPush } from "@/lib/sync";
 import type { Client, Exercise, ItemResult, ProgramItem, Workout, WorkoutLog } from "@/lib/types";
 import { youtubeId } from "@/lib/youtube";
-import { DOW_LONG, todayDow, weekDates } from "@/lib/week";
+import { DOW_LONG, isoDate, todayDow, weekDates } from "@/lib/week";
 import { Button, Card, Pill } from "./ui";
 import StreakHeader from "./StreakHeader";
 import WeekStrip from "./WeekStrip";
@@ -37,7 +37,7 @@ export default function TrainView({ client }: { client: Client }) {
   const workouts = program?.workouts ?? [];
   const marked = new Set(workouts.map((w) => w.dow));
   const dayWorkouts = workouts.filter((w) => w.dow === day);
-  const selectedDate = weekDates()[day].toISOString().slice(0, 10);
+  const selectedDate = isoDate(weekDates()[day]);
   const logByWorkout = Object.fromEntries(
     logs.filter((l) => l.date === selectedDate).map((l) => [l.workoutId, l]),
   );

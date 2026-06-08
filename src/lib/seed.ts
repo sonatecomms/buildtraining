@@ -1,5 +1,6 @@
 import type { Client, DB, Exercise, Program } from "./types";
 import { CROSSFIT_EXERCISES } from "./crossfit";
+import { isoDate } from "./week";
 
 // A starter exercise repository. YouTube links point at well-known form demos.
 // Coaches can add their own on top of these.
@@ -52,7 +53,7 @@ export const SEED_EXERCISES: Exercise[] = [
 function isoDaysAgo(n: number): string {
   const d = new Date();
   d.setDate(d.getDate() - n);
-  return d.toISOString().slice(0, 10);
+  return isoDate(d);
 }
 
 const demoClient: Client = {

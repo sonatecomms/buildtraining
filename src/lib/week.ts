@@ -12,8 +12,11 @@ export const DOW_LONG = [
   "Saturday",
 ];
 
-export function isoDate(d: Date): string {
-  return d.toISOString().slice(0, 10);
+// Local calendar date (yyyy-mm-dd). Using toISOString() here would be UTC, which
+// shifts the "day" by one every evening in western timezones — breaking the
+// today highlight, streaks, and which calendar day a workout logs to.
+export function isoDate(d: Date = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 export function todayDow(): number {

@@ -1,6 +1,6 @@
 "use client";
 
-import { DOW_LETTER, weekDates } from "@/lib/week";
+import { DOW_LETTER, isoDate, weekDates } from "@/lib/week";
 
 // Sun–Sat strip of dated circles, centered. Tap a day to select it.
 // `marked` = weekdays that have a workout scheduled (shown with a dot).
@@ -14,12 +14,12 @@ export default function WeekStrip({
   marked?: Set<number>;
 }) {
   const dates = weekDates();
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = isoDate();
 
   return (
     <div className="flex justify-between gap-1 mb-4">
       {dates.map((d, dow) => {
-        const isToday = d.toISOString().slice(0, 10) === todayIso;
+        const isToday = isoDate(d) === todayIso;
         const isSel = dow === selected;
         const has = marked?.has(dow);
         return (

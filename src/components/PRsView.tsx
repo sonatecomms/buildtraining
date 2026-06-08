@@ -16,7 +16,10 @@ export default function PRsView({ client }: { client: Client }) {
   for (const log of logs) {
     for (const e of log.entries ?? []) {
       if (!e.exerciseId) continue;
-      const w = parseFloat((e.weight ?? "").replace(/[^0-9.]/g, ""));
+      // first numeric token only — so "135-145" or "2x45" don't concatenate into
+      // a garbage PR like 135145
+      const m = (e.weight ?? "").match(/\d+(?:\.\d+)?/);
+      const w = m ? parseFloat(m[0]) : NaN;
       if (!isFinite(w) || w <= 0) continue;
       const cur = best[e.exerciseId];
       if (!cur || w > cur.weight) {
