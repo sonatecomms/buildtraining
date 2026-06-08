@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   computeStreak,
   logWorkout,
@@ -13,9 +13,10 @@ import { flushPush } from "@/lib/sync";
 import type { Client, Exercise, ItemResult, ProgramItem, Workout, WorkoutLog } from "@/lib/types";
 import { youtubeId } from "@/lib/youtube";
 import { runPace, speedMph } from "@/lib/activities";
+import { parseRest, formatClock } from "@/lib/rest";
 import { pushRecent } from "@/lib/recents";
 import { DOW_LONG, isoDate, todayDow, weekDates, relativeDate } from "@/lib/week";
-import { Button, Card, Pill } from "./ui";
+import { Button, Card, Pill, Skeleton } from "./ui";
 import StreakHeader from "./StreakHeader";
 import WeekStrip from "./WeekStrip";
 import VideoModal from "./VideoModal";
@@ -40,6 +41,14 @@ export default function TrainView({ client }: { client: Client }) {
   const [extras, setExtras] = useState<{ id: string; exerciseId: string }[]>([]);
   const [picking, setPicking] = useState(false);
   const [celebrate, setCelebrate] = useState<{ title: string; sub: string } | null>(null);
+  // active rest countdown (one at a time); bumping `key` restarts the timer.
+  const [rest, setRest] = useState<{ seconds: number; label: string; key: number } | null>(null);
+  const startRest = (seconds: number, label: string) =>
+    setRest((r) => ({ seconds, label, key: (r?.key ?? 0) + 1 }));
+  // gate the overview on mount so we never flash the SSR seed/empty data before
+  // the real (localStorage / cloud-pulled) program + logs are in hand
+  const [ready, setReady] = useState(false);
+  useEffect(() => setReady(true), []);
 
   const workouts = program?.workouts ?? [];
   const marked = new Set(workouts.map((w) => w.dow));
@@ -174,6 +183,7 @@ export default function TrainView({ client }: { client: Client }) {
                       })
                     }
                     onChange={(patch) => updateResult(it.id, patch)}
+                    onRest={startRest}
                   />
                 ))}
               </div>
@@ -236,6 +246,15 @@ export default function TrainView({ client }: { client: Client }) {
             }}
           />
         )}
+
+        {rest && (
+          <RestTimer
+            key={rest.key}
+            seconds={rest.seconds}
+            label={rest.label}
+            onClose={() => setRest(null)}
+          />
+        )}
       </div>
     );
   }
@@ -262,7 +281,13 @@ export default function TrainView({ client }: { client: Client }) {
       <div>
         <p className="text-sm font-semibold text-slate mb-2">{DOW_LONG[day]}</p>
         <div className="space-y-2">
-          {dayWorkouts.length === 0 && (() => {
+          {!ready && (
+            <>
+              <Skeleton className="h-[68px] rounded-2xl" />
+              <Skeleton className="h-[68px] rounded-2xl" />
+            </>
+          )}
+          {ready && dayWorkouts.length === 0 && (() => {
             // find the next scheduled day so a rest day still answers "what's next?"
             const nextDow = marked.size
               ? Array.from({ length: 7 }, (_, i) => (day + 1 + i) % 7).find((d) => marked.has(d))
@@ -280,7 +305,7 @@ export default function TrainView({ client }: { client: Client }) {
               </Card>
             );
           })()}
-          {dayWorkouts.map((w) => {
+          {ready && dayWorkouts.map((w) => {
             const count = w.blocks.reduce((n, b) => n + b.items.length, 0);
             const logged = logByWorkout[w.id];
             return (
@@ -303,7 +328,7 @@ export default function TrainView({ client }: { client: Client }) {
           })}
 
           {/* log your own session, any day */}
-          {(() => {
+          {ready && (() => {
             const extraId = `extra-${selectedDate}`;
             const extraLog = logByWorkout[extraId];
             const extraWorkout: Workout = { id: extraId, name: "Your own work", dow: day, blocks: [] };
@@ -328,11 +353,16 @@ export default function TrainView({ client }: { client: Client }) {
         </div>
       </div>
 
-      <StreakHeader streak={streak} />
+      {ready ? <StreakHeader streak={streak} /> : <Skeleton className="h-24 rounded-2xl" />}
 
       <div>
         <h3 className="font-semibold mb-2">Recent activity</h3>
-        {logs.length === 0 ? (
+        {!ready ? (
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-full" />
+            <Skeleton className="h-5 w-4/5" />
+          </div>
+        ) : logs.length === 0 ? (
           <p className="text-slate text-sm">No sessions logged yet.</p>
         ) : (
           <div className="space-y-2">
@@ -365,6 +395,7 @@ function RunnerItem({
   result,
   onToggle,
   onChange,
+  onRest,
   isExtra,
   onRemove,
 }: {
@@ -374,6 +405,7 @@ function RunnerItem({
   result?: ItemResult;
   onToggle: () => void;
   onChange: (patch: Partial<ItemResult>) => void;
+  onRest?: (seconds: number, label: string) => void;
   isExtra?: boolean;
   onRemove?: () => void;
 }) {
@@ -381,6 +413,8 @@ function RunnerItem({
   const r = result ?? ({} as ItemResult);
   const bodyweight = ex?.equipment === "Bodyweight"; // coach-denoted → no weight field
   const activity = ex?.activity; // run/walk/yoga… → log duration + distance, not load
+  // coach's rest, if it parses to a real duration → offer a countdown (not for cardio)
+  const restSeconds = activity ? null : parseRest(item.rest);
   // live speed readout: mph for cycling, pace (min/mi) for everything else
   const speedLabel = ex?.speedUnit === "mph" ? "Speed" : "Pace";
   const speed = activity
@@ -462,6 +496,14 @@ function RunnerItem({
               <LogField label="Reps" value={r.repsDone} placeholder={item.reps} onChange={(v) => onChange({ repsDone: v })} />
             </div>
           )}
+          {restSeconds != null && onRest && (
+            <button
+              onClick={() => onRest(restSeconds, ex?.name ?? "Rest")}
+              className="w-full rounded-lg border border-line bg-surface py-1.5 text-sm font-medium text-forest flex items-center justify-center gap-1.5 active:scale-[0.99] transition-transform"
+            >
+              ⏱ Start {item.rest} rest
+            </button>
+          )}
           <div>
             <span className="text-[10px] uppercase tracking-wide text-slate">How it felt (effort)</span>
             <div className="flex items-center gap-1.5 mt-1">
@@ -521,4 +563,119 @@ function LogField({
       />
     </label>
   );
+}
+
+// Floating rest countdown — one at a time, triggered from a movement's "Start
+// rest" button. Sits above the bottom nav; chimes + buzzes when time's up, and
+// can be paused or nudged ±15s.
+function RestTimer({
+  seconds,
+  label,
+  onClose,
+}: {
+  seconds: number;
+  label: string;
+  onClose: () => void;
+}) {
+  const [remaining, setRemaining] = useState(seconds);
+  const [paused, setPaused] = useState(false);
+  const chimed = useRef(false);
+
+  useEffect(() => {
+    if (paused) return;
+    const id = setInterval(() => setRemaining((t) => (t <= 0 ? 0 : t - 1)), 1000);
+    return () => clearInterval(id);
+  }, [paused]);
+
+  const finished = remaining <= 0;
+
+  // chime + buzz once when it hits zero, then auto-dismiss
+  useEffect(() => {
+    if (!finished || chimed.current) return;
+    chimed.current = true;
+    try {
+      navigator.vibrate?.([120, 60, 120]);
+    } catch {}
+    chime();
+    const t = setTimeout(onClose, 4000);
+    return () => clearTimeout(t);
+  }, [finished, onClose]);
+
+  const adjust = (delta: number) => {
+    if (delta > 0) chimed.current = false; // adding time re-arms the chime
+    setRemaining((t) => Math.max(0, t + delta));
+  };
+
+  const pct = seconds > 0 ? Math.min(100, (remaining / seconds) * 100) : 0;
+
+  return (
+    <div
+      className="fixed inset-x-0 bottom-20 z-40 px-4 pointer-events-none"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+    >
+      <div className="max-w-2xl mx-auto pointer-events-auto rounded-2xl border border-line bg-surface overflow-hidden shadow-[0_12px_40px_-8px_rgba(25,53,12,0.35)]">
+        <div className="h-1 bg-line">
+          <div
+            className={`h-full transition-all duration-1000 ease-linear ${finished ? "bg-green" : "bg-forest"}`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+        <div className="flex items-center gap-2 px-3 py-2.5">
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] uppercase tracking-wide text-slate">{finished ? "Rest done" : "Resting"}</p>
+            <p className="text-sm font-medium truncate">{label}</p>
+          </div>
+          {finished ? (
+            <span className="text-2xl mr-1">💪</span>
+          ) : (
+            <>
+              <button onClick={() => adjust(-15)} className="text-xs font-semibold text-slate px-1.5 py-1">−15</button>
+              <span className="font-display text-2xl tabular-nums w-16 text-center leading-none">{formatClock(remaining)}</span>
+              <button onClick={() => adjust(15)} className="text-xs font-semibold text-slate px-1.5 py-1">+15</button>
+              <button
+                onClick={() => setPaused((p) => !p)}
+                className="w-9 h-9 rounded-full bg-field grid place-items-center text-sm"
+                aria-label={paused ? "Resume rest" : "Pause rest"}
+              >
+                {paused ? "▶" : "⏸"}
+              </button>
+            </>
+          )}
+          <button
+            onClick={onClose}
+            className="w-9 h-9 rounded-full bg-field grid place-items-center text-slate"
+            aria-label="Dismiss timer"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Short two-tone chime via WebAudio; silent if unsupported or blocked.
+function chime() {
+  try {
+    const Ctx =
+      window.AudioContext ??
+      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    const now = ctx.currentTime;
+    [880, 1175].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      const start = now + i * 0.18;
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.linearRampToValueAtTime(0.25, start + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.35);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(start);
+      osc.stop(start + 0.4);
+    });
+    setTimeout(() => void ctx.close(), 1200);
+  } catch {}
 }

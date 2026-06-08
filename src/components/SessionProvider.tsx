@@ -144,7 +144,7 @@ export default function SessionProvider({ children }: { children: React.ReactNod
 
   if (cloud && status === "loading") {
     return (
-      <div className="min-h-screen grid place-items-center bg-bone">
+      <div className="fixed inset-0 z-50 grid place-items-center bg-bone overflow-hidden overscroll-none">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/logo-icon.png?v=10" alt="BUILD" className="w-24 h-24 animate-lift" />
       </div>
