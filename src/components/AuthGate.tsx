@@ -44,8 +44,12 @@ export default function AuthGate() {
       return;
     }
 
-    // sign up
-    const { data, error } = await sb.auth.signUp({ email: id, password });
+    // sign up — they chose their own password, so no first-login reset needed
+    const { data, error } = await sb.auth.signUp({
+      email: id,
+      password,
+      options: { data: { password_set: true } },
+    });
     setBusy(false);
     if (error) {
       setError(error.message);

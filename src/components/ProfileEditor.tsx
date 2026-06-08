@@ -53,14 +53,14 @@ export default function ProfileEditor({
   const copyInvite = async () => {
     if (!client.athleteEmail) return;
     const origin = window.location.origin;
-    const loginLine = isPhoneLogin(client.athleteEmail)
-      ? `2. Sign in with this phone: ${formatPhone(phoneDigits(client.athleteEmail))}`
-      : `2. Sign in with this email: ${client.athleteEmail}`;
+    const who = isPhoneLogin(client.athleteEmail)
+      ? formatPhone(phoneDigits(client.athleteEmail))
+      : client.athleteEmail;
     const msg =
       `You're invited to train on BUILD 💪\n\n` +
       `1. Open ${origin}/?role=athlete\n` +
-      `${loginLine}\n` +
-      `3. Use the password I'll share with you — your program is ready.\n\n` +
+      `2. Tap "Create one" and sign up with: ${who}\n` +
+      `3. Pick your own password — your program is ready.\n\n` +
       `Tip: add BUILD to your home screen to use it like an app.`;
     try {
       await navigator.clipboard.writeText(msg);
