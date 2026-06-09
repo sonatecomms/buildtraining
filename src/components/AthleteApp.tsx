@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useClient, useExercises, logWorkout, uid, updateClient, getClient } from "@/lib/store";
 import { flushPush, saveClientNow } from "@/lib/sync";
 import { isoDate } from "@/lib/week";
@@ -65,7 +65,11 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
     <div className="min-h-screen flex flex-col">
       <header className="sticky top-0 z-30 bg-bone/90 backdrop-blur border-b border-line">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
-          <button onClick={() => setView("train")} className="font-display text-xl tracking-tight">
+          <button
+            onClick={() => setView("train")}
+            aria-label="Go to training"
+            className="font-display text-xl tracking-tight rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest/40"
+          >
             BUILD
           </button>
           <div className="flex-1" />
@@ -148,7 +152,8 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
               <button
                 key={t.id}
                 onClick={() => setView(t.id)}
-                className={`flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
+                aria-label={t.label}
+                className={`flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-forest/40 ${
                   active ? "text-forest" : "text-slate"
                 }`}
               >
@@ -167,21 +172,27 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
 // revealed content — which may be cards (Profile, Install) — doesn't nest.
 function Collapsible({ title, icon, children }: { title: string; icon: string; children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
+  const id = useId();
   return (
     <div className="border-b border-line">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="w-full flex items-center gap-3 py-4 text-left"
+        aria-controls={id}
+        className="w-full flex items-center gap-3 py-4 text-left rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest/40"
       >
-        <span className="text-lg leading-none">{icon}</span>
+        <span className="text-lg leading-none" aria-hidden>{icon}</span>
         <span className="font-semibold flex-1">{title}</span>
         <span className={`text-slate transition-transform duration-200 ${open ? "rotate-180" : ""}`} aria-hidden>
           ▾
         </span>
       </button>
-      {open && <div className="pb-4 space-y-3">{children}</div>}
+      {open && (
+        <div id={id} role="region" className="pb-4 space-y-3">
+          {children}
+        </div>
+      )}
     </div>
   );
 }
@@ -194,14 +205,21 @@ function YourLoginCard({ client }: { client: Client }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [recMsg, setRecMsg] = useState<string | null>(null);
 
   // Recovery email persists on the client row immediately (athlete may set it so
   // they can recover a phone/username login later).
   const saveRecovery = async (raw: string) => {
-    const recoveryEmail = raw.trim().toLowerCase() || undefined;
-    updateClient(client.id, { recoveryEmail });
+    const v = raw.trim().toLowerCase();
+    if (v && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) {
+      setRecMsg("That doesn't look like an email.");
+      return;
+    }
+    updateClient(client.id, { recoveryEmail: v || undefined });
     const latest = getClient(client.id);
     if (latest) await saveClientNow(latest);
+    setRecMsg(v ? "Saved ✓" : "Cleared");
+    setTimeout(() => setRecMsg(null), 2500);
   };
 
   const valid =
@@ -236,6 +254,8 @@ function YourLoginCard({ client }: { client: Client }) {
         setValue("");
         setPw("");
       } else {
+        // reflect the new login immediately so the card doesn't show the old one
+        updateClient(client.id, { athleteEmail: newLoginId });
         setMsg(`Done. Next time, sign in with ${displayLogin(newLoginId)}.`);
         setValue("");
         setPw("");
@@ -256,11 +276,17 @@ function YourLoginCard({ client }: { client: Client }) {
       <p className="text-[11px] text-slate font-medium mb-1">Recovery email (so you can reset your own password)</p>
       <input
         type="email"
+        autoComplete="email"
         defaultValue={client.recoveryEmail ?? ""}
         onBlur={(e) => saveRecovery(e.target.value)}
         placeholder="backup@example.com"
-        className="w-full mb-4 rounded-xl bg-field border border-line px-3 py-2.5 text-sm outline-none focus:border-forest"
+        className="w-full rounded-xl bg-field border border-line px-3 py-2.5 text-sm outline-none focus:border-forest"
       />
+      <p className="text-[11px] mt-1 mb-4 min-h-[14px]" aria-live="polite">
+        {recMsg && (
+          <span className={recMsg.includes("✓") || recMsg === "Cleared" ? "text-forest" : "text-brick"}>{recMsg}</span>
+        )}
+      </p>
 
       <p className="text-[11px] text-slate font-medium mb-1">Change how you sign in</p>
       <div className="flex gap-1 mb-2">
@@ -268,7 +294,7 @@ function YourLoginCard({ client }: { client: Client }) {
           <button
             key={m}
             onClick={() => setKind(m)}
-            className={`flex-1 rounded-lg py-1.5 text-xs font-semibold capitalize ${
+            className={`flex-1 rounded-lg py-2.5 text-xs font-semibold capitalize focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest/40 ${
               kind === m ? "bg-forest text-bone" : "bg-field text-slate border border-line"
             }`}
           >
@@ -287,6 +313,7 @@ function YourLoginCard({ client }: { client: Client }) {
       />
       <input
         type="password"
+        autoComplete="current-password"
         value={pw}
         onChange={(e) => setPw(e.target.value)}
         placeholder="Your current password"
@@ -320,10 +347,9 @@ function ChangePasswordCard() {
     const { error } = await sb.auth.updateUser({ password: pw, data: { password_set: true } });
     setBusy(false);
     if (error) {
-      console.warn(error.message);
-      setMsg("Couldn't update password. Please try again.");
+      setMsg("error:Couldn't update password. Please try again.");
     } else {
-      setMsg("Password updated ✓");
+      setMsg("ok:Password updated ✓");
       setPw("");
       setConfirm("");
     }
@@ -333,6 +359,7 @@ function ChangePasswordCard() {
     <div>
       <input
         type="password"
+        autoComplete="new-password"
         value={pw}
         onChange={(e) => setPw(e.target.value)}
         placeholder="New password (6+ chars)"
@@ -340,12 +367,20 @@ function ChangePasswordCard() {
       />
       <input
         type="password"
+        autoComplete="new-password"
         value={confirm}
         onChange={(e) => setConfirm(e.target.value)}
         placeholder="Confirm new password"
         className="w-full rounded-xl bg-field border border-line px-3 py-2.5 text-sm outline-none focus:border-forest"
       />
-      {msg && <p className="text-xs text-slate mt-2">{msg}</p>}
+      {confirm.length > 0 && pw !== confirm && (
+        <p className="text-brick text-[11px] mt-1">Passwords don&apos;t match.</p>
+      )}
+      {msg && (
+        <p className={`text-xs mt-2 ${msg.startsWith("error:") ? "text-brick" : "text-forest"}`} aria-live="polite">
+          {msg.replace(/^(error|ok):/, "")}
+        </p>
+      )}
       <Button className="w-full mt-3" onClick={save} disabled={busy || !canSave}>
         {busy ? "Saving…" : "Update password"}
       </Button>

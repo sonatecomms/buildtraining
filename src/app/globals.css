@@ -13,7 +13,8 @@
   --color-green: #357836;
   --color-green-soft: #3f8c41;
   --color-slate: #5c6f76;
-  --color-sky: #6fa9bb;
+  --color-sky: #6fa9bb; /* decorative only — fails text contrast on light bg */
+  --color-sky-dark: #2f5563; /* accessible sky for links/buttons (AA on white & bone) */
   --color-brick: #a12323;
   --color-bone: #e2e6da;
   --color-ink: #191918;

@@ -37,11 +37,14 @@ export function syncActive(): boolean {
 export function startRealtime(onChange: () => void): () => void {
   const sb = getSupabase();
   if (!sb || !coachId) return () => {};
+  // Scope the subscription to this coach's rows so we don't wake on unrelated
+  // coaches' changes (RLS already blocks reading them; this avoids the noise).
+  const filter = `coach_id=eq.${coachId}`;
   const ch = sb
     .channel("build-sync")
-    .on("postgres_changes", { event: "*", schema: "public", table: "clients" }, onChange)
-    .on("postgres_changes", { event: "*", schema: "public", table: "programs" }, onChange)
-    .on("postgres_changes", { event: "*", schema: "public", table: "workout_logs" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "clients", filter }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "programs", filter }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "workout_logs", filter }, onChange)
     .subscribe();
   return () => {
     sb.removeChannel(ch);

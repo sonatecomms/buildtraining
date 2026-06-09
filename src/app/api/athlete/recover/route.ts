@@ -1,21 +1,27 @@
 import type { NextRequest } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { sendRecoveryEmail } from "@/lib/email";
+import { rateLimit, clientIp } from "@/lib/ratelimit";
 
 // Unauthenticated password recovery for a LOCKED-OUT athlete whose login is a
-// phone or username (no inbox, so Supabase's reset link has nowhere to go). We
-// look up the recovery email they (or their coach) put on file and send a real
-// reset link there.
+// phone/username (no inbox). Looks up the recovery_email on the matching client
+// row and emails a reset link there.
 //
-// Security: always returns the same generic success regardless of whether the
-// account or a recovery email exists, so this can't be used to probe for valid
-// logins. Email-login athletes don't use this path (AuthGate sends them through
-// Supabase's native resetPasswordForEmail instead).
+// Hardening:
+//  - Always returns the same generic success (no account/recovery-email oracle).
+//  - The email send is fire-and-forget so response time doesn't reveal whether a
+//    recovery email exists.
+//  - redirectTo is a fixed server constant (NOT the attacker-controllable Origin).
+//  - Rate limited per-IP and per-login to blunt mail-bombing / quota abuse.
+
+const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://buildtraining.vercel.app";
 
 export async function POST(req: NextRequest) {
   const ok = () => Response.json({ ok: true });
   const admin = getSupabaseAdmin();
   if (!admin) return ok();
+
+  if (!rateLimit(`recover:ip:${clientIp(req)}`, 5, 60 * 60 * 1000)) return ok();
 
   let loginId: string | undefined;
   try {
@@ -24,8 +30,8 @@ export async function POST(req: NextRequest) {
     return ok();
   }
   if (!loginId) return ok();
+  if (!rateLimit(`recover:login:${loginId}`, 1, 15 * 60 * 1000)) return ok();
 
-  // Find the recovery email on the matching client row.
   const { data: rows } = await admin
     .from("clients")
     .select("recovery_email")
@@ -34,16 +40,14 @@ export async function POST(req: NextRequest) {
   const recoveryEmail = (rows?.[0]?.recovery_email as string | null)?.trim();
   if (!recoveryEmail) return ok();
 
-  // Generate a recovery link for the synthetic login and email it to the recovery
-  // address ourselves (generateLink returns the link without sending).
-  const origin = req.headers.get("origin") || process.env.NEXT_PUBLIC_SITE_URL || "https://buildtraining.vercel.app";
   const { data, error } = await admin.auth.admin.generateLink({
     type: "recovery",
     email: loginId,
-    options: { redirectTo: `${origin}/` },
+    options: { redirectTo: `${SITE}/` },
   });
   const link = data?.properties?.action_link;
-  if (!error && link) await sendRecoveryEmail(recoveryEmail, link);
+  // fire-and-forget: don't await, so timing doesn't leak that a recovery email exists
+  if (!error && link) void sendRecoveryEmail(recoveryEmail, link);
 
   return ok();
 }

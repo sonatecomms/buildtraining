@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
-import { loginKind, toLoginId } from "@/lib/login";
+import { isReservedEmail, loginKind, toLoginId } from "@/lib/login";
 import { APP_VERSION } from "@/lib/version";
 import { Button, Card } from "./ui";
 
@@ -50,7 +50,6 @@ export default function AuthGate() {
       // real inbox → Supabase's own reset link
       const { error } = await sb.auth.resetPasswordForEmail(id);
       if (error) {
-        console.warn(error.message);
         setError(friendlyAuthError(error.message));
       } else {
         setNotice("If that email has an account, a reset link is on its way.");
@@ -79,14 +78,21 @@ export default function AuthGate() {
     setError(null);
     setNotice(null);
 
-    // accept an email OR a phone number (phone → synthetic email, no SMS needed)
+    // a real email must not live in our synthetic namespaces (it would collide
+    // with a phone/username login on the same auth account)
+    if (email.includes("@") && isReservedEmail(email)) {
+      setBusy(false);
+      setError("That email address can’t be used here. Try a different one.");
+      return;
+    }
+
+    // accept email, phone, or username (phone/username → synthetic email, no SMS)
     const id = toLoginId(email);
 
     if (mode === "signin") {
       const { error } = await sb.auth.signInWithPassword({ email: id, password });
       setBusy(false);
       if (error) {
-        console.warn(error.message);
         setError(friendlyAuthError(error.message));
       }
       // success → SessionProvider's auth listener takes over
@@ -102,7 +108,6 @@ export default function AuthGate() {
     });
     setBusy(false);
     if (error) {
-      console.warn(error.message);
       if (error.message.toLowerCase().includes("already")) setMode("signin");
       setError(friendlyAuthError(error.message));
     } else if (data.session) {
@@ -113,7 +118,8 @@ export default function AuthGate() {
     }
   };
 
-  const canSubmit = email.trim().length > 3 && password.length >= 6;
+  // allow short usernames (≥3) and short emails; the real check is in submit()
+  const canSubmit = email.trim().length > 0 && password.length >= 6;
 
   return (
     <div className="min-h-[70vh] flex flex-col items-center justify-center px-6 text-center">
@@ -125,20 +131,27 @@ export default function AuthGate() {
       </p>
 
       <Card className="p-5 w-full max-w-sm text-left">
-        <label className="text-xs text-slate font-medium">Email, phone, or username</label>
+        <label htmlFor="auth-id" className="text-xs text-slate font-medium">Email, phone, or username</label>
         <input
+          id="auth-id"
           autoFocus
           type="text"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          autoComplete="username"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="email, phone, or username"
           className="w-full mt-1.5 mb-3 rounded-xl bg-field border border-line px-3 py-2.5 text-sm outline-none focus:border-forest"
         />
 
-        <label className="text-xs text-slate font-medium">Password</label>
+        <label htmlFor="auth-pw" className="text-xs text-slate font-medium">Password</label>
         <div className="relative mt-1.5">
           <input
+            id="auth-pw"
             type={showPw ? "text" : "password"}
+            autoComplete={mode === "signin" ? "current-password" : "new-password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && canSubmit && submit()}
@@ -156,7 +169,7 @@ export default function AuthGate() {
         </div>
 
         {mode === "signin" && (
-          <button onClick={resetPassword} className="text-sky text-xs mt-2 font-medium">
+          <button onClick={resetPassword} className="text-sky-dark text-xs mt-2 font-medium py-2 px-1 -mx-1 inline-flex items-center min-h-[32px]">
             Forgot password?
           </button>
         )}
@@ -168,16 +181,22 @@ export default function AuthGate() {
           {busy ? (mode === "signin" ? "Signing in…" : "Creating…") : mode === "signin" ? "Sign in" : "Create account"}
         </Button>
 
-        <button
-          onClick={() => {
-            setMode((m) => (m === "signin" ? "signup" : "signin"));
-            setError(null);
-            setNotice(null);
-          }}
-          className="w-full text-center text-sky text-sm mt-3"
-        >
-          {mode === "signin" ? "No account yet? Create one" : "Have an account? Sign in"}
-        </button>
+        {isAthlete ? (
+          <p className="w-full text-center text-slate text-xs mt-3">
+            Your coach sets up your account. Tap “Forgot password?” if you can’t get in.
+          </p>
+        ) : (
+          <button
+            onClick={() => {
+              setMode((m) => (m === "signin" ? "signup" : "signin"));
+              setError(null);
+              setNotice(null);
+            }}
+            className="w-full text-center text-sky-dark text-sm mt-3 underline-offset-2 hover:underline"
+          >
+            {mode === "signin" ? "No account yet? Create one" : "Have an account? Sign in"}
+          </button>
+        )}
       </Card>
       <p className="text-[10px] text-slate mt-4">build {APP_VERSION}</p>
     </div>

@@ -32,7 +32,6 @@ export default function AthleteOnboard({
     });
     setBusy(false);
     if (error) {
-      console.warn(error.message);
       setError("Couldn't save your password. Please try again.");
     } else onDone();
   };

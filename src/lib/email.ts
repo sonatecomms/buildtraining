@@ -1,3 +1,5 @@
+import "server-only";
+
 // Server-only transactional email via Resend. Used to send a password-reset link
 // to an athlete's RECOVERY email (a different address than their login), which
 // Supabase's built-in auth emails can't target. Reads RESEND_API_KEY and an

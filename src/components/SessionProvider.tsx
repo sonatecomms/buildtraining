@@ -147,8 +147,8 @@ export default function SessionProvider({ children }: { children: React.ReactNod
         }
         // start live sync once
         if (!realtimeOff.current) realtimeOff.current = startRealtime(scheduleRepull);
-      } catch (e) {
-        console.warn("sign-in sync failed", e);
+      } catch {
+        console.warn("sign-in sync failed");
         resolvedFor.current = null; // allow a retry on the next auth event
       }
       setStatus("ready");
@@ -157,6 +157,10 @@ export default function SessionProvider({ children }: { children: React.ReactNod
     sb.auth.getSession().then(({ data }) => handle(data.session));
     const { data: sub } = sb.auth.onAuthStateChange((event, s) => {
       if (event === "PASSWORD_RECOVERY") setRecovering(true);
+      // A confirmed email change fires USER_UPDATED with the SAME user id, which the
+      // resolvedFor guard would otherwise skip — force a re-resolve so sync-login
+      // reconciles the client row to the new email.
+      if (event === "USER_UPDATED") resolvedFor.current = null;
       handle(s);
     });
     return () => {

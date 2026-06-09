@@ -480,7 +480,7 @@ function RunnerItem({
           </span>
         </button>
         {youtubeId(url) && (
-          <button onClick={() => setPlaying(true)} className="text-sky text-xs shrink-0" aria-label="Play demo">▶</button>
+          <button onClick={() => setPlaying(true)} className="text-sky-dark text-xs shrink-0" aria-label="Play demo">▶</button>
         )}
         {isExtra && onRemove ? (
           <button onClick={onRemove} className="text-slate hover:text-brick text-sm shrink-0" aria-label="Remove">✕</button>

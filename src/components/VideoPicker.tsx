@@ -51,7 +51,7 @@ export default function VideoPicker({
             href={searchUrl}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-1.5 text-sm text-sky font-medium"
+            className="inline-flex items-center gap-1.5 text-sm text-sky-dark font-medium"
           >
             🔎 Find “{movementName}” on YouTube
           </a>

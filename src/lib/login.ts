@@ -29,7 +29,16 @@ export function canonicalUsername(input: string): string {
 
 export function isValidUsername(input: string): boolean {
   const h = canonicalUsername(input);
+  // require a letter so an all-digit handle can never collide with a phone login,
+  // and ≥3 chars so it can't be mistaken for noise
   return h.length >= 3 && /[a-z]/.test(h);
+}
+
+// A real email must not live in our synthetic namespaces, or it would collide with
+// a phone/username login (same auth account). Reject these at input boundaries.
+export function isReservedEmail(input: string): boolean {
+  const v = input.trim().toLowerCase();
+  return v.endsWith(PHONE_DOMAIN) || v.endsWith(USERNAME_DOMAIN);
 }
 
 // Does this raw input look like a phone number (only phone-ish chars, ≥7 digits)?
@@ -79,6 +88,15 @@ export function formatPhone(input: string): string {
   if (d.length === 10) return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
   if (d.length === 11 && d[0] === "1") return `+1 (${d.slice(1, 4)}) ${d.slice(4, 7)}-${d.slice(7)}`;
   return input;
+}
+
+// Server-side guard: is this a well-formed login id of one of the three kinds?
+// (clients send an already-canonicalized id; the server must not trust it blindly.)
+export function isWellFormedLoginId(id?: string): boolean {
+  const v = (id || "").trim().toLowerCase();
+  if (isUsernameLogin(v)) return isValidUsername(usernameHandle(v));
+  if (isPhoneLogin(v)) return /^\d{7,15}$/.test(phoneDigits(v));
+  return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v); // real email
 }
 
 // Human-readable form of a login id, whatever its kind.

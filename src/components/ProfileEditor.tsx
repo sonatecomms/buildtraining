@@ -9,6 +9,8 @@ import { ALL_GOALS, GOALS } from "@/lib/goals";
 import {
   displayLogin,
   formatPhone,
+  isReservedEmail,
+  isValidUsername,
   type LoginKind,
   loginKind,
   phoneDigits,
@@ -19,6 +21,15 @@ import { APP_VERSION } from "@/lib/version";
 import { Avatar, Button, Card } from "./ui";
 import AvatarCropper from "./AvatarCropper";
 import BiometricLockCard from "./BiometricLockCard";
+
+// A readable but non-guessable temp password (no ambiguous chars). ~58 bits —
+// far stronger than the old predictable `build####` (9k-guess) pattern.
+function genTempPassword(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+  const arr = new Uint32Array(10);
+  crypto.getRandomValues(arr);
+  return Array.from(arr, (n) => chars[n % chars.length]).join("");
+}
 
 export default function ProfileEditor({
   client,
@@ -33,10 +44,13 @@ export default function ProfileEditor({
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
   const [loginMode, setLoginMode] = useState<LoginKind>(loginKind(client.athleteEmail));
+  const [loginErr, setLoginErr] = useState<string | null>(null);
   const [resetting, setResetting] = useState(false);
   const [resetDone, setResetDone] = useState<{ login: string; pw: string } | null>(null);
   const [resetErr, setResetErr] = useState<string | null>(null);
-  const [credPw, setCredPw] = useState(() => `build${Math.floor(1000 + Math.random() * 9000)}`);
+  const [credPw, setCredPw] = useState(genTempPassword);
+  const [showCredPw, setShowCredPw] = useState(false);
+  const [credCopied, setCredCopied] = useState(false);
   // The login id already on file when the editor opened, so a username change can
   // rename that same auth account instead of orphaning it.
   const originalEmail = useRef(client.athleteEmail);
@@ -134,6 +148,7 @@ export default function ProfileEditor({
         originalEmail.current = saved;
         const shown = displayLogin(saved);
         setResetDone({ login: shown, pw });
+        setCredPw(genTempPassword()); // fresh one for the next athlete
       }
     } catch {
       setResetErr("Network error — try again.");
@@ -177,7 +192,7 @@ export default function ProfileEditor({
 
       {/* avatar + name */}
       <Card className="p-4 flex items-center gap-4">
-        <button onClick={() => fileRef.current?.click()} className="relative">
+        <button onClick={() => fileRef.current?.click()} aria-label="Change profile photo" className="relative">
           <Avatar src={client.avatarUrl} name={client.name} size={72} />
           <span className="absolute -bottom-1 -right-1 bg-forest text-bone rounded-full w-6 h-6 flex items-center justify-center text-xs border-2 border-surface">
             📷
@@ -309,8 +324,11 @@ export default function ProfileEditor({
           {(["email", "phone", "username"] as const).map((m) => (
             <button
               key={m}
-              onClick={() => setLoginMode(m)}
-              className={`flex-1 rounded-lg py-1.5 text-xs font-semibold capitalize ${
+              onClick={() => {
+                setLoginMode(m);
+                setLoginErr(null);
+              }}
+              className={`flex-1 rounded-lg py-2.5 text-xs font-semibold capitalize focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest/40 ${
                 loginMode === m ? "bg-forest text-bone" : "bg-field text-slate border border-line"
               }`}
             >
@@ -323,11 +341,15 @@ export default function ProfileEditor({
             key="email"
             type="email"
             defaultValue={loginKind(client.athleteEmail) === "email" ? (client.athleteEmail ?? "") : ""}
-            onBlur={(e) =>
-              updateClient(client.id, {
-                athleteEmail: e.target.value.trim() ? toLoginId(e.target.value, "email") : undefined,
-              })
-            }
+            onBlur={(e) => {
+              const v = e.target.value.trim();
+              if (v && isReservedEmail(v)) {
+                setLoginErr("That email address can’t be used here.");
+                return;
+              }
+              setLoginErr(null);
+              updateClient(client.id, { athleteEmail: v ? toLoginId(v, "email") : undefined });
+            }}
             placeholder="athlete@example.com"
             className="w-full rounded-xl bg-field border border-line px-3 py-2.5 text-sm outline-none focus:border-forest"
           />
@@ -350,15 +372,20 @@ export default function ProfileEditor({
             autoCapitalize="none"
             autoCorrect="off"
             defaultValue={usernameHandle(client.athleteEmail)}
-            onBlur={(e) =>
-              updateClient(client.id, {
-                athleteEmail: e.target.value.trim() ? toLoginId(e.target.value, "username") : undefined,
-              })
-            }
+            onBlur={(e) => {
+              const v = e.target.value.trim();
+              if (v && !isValidUsername(v)) {
+                setLoginErr("Username needs 3+ characters and at least one letter.");
+                return;
+              }
+              setLoginErr(null);
+              updateClient(client.id, { athleteEmail: v ? toLoginId(v, "username") : undefined });
+            }}
             placeholder="e.g. abbyr (3+ chars, a letter)"
             className="w-full rounded-xl bg-field border border-line px-3 py-2.5 text-sm outline-none focus:border-forest"
           />
         )}
+        {loginErr && <p className="text-brick text-[11px] mt-1.5" role="alert">{loginErr}</p>}
         <Button
           className="w-full mt-2"
           variant={copied ? "outline" : "primary"}
@@ -376,7 +403,14 @@ export default function ProfileEditor({
           <p className="text-[11px] text-slate mt-2">Add an email, phone, or username above to enable the invite.</p>
         )}
 
-        {client.athleteEmail && (
+        {client.athleteEmail && client.athleteEmail !== originalEmail.current && (
+          <p className="text-[11px] text-brick mt-2" role="alert">
+            You changed the login. This only updates your roster — use “Save login &amp; password” below to apply it to
+            their actual sign-in account, or they won’t be able to log in.
+          </p>
+        )}
+
+        {client.athleteEmail && loginKind(client.athleteEmail) !== "email" && (
           <div className="mt-3">
             <label className="text-[11px] text-slate font-medium">Recovery email (for password resets)</label>
             <input
@@ -388,11 +422,9 @@ export default function ProfileEditor({
               placeholder="backup@example.com"
               className="w-full mt-1 rounded-xl bg-field border border-line px-3 py-2 text-sm outline-none focus:border-forest"
             />
-            {loginKind(client.athleteEmail) !== "email" && (
-              <p className="text-[11px] text-slate mt-1">
-                Lets a phone/username athlete reset their own password without you.
-              </p>
-            )}
+            <p className="text-[11px] text-slate mt-1">
+              Lets this phone/username athlete reset their own password without you.
+            </p>
           </div>
         )}
 
@@ -404,26 +436,56 @@ export default function ProfileEditor({
               (no inbox to self-reset) or to fix a sign-in.
             </p>
             <label className="text-[11px] text-slate font-medium">Password</label>
-            <input
-              type="text"
-              value={credPw}
-              onChange={(e) => setCredPw(e.target.value)}
-              placeholder="At least 6 characters"
-              className="w-full mt-1 mb-2 rounded-xl bg-field border border-line px-3 py-2 text-sm outline-none focus:border-forest"
-            />
-            <Button
-              className="w-full"
-              variant="outline"
-              disabled={resetting}
-              onClick={saveLoginAndPassword}
-            >
+            <div className="relative mt-1 mb-2">
+              <input
+                type={showCredPw ? "text" : "password"}
+                value={credPw}
+                onChange={(e) => setCredPw(e.target.value)}
+                placeholder="At least 6 characters"
+                className="w-full rounded-xl bg-field border border-line px-3 py-2 pr-24 text-sm outline-none focus:border-forest"
+              />
+              <div className="absolute right-1 inset-y-0 flex items-center">
+                <button
+                  type="button"
+                  onClick={() => setShowCredPw((s) => !s)}
+                  className="px-2 text-[11px] text-slate font-medium"
+                  aria-label={showCredPw ? "Hide password" : "Show password"}
+                >
+                  {showCredPw ? "Hide" : "Show"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCredPw(genTempPassword())}
+                  className="px-2 text-[11px] text-sky-dark font-medium"
+                >
+                  New
+                </button>
+              </div>
+            </div>
+            <Button className="w-full" variant="outline" disabled={resetting} onClick={saveLoginAndPassword}>
               {resetting ? "Saving…" : "Save login & password"}
             </Button>
             {resetDone && (
-              <p className="text-[11px] text-ink mt-2">
-                Done — they sign in with <b>{resetDone.login}</b> and password <b>{resetDone.pw}</b>. Send it to
-                them; it works right away.
-              </p>
+              <div className="mt-2">
+                <p className="text-[11px] text-ink">
+                  Done — they sign in with <b>{resetDone.login}</b> and password <b>{resetDone.pw}</b>.
+                </p>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(`Login: ${resetDone.login}\nPassword: ${resetDone.pw}`);
+                      setCredCopied(true);
+                      setTimeout(() => setCredCopied(false), 2000);
+                    } catch {
+                      /* clipboard unavailable */
+                    }
+                  }}
+                  className="text-[11px] text-sky-dark font-medium mt-1"
+                >
+                  {credCopied ? "✓ Copied" : "Copy login + password"}
+                </button>
+              </div>
             )}
             {resetErr && <p className="text-[11px] text-brick mt-2">{resetErr}</p>}
           </div>

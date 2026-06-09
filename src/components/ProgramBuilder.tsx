@@ -600,7 +600,7 @@ function SortableBlock({
               </div>
             </div>
           ) : (
-            <button onClick={() => setGrouping(true)} className="text-xs text-sky font-semibold pl-1">
+            <button onClick={() => setGrouping(true)} className="text-xs text-sky-dark font-semibold pl-1">
               ⊕ group into superset
             </button>
           )}
