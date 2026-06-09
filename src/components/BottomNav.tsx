@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 const tabs = [
   { href: "/", label: "Clients", icon: "👥", match: (p: string) => p === "/" || p.startsWith("/clients") },
+  { href: "/numbers", label: "Numbers", icon: "🔢", match: (p: string) => p.startsWith("/numbers") },
   { href: "/exercises", label: "Library", icon: "📚", match: (p: string) => p.startsWith("/exercises") },
   { href: "/install", label: "Settings", icon: "⚙️", match: (p: string) => p.startsWith("/install") },
 ];
@@ -14,7 +15,7 @@ export default function BottomNav() {
   return (
     <nav className="fixed bottom-0 inset-x-0 z-40 border-t border-line bg-surface/95 backdrop-blur">
       <div
-        className="max-w-2xl mx-auto grid grid-cols-3"
+        className="max-w-2xl mx-auto grid grid-cols-4"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         {tabs.map((t) => {

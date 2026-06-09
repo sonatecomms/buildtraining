@@ -17,12 +17,16 @@ const fmt = (n: number) => {
 const roundTo = (n: number, step: number) => Math.round(n / step) * step;
 
 export default function PercentageCalculator({
-  max,
+  max: maxProp,
   onMaxChange,
 }: {
-  max: string;
-  onMaxChange: (v: string) => void;
-}) {
+  // controlled by the parent (athlete PRs, for tap-to-load) or standalone (coach)
+  max?: string;
+  onMaxChange?: (v: string) => void;
+} = {}) {
+  const [internalMax, setInternalMax] = useState("");
+  const max = maxProp ?? internalMax;
+  const setMax = onMaxChange ?? setInternalMax;
   const [round, setRound] = useState(5);
   const [customPct, setCustomPct] = useState("");
 
@@ -44,7 +48,7 @@ export default function PercentageCalculator({
         type="number"
         inputMode="decimal"
         value={max}
-        onChange={(e) => onMaxChange(e.target.value)}
+        onChange={(e) => setMax(e.target.value)}
         placeholder="e.g. 225"
         className="w-full mt-1 mb-3 rounded-xl bg-field border border-line px-3 py-2.5 text-sm outline-none focus:border-forest"
       />

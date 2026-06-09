@@ -29,7 +29,7 @@ type View = "train" | "timer" | "prs" | "library" | "settings";
 const NAV: { id: View; label: string; icon: string }[] = [
   { id: "train", label: "Train", icon: "🔥" },
   { id: "timer", label: "Timer", icon: "⏱️" },
-  { id: "prs", label: "PRs", icon: "🏆" },
+  { id: "prs", label: "Numbers", icon: "🔢" },
   { id: "library", label: "Library", icon: "📚" },
   { id: "settings", label: "Settings", icon: "⚙️" },
 ];
