@@ -100,6 +100,11 @@ export default function TrainView({ client }: { client: Client }) {
     });
   };
 
+  // AMRAP/EMOM rounds are a block-level result, keyed by the block id (not an
+  // item, so it stays out of the per-movement checklist / progress bar).
+  const setRounds = (blockId: string, n: number) =>
+    setResults((r) => ({ ...r, [blockId]: { ...r[blockId], itemId: blockId, rounds: Math.max(0, n) } }));
+
   const totalItems = running
     ? running.blocks.reduce((n, b) => n + (b.type === "note" ? 0 : b.items.length), 0) + extras.length
     : 0;
@@ -113,7 +118,7 @@ export default function TrainView({ client }: { client: Client }) {
     extras.forEach((x) => (exOf[x.id] = x.exerciseId));
     // keep only results that actually carry data
     const entries = Object.values(results)
-      .filter((e) => e.weight || e.setsDone || e.repsDone || e.duration || e.distance || e.intensity || e.feeling || e.note)
+      .filter((e) => e.weight || e.setsDone || e.repsDone || e.duration || e.distance || e.intensity || e.feeling || e.note || e.rounds)
       .map((e) => ({ ...e, exerciseId: exOf[e.itemId], extra: extraIds.has(e.itemId) || undefined }));
     const allDone = totalItems > 0 && done.size >= totalItems;
     logWorkout({
@@ -160,12 +165,28 @@ export default function TrainView({ client }: { client: Client }) {
               </Card>
             );
           }
+          const mode = block.type === "circuit" ? block.mode ?? "rounds" : undefined;
+          const timed = mode === "amrap" || mode === "emom";
           return (
             <Card key={block.id} className="p-3">
               {block.type !== "single" && (
                 <Pill tone={block.type === "circuit" ? "brick" : "sky"} className="mb-2">
-                  {BLOCK_LABEL[block.type]}{block.type === "circuit" && block.rounds ? ` ×${block.rounds}` : ""}
+                  {timed
+                    ? mode === "amrap"
+                      ? `AMRAP ${formatClock(block.capSec ?? 1200)}`
+                      : `EMOM ${formatClock(block.intervalSec ?? 60)} ×${block.rounds ?? 10}`
+                    : `${BLOCK_LABEL[block.type]}${block.type === "circuit" && block.rounds ? ` ×${block.rounds}` : ""}`}
                 </Pill>
+              )}
+              {timed && (
+                <ConditioningTimer
+                  mode={mode === "amrap" ? "amrap" : "emom"}
+                  capSec={block.capSec ?? 1200}
+                  intervalSec={block.intervalSec ?? 60}
+                  totalRounds={block.rounds ?? 10}
+                  rounds={results[block.id]?.rounds ?? 0}
+                  onRounds={(n) => setRounds(block.id, n)}
+                />
               )}
               <div className="space-y-2">
                 {block.items.map((it) => (
@@ -647,6 +668,140 @@ function RestTimer({
             aria-label="Dismiss timer"
           >
             ✕
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// In-runner conditioning timer for AMRAP / EMOM circuits, with a rounds-completed
+// counter the athlete taps. AMRAP counts down from the cap; EMOM chimes every
+// interval, auto-advances the minute, and bumps the round count as it goes.
+function ConditioningTimer({
+  mode,
+  capSec,
+  intervalSec,
+  totalRounds,
+  rounds,
+  onRounds,
+}: {
+  mode: "amrap" | "emom";
+  capSec: number;
+  intervalSec: number;
+  totalRounds: number;
+  rounds: number;
+  onRounds: (n: number) => void;
+}) {
+  const total = mode === "amrap" ? capSec : intervalSec * totalRounds;
+  const [elapsed, setElapsed] = useState(0);
+  const [running, setRunning] = useState(false);
+  const roundsRef = useRef(rounds);
+  const onRoundsRef = useRef(onRounds);
+  const prevInterval = useRef(0);
+  const doneRef = useRef(false);
+  // keep the latest rounds / callback reachable from the interval without making
+  // them effect deps (which would tear down the timer on every tick)
+  useEffect(() => {
+    roundsRef.current = rounds;
+    onRoundsRef.current = onRounds;
+  });
+
+  useEffect(() => {
+    if (!running) return;
+    const id = setInterval(() => {
+      setElapsed((e) => {
+        const next = e + 1;
+        // EMOM: chime + auto-advance the round at each interval boundary
+        if (mode === "emom" && next < total) {
+          const iv = Math.floor(next / intervalSec);
+          if (iv > prevInterval.current) {
+            prevInterval.current = iv;
+            chime();
+            try {
+              navigator.vibrate?.(60);
+            } catch {}
+            onRoundsRef.current(Math.min(totalRounds, roundsRef.current + 1));
+          }
+        }
+        return next >= total ? total : next;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [running, mode, intervalSec, total, totalRounds]);
+
+  const finished = elapsed >= total;
+  useEffect(() => {
+    if (!finished || doneRef.current) return;
+    doneRef.current = true;
+    setRunning(false);
+    try {
+      navigator.vibrate?.([120, 60, 120]);
+    } catch {}
+    chime();
+  }, [finished]);
+
+  const reset = () => {
+    setElapsed(0);
+    setRunning(false);
+    prevInterval.current = 0;
+    doneRef.current = false;
+  };
+
+  const remaining = Math.max(0, total - elapsed);
+  const withinLeft = intervalSec - (elapsed % intervalSec || 0);
+  const minute = Math.min(totalRounds, Math.floor(elapsed / intervalSec) + 1);
+  const pct = total > 0 ? Math.min(100, (elapsed / total) * 100) : 0;
+  const big = mode === "amrap" ? remaining : finished ? 0 : withinLeft;
+
+  return (
+    <div className="rounded-xl border border-line bg-field/50 p-3 mb-3">
+      <div className="h-1 rounded-full bg-line overflow-hidden mb-2.5">
+        <div
+          className={`h-full transition-all duration-1000 ease-linear ${finished ? "bg-green" : "bg-forest"}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <div className="flex items-center gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] uppercase tracking-wide text-slate">
+            {finished
+              ? "Time!"
+              : mode === "amrap"
+                ? "AMRAP — time left"
+                : `EMOM — minute ${minute} of ${totalRounds}`}
+          </p>
+          <p className="font-display text-3xl tabular-nums leading-none mt-0.5">{formatClock(big)}</p>
+          {mode === "emom" && !finished && (
+            <p className="text-[11px] text-slate mt-0.5">{formatClock(remaining)} total left</p>
+          )}
+        </div>
+        <button
+          onClick={() => (finished ? reset() : setRunning((r) => !r))}
+          className="w-12 h-12 rounded-full bg-forest text-bone grid place-items-center text-lg shrink-0"
+          aria-label={finished ? "Reset" : running ? "Pause" : "Start"}
+        >
+          {finished ? "↻" : running ? "⏸" : "▶"}
+        </button>
+      </div>
+
+      <div className="flex items-center justify-between mt-3 pt-3 border-t border-line">
+        <span className="text-xs font-medium text-slate">Rounds done</span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => onRounds(Math.max(0, rounds - 1))}
+            className="w-8 h-8 rounded-full bg-surface border border-line grid place-items-center text-lg leading-none"
+            aria-label="One fewer round"
+          >
+            −
+          </button>
+          <span className="font-display text-2xl tabular-nums w-8 text-center">{rounds}</span>
+          <button
+            onClick={() => onRounds(rounds + 1)}
+            className="w-8 h-8 rounded-full bg-forest text-bone grid place-items-center text-lg leading-none"
+            aria-label="One more round"
+          >
+            +
           </button>
         </div>
       </div>

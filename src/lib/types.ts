@@ -61,6 +61,10 @@ export interface Exercise {
 
 export type BlockType = "single" | "superset" | "circuit" | "note";
 
+// How a circuit is run: a fixed number of rounds, an AMRAP (as many rounds as
+// possible inside a time cap), or an EMOM (one round every interval).
+export type BlockMode = "rounds" | "amrap" | "emom";
+
 export interface ProgramItem {
   id: string;
   exerciseId: string;
@@ -76,7 +80,10 @@ export interface ProgramItem {
 export interface Block {
   id: string;
   type: BlockType;
-  rounds?: number; // for circuits
+  rounds?: number; // circuits: number of rounds (also the interval count for EMOM)
+  mode?: BlockMode; // circuits only; undefined == "rounds"
+  capSec?: number; // AMRAP: total time cap, in seconds
+  intervalSec?: number; // EMOM: seconds per round (default 60)
   items: ProgramItem[];
   // for "note" blocks: free text with no movements (warm-ups, metcons, cues)
   title?: string;
@@ -132,6 +139,7 @@ export interface ItemResult {
   feeling?: number; // 1 (rough) … 5 (great)
   note?: string;
   extra?: boolean; // athlete-added movement, beyond what the coach programmed
+  rounds?: number; // AMRAP/EMOM block result: rounds the athlete completed (keyed by block id)
 }
 
 export interface WorkoutLog {

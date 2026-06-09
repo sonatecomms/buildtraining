@@ -37,7 +37,8 @@ export default function ExerciseList({
   // "Recent" is only useful when picking (program builder / logging an extra)
   const showRecent = !!onPick && recents.length > 0;
   const [q, setQ] = useState("");
-  const [cat, setCat] = useState<Filter>(showRecent ? "Recent" : "All");
+  // Default to the full library; Recent stays available as a tab but isn't pre-selected.
+  const [cat, setCat] = useState<Filter>("All");
   const [playing, setPlaying] = useState<{ url: string; name: string } | null>(null);
 
   const cats: Filter[] = showRecent ? ["Recent", ...CATEGORIES] : CATEGORIES;

@@ -32,6 +32,7 @@ import {
   renameWorkout,
   reorderBlocks,
   setBlockRounds,
+  setBlockConfig,
   setBlockText,
   setBlockType,
   setItemVideo,
@@ -40,7 +41,7 @@ import {
   useExercises,
   useProgramForClient,
 } from "@/lib/store";
-import type { Block, BlockType, Exercise, ProgramItem, Workout } from "@/lib/types";
+import type { Block, BlockMode, BlockType, Exercise, ProgramItem, Workout } from "@/lib/types";
 import { pushRecent } from "@/lib/recents";
 import { youtubeId, youtubeThumb } from "@/lib/youtube";
 import { DOW_LONG, todayDow } from "@/lib/week";
@@ -59,6 +60,12 @@ const BLOCK_LABEL: Record<BlockType, string> = {
 const BLOCK_DESC: Record<"superset" | "circuit", string> = {
   superset: "Alternate these movements back-to-back, rest only after the pair.",
   circuit: "Move through every station in order, then repeat for the rounds set.",
+};
+
+const MODE_LABEL: Record<BlockMode, string> = {
+  rounds: "Rounds",
+  amrap: "AMRAP",
+  emom: "EMOM",
 };
 
 function exMap(list: Exercise[]) {
@@ -472,19 +479,74 @@ function SortableBlock({
               {BLOCK_LABEL[t]}
             </button>
           ))}
-          {block.type === "circuit" && (
-            <span className="flex items-center gap-1 text-[11px] text-slate ml-1">
-              ×
-              <input
-                type="number"
-                min={1}
-                value={block.rounds ?? 3}
-                onChange={(e) => setBlockRounds(clientId, workoutId, block.id, Math.max(1, +e.target.value))}
-                className="w-10 rounded bg-surface border border-line px-1 py-0.5 text-center outline-none"
-              />
-              rounds
-            </span>
-          )}
+          {block.type === "circuit" && (() => {
+            const mode = block.mode ?? "rounds";
+            return (
+              <div className="flex items-center gap-1.5 ml-1 flex-wrap text-[11px]">
+                {(["rounds", "amrap", "emom"] as BlockMode[]).map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => setBlockConfig(clientId, workoutId, block.id, { mode: m })}
+                    className={`font-semibold rounded-full px-2 py-0.5 ${
+                      mode === m ? "bg-sky text-bone" : "bg-surface text-slate border border-line"
+                    }`}
+                  >
+                    {MODE_LABEL[m]}
+                  </button>
+                ))}
+                {mode === "rounds" && (
+                  <span className="flex items-center gap-1 text-slate">
+                    ×
+                    <input
+                      type="number"
+                      min={1}
+                      value={block.rounds ?? 3}
+                      onChange={(e) => setBlockRounds(clientId, workoutId, block.id, Math.max(1, +e.target.value))}
+                      className="w-10 rounded bg-surface border border-line px-1 py-0.5 text-center outline-none"
+                    />
+                    rounds
+                  </span>
+                )}
+                {mode === "amrap" && (
+                  <span className="flex items-center gap-1 text-slate">
+                    cap
+                    <input
+                      type="number"
+                      min={1}
+                      value={Math.round((block.capSec ?? 1200) / 60)}
+                      onChange={(e) => setBlockConfig(clientId, workoutId, block.id, { capSec: Math.max(1, +e.target.value) * 60 })}
+                      className="w-10 rounded bg-surface border border-line px-1 py-0.5 text-center outline-none"
+                    />
+                    min
+                  </span>
+                )}
+                {mode === "emom" && (
+                  <span className="flex items-center gap-1 text-slate">
+                    every
+                    <select
+                      value={block.intervalSec ?? 60}
+                      onChange={(e) => setBlockConfig(clientId, workoutId, block.id, { intervalSec: +e.target.value })}
+                      className="rounded bg-surface border border-line px-1 py-0.5 outline-none"
+                    >
+                      <option value={30}>30s</option>
+                      <option value={60}>60s</option>
+                      <option value={90}>90s</option>
+                      <option value={120}>2 min</option>
+                    </select>
+                    ×
+                    <input
+                      type="number"
+                      min={1}
+                      value={block.rounds ?? 10}
+                      onChange={(e) => setBlockConfig(clientId, workoutId, block.id, { rounds: Math.max(1, +e.target.value) })}
+                      className="w-10 rounded bg-surface border border-line px-1 py-0.5 text-center outline-none"
+                    />
+                    rounds
+                  </span>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </div>
 

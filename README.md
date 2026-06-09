@@ -1,4 +1,4 @@
-# Forge — Fitness Coaching App
+# BUILD: Fitness Coaching App
 
 A TrueCoach-style PWA: coaches build training programs, athletes log workouts and
 chase streaks. Installable to the iOS/Android home screen.

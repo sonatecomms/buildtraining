@@ -324,9 +324,40 @@ export function setBlockType(
     ...w,
     blocks: w.blocks.map((b) =>
       b.id === blockId
-        ? { ...b, type, rounds: type === "circuit" ? b.rounds ?? 3 : undefined }
+        ? {
+            ...b,
+            type,
+            // keep circuit timing fields only while it stays a circuit
+            rounds: type === "circuit" ? b.rounds ?? 3 : undefined,
+            mode: type === "circuit" ? b.mode : undefined,
+            capSec: type === "circuit" ? b.capSec : undefined,
+            intervalSec: type === "circuit" ? b.intervalSec : undefined,
+          }
         : b,
     ),
+  }));
+}
+
+// Set a circuit's mode (rounds / AMRAP / EMOM) and its timing fields, seeding
+// sensible defaults the first time each mode is chosen.
+export function setBlockConfig(
+  clientId: string,
+  workoutId: string,
+  blockId: string,
+  patch: Partial<Pick<Block, "mode" | "capSec" | "intervalSec" | "rounds">>,
+) {
+  mutateWorkout(clientId, workoutId, (w) => ({
+    ...w,
+    blocks: w.blocks.map((b) => {
+      if (b.id !== blockId) return b;
+      const next = { ...b, ...patch };
+      if (patch.mode === "amrap" && next.capSec == null) next.capSec = 1200; // 20:00
+      if (patch.mode === "emom") {
+        if (next.intervalSec == null) next.intervalSec = 60;
+        if (next.rounds == null) next.rounds = 10;
+      }
+      return next;
+    }),
   }));
 }
 
