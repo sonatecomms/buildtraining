@@ -11,7 +11,13 @@ interface BIPEvent extends Event {
   userChoice: Promise<{ outcome: string }>;
 }
 
-export default function InstallGuide() {
+export default function InstallGuide({
+  title = "Install BUILD",
+  subtitle = "Run it like a native app",
+}: {
+  title?: string;
+  subtitle?: string;
+} = {}) {
   const [deferred, setDeferred] = useState<BIPEvent | null>(null);
   const [installed, setInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
@@ -37,7 +43,7 @@ export default function InstallGuide() {
 
   return (
     <div>
-      <PageHeader title="Install BUILD" subtitle="Run it like a native app" />
+      <PageHeader title={title} subtitle={subtitle} />
 
       {installed ? (
         <Card className="p-6 text-center">

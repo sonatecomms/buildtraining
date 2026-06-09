@@ -11,7 +11,7 @@ export default function InstallPage() {
 
   return (
     <div>
-      <InstallGuide />
+      <InstallGuide title="Settings" subtitle="Install BUILD, manage your account" />
 
       <div className="mt-8 border-t border-line pt-4 space-y-3">
         <div className="flex items-center justify-between">
