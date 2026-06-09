@@ -28,8 +28,12 @@ export default function ProfileEditor({
     isPhoneLogin(client.athleteEmail) ? "phone" : "email",
   );
   const [resetting, setResetting] = useState(false);
-  const [resetPw, setResetPw] = useState<string | null>(null);
+  const [resetDone, setResetDone] = useState<{ login: string; pw: string } | null>(null);
   const [resetErr, setResetErr] = useState<string | null>(null);
+  const [credPw, setCredPw] = useState(() => `build${Math.floor(1000 + Math.random() * 9000)}`);
+  // The login id already on file when the editor opened, so a username change can
+  // rename that same auth account instead of orphaning it.
+  const originalEmail = useRef(client.athleteEmail);
 
   // While editing the profile, pause live re-pulls so a background update can't
   // revert an in-progress change; flush + resume on leave.
@@ -77,16 +81,29 @@ export default function ProfileEditor({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Set a fresh password for this athlete and show it so the coach can relay it.
-  // Essential for phone logins, which have no inbox and so can't self-reset.
-  // The privileged work happens server-side; we only pass the coach's token.
-  const resetAthletePassword = async () => {
+  // Apply the chosen username (the email/phone field above) AND set a password in
+  // one step. Server-side this reconciles the real auth account — creating it,
+  // renaming it, or just repasswording it — so phone athletes (no inbox, can't
+  // self-reset) and renamed logins always end up able to sign in.
+  const saveLoginAndPassword = async () => {
     const sb = getSupabase();
-    if (!sb || !client.athleteEmail) return;
-    setResetting(true);
+    if (!sb) return;
+    // commit whatever's in the focused username field first, then read it back
+    (document.activeElement as HTMLElement | null)?.blur();
     setResetErr(null);
-    setResetPw(null);
-    const pw = `build${Math.floor(1000 + Math.random() * 9000)}`;
+    setResetDone(null);
+    await new Promise((r) => setTimeout(r, 60));
+    const loginId = getClient(client.id)?.athleteEmail;
+    if (!loginId) {
+      setResetErr("Add an email or phone above first.");
+      return;
+    }
+    const pw = credPw.trim();
+    if (pw.length < 6) {
+      setResetErr("Password must be at least 6 characters.");
+      return;
+    }
+    setResetting(true);
     try {
       const { data } = await sb.auth.getSession();
       const token = data.session?.access_token;
@@ -97,11 +114,23 @@ export default function ProfileEditor({
       const res = await fetch("/api/athlete/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ clientId: client.id, newPassword: pw }),
+        body: JSON.stringify({
+          clientId: client.id,
+          loginId,
+          previousLoginId: originalEmail.current,
+          newPassword: pw,
+        }),
       });
       const json = await res.json();
-      if (!res.ok) setResetErr(json.error || "Couldn't reset the password.");
-      else setResetPw(pw);
+      if (!res.ok) {
+        setResetErr(json.error || "Couldn't save the login.");
+      } else {
+        const saved = (json.loginId as string) || loginId;
+        if (saved !== client.athleteEmail) updateClient(client.id, { athleteEmail: saved });
+        originalEmail.current = saved;
+        const shown = isPhoneLogin(saved) ? formatPhone(phoneDigits(saved)) : saved;
+        setResetDone({ login: shown, pw });
+      }
     } catch {
       setResetErr("Network error — try again.");
     } finally {
@@ -331,21 +360,31 @@ export default function ProfileEditor({
 
         {client.athleteEmail && (
           <div className="mt-3 pt-3 border-t border-line">
-            <button
-              onClick={resetAthletePassword}
+            <p className="text-xs text-slate font-medium">Or set their login &amp; password directly</p>
+            <p className="text-[11px] text-slate mt-0.5 mb-2">
+              Applies the email/phone above and this password to their account — use it for phone logins
+              (no inbox to self-reset) or to fix a sign-in.
+            </p>
+            <label className="text-[11px] text-slate font-medium">Password</label>
+            <input
+              type="text"
+              value={credPw}
+              onChange={(e) => setCredPw(e.target.value)}
+              placeholder="At least 6 characters"
+              className="w-full mt-1 mb-2 rounded-xl bg-field border border-line px-3 py-2 text-sm outline-none focus:border-forest"
+            />
+            <Button
+              className="w-full"
+              variant="outline"
               disabled={resetting}
-              className="text-sky text-xs font-medium disabled:opacity-50"
+              onClick={saveLoginAndPassword}
             >
-              {resetting ? "Setting new password…" : "Reset this athlete's password"}
-            </button>
-            {isPhoneLogin(client.athleteEmail) && !resetPw && (
-              <p className="text-[11px] text-slate mt-1">
-                Phone logins can&apos;t reset their own password — set a new one here and share it.
-              </p>
-            )}
-            {resetPw && (
+              {resetting ? "Saving…" : "Save login & password"}
+            </Button>
+            {resetDone && (
               <p className="text-[11px] text-ink mt-2">
-                New password: <b>{resetPw}</b> — send it to them, they can sign in right away.
+                Done — they sign in with <b>{resetDone.login}</b> and password <b>{resetDone.pw}</b>. Send it to
+                them; it works right away.
               </p>
             )}
             {resetErr && <p className="text-[11px] text-brick mt-2">{resetErr}</p>}
