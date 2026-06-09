@@ -18,6 +18,7 @@ import { buildSeedDB } from "@/lib/seed";
 import AuthGate from "./AuthGate";
 import AthleteApp from "./AthleteApp";
 import BiometricLock from "./BiometricLock";
+import PasswordRecovery from "./PasswordRecovery";
 
 type Status = "loading" | "signedout" | "ready";
 type Role = "coach" | "athlete";
@@ -36,6 +37,7 @@ export default function SessionProvider({ children }: { children: React.ReactNod
   const [status, setStatus] = useState<Status>(cloud ? "loading" : "ready");
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<Role>("coach");
+  const [recovering, setRecovering] = useState(false);
   const [athleteClientId, setAthleteClientId] = useState<string | null>(null);
   const resolvedFor = useRef<string | null>(null);
   const roleRef = useRef<Role>("coach");
@@ -65,6 +67,21 @@ export default function SessionProvider({ children }: { children: React.ReactNod
     const scheduleRepull = () => {
       if (repullTimer.current) clearTimeout(repullTimer.current);
       repullTimer.current = setTimeout(() => void repull(), 800);
+    };
+
+    // After a confirmed native email change, ask the server to point the athlete's
+    // client row at their new email. Idempotent; returns true if it changed anything.
+    const syncLogin = async (accessToken?: string): Promise<boolean> => {
+      if (!accessToken) return false;
+      try {
+        const res = await fetch("/api/athlete/sync-login", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        return Boolean((await res.json())?.synced);
+      } catch {
+        return false;
+      }
     };
 
     const handle = async (s: Session | null) => {
@@ -101,7 +118,12 @@ export default function SessionProvider({ children }: { children: React.ReactNod
           roleRef.current = "coach";
           setRole("coach");
         } else {
-          const ath = email ? await pullAthlete(email) : null;
+          let ath = email ? await pullAthlete(email) : null;
+          // Just confirmed a native email change? Reconcile their client row to
+          // the new email, then re-pull so role detection lands on athlete.
+          if (!ath && email && (await syncLogin(s.access_token))) {
+            ath = await pullAthlete(email);
+          }
           if (ath) {
             setAthleteRole(ath.coachId, ath.clientId);
             hydrate(ath.db);
@@ -133,7 +155,10 @@ export default function SessionProvider({ children }: { children: React.ReactNod
     };
 
     sb.auth.getSession().then(({ data }) => handle(data.session));
-    const { data: sub } = sb.auth.onAuthStateChange((_event, s) => handle(s));
+    const { data: sub } = sb.auth.onAuthStateChange((event, s) => {
+      if (event === "PASSWORD_RECOVERY") setRecovering(true);
+      handle(s);
+    });
     return () => {
       sub.subscription.unsubscribe();
       realtimeOff.current?.();
@@ -149,6 +174,10 @@ export default function SessionProvider({ children }: { children: React.ReactNod
         <img src="/logo-icon.png?v=10" alt="BUILD" className="w-24 h-24 animate-lift" />
       </div>
     );
+  }
+
+  if (cloud && recovering && session) {
+    return <PasswordRecovery onDone={() => setRecovering(false)} />;
   }
 
   if (cloud && status === "signedout") {

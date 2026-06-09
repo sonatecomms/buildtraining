@@ -121,7 +121,8 @@ export interface Client {
   goals: GoalType[];
   intendedFrequency: number; // sessions / week
   notes?: string;
-  athleteEmail?: string; // login email so the athlete can sign in to their own view
+  athleteEmail?: string; // login id (email, or synthetic phone/username) for athlete sign-in
+  recoveryEmail?: string; // real address for password recovery when login is phone/username
   archived?: boolean; // hidden from the active roster, recoverable
   createdAt: string;
 }

@@ -60,6 +60,7 @@ const clientRow = (c: Client) => ({
   intended_frequency: c.intendedFrequency,
   notes: c.notes ?? null,
   athlete_email: c.athleteEmail ?? null,
+  recovery_email: c.recoveryEmail ?? null,
   archived: c.archived ?? false,
   created_at: c.createdAt,
 });
@@ -73,6 +74,7 @@ const rowClient = (r: Record<string, unknown>): Client => ({
   intendedFrequency: (r.intended_frequency as number) ?? 3,
   notes: (r.notes as string) ?? undefined,
   athleteEmail: (r.athlete_email as string) ?? undefined,
+  recoveryEmail: (r.recovery_email as string) ?? undefined,
   archived: (r.archived as boolean) ?? false,
   createdAt: r.created_at as string,
 });

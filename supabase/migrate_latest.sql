@@ -4,6 +4,7 @@
 
 -- columns the app now writes
 alter table clients add column if not exists athlete_email text;
+alter table clients add column if not exists recovery_email text;
 alter table clients add column if not exists archived boolean not null default false;
 alter table workout_logs add column if not exists entries jsonb not null default '[]'::jsonb;
 
@@ -15,11 +16,14 @@ create policy "athlete updates own client" on clients
 
 -- Lock sensitive columns against athlete writes: RLS is row-level, so without
 -- this an athlete updating their own row could change coach_id / athlete_email /
--- archived (reassign or hijack the record). When the updater isn't the owning
--- coach, force those columns back to their previous values.
+-- archived (reassign or hijack the record). When the updater is an AUTHENTICATED
+-- non-owner (an athlete), force those columns back. The `auth.uid() is not null`
+-- guard lets the trusted SERVER (service-role, uid null) write them — that's how
+-- coach- and athlete-initiated login changes update athlete_email; athletes still
+-- can't touch these columns directly.
 create or replace function build_protect_client_cols() returns trigger as $$
 begin
-  if auth.uid() is distinct from old.coach_id then
+  if auth.uid() is not null and auth.uid() is distinct from old.coach_id then
     new.coach_id := old.coach_id;
     new.athlete_email := old.athlete_email;
     new.id := old.id;

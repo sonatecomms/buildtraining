@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
-import { toLoginId } from "@/lib/login";
+import { loginKind, toLoginId } from "@/lib/login";
 import { APP_VERSION } from "@/lib/version";
 import { Button, Card } from "./ui";
 
@@ -37,27 +37,39 @@ export default function AuthGate() {
     setIsAthlete(new URLSearchParams(window.location.search).get("role") === "athlete");
   }, []);
 
-  const looksLikePhone = email.trim().length > 0 && !email.includes("@");
-
   const resetPassword = async () => {
     const sb = getSupabase();
     setNotice(null);
     setError(null);
     if (!sb || !email.trim()) {
-      setError("Enter your email above first, then tap “Forgot password?”.");
+      setError("Enter your email, phone, or username above first, then tap “Forgot password?”.");
       return;
     }
-    if (looksLikePhone) {
-      setNotice("Signing in by phone? Only your coach can reset your password — ask them to resend your invite.");
+    const id = toLoginId(email);
+    if (loginKind(id) === "email") {
+      // real inbox → Supabase's own reset link
+      const { error } = await sb.auth.resetPasswordForEmail(id);
+      if (error) {
+        console.warn(error.message);
+        setError(friendlyAuthError(error.message));
+      } else {
+        setNotice("If that email has an account, a reset link is on its way.");
+      }
       return;
     }
-    const { error } = await sb.auth.resetPasswordForEmail(toLoginId(email));
-    if (error) {
-      console.warn(error.message);
-      setError(friendlyAuthError(error.message));
-    } else {
-      setNotice("If that email has an account, a reset link is on its way.");
+    // phone / username → no inbox; send the reset link to their recovery email
+    try {
+      await fetch("/api/athlete/recover", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ loginId: id }),
+      });
+    } catch {
+      /* generic response either way — don't reveal whether an account exists */
     }
+    setNotice(
+      "If a recovery email is on file for that login, a reset link is on its way to it. No recovery email? Ask your coach to reset you.",
+    );
   };
 
   const submit = async () => {
@@ -113,13 +125,13 @@ export default function AuthGate() {
       </p>
 
       <Card className="p-5 w-full max-w-sm text-left">
-        <label className="text-xs text-slate font-medium">Email or phone</label>
+        <label className="text-xs text-slate font-medium">Email, phone, or username</label>
         <input
           autoFocus
           type="text"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@example.com or (555) 123-4567"
+          placeholder="email, phone, or username"
           className="w-full mt-1.5 mb-3 rounded-xl bg-field border border-line px-3 py-2.5 text-sm outline-none focus:border-forest"
         />
 
@@ -147,9 +159,6 @@ export default function AuthGate() {
           <button onClick={resetPassword} className="text-sky text-xs mt-2 font-medium">
             Forgot password?
           </button>
-        )}
-        {looksLikePhone && (
-          <p className="text-[11px] text-slate mt-1">Signing in by phone? Only your coach can reset your password.</p>
         )}
 
         {error && <p className="text-brick text-xs mt-2">{error}</p>}

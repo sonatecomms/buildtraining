@@ -1,10 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { useClient, useExercises, logWorkout, uid } from "@/lib/store";
-import { flushPush } from "@/lib/sync";
+import { useClient, useExercises, logWorkout, uid, updateClient, getClient } from "@/lib/store";
+import { flushPush, saveClientNow } from "@/lib/sync";
 import { isoDate } from "@/lib/week";
 import { formatClock } from "@/lib/rest";
+import {
+  displayLogin,
+  isValidUsername,
+  type LoginKind,
+  loginKind,
+  toLoginId,
+} from "@/lib/login";
+import type { Client } from "@/lib/types";
 import { getSupabase } from "@/lib/supabase";
 import { Avatar, Button, Card } from "./ui";
 import TrainView from "./TrainView";
@@ -113,6 +121,7 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
             <h1 className="text-2xl font-bold mb-4">Profile & settings</h1>
             <ProfileEditor client={client} coachView={false} />
             <div className="mt-4 space-y-3">
+              <YourLoginCard client={client} />
               <ChangePasswordCard />
               <Button variant="outline" className="w-full" onClick={() => getSupabase()?.auth.signOut()}>
                 Sign out
@@ -142,6 +151,125 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
         </div>
       </nav>
     </div>
+  );
+}
+
+function YourLoginCard({ client }: { client: Client }) {
+  const current = client.athleteEmail;
+  const [kind, setKind] = useState<LoginKind>(loginKind(current));
+  const [value, setValue] = useState("");
+  const [pw, setPw] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  // Recovery email persists on the client row immediately (athlete may set it so
+  // they can recover a phone/username login later).
+  const saveRecovery = async (raw: string) => {
+    const recoveryEmail = raw.trim().toLowerCase() || undefined;
+    updateClient(client.id, { recoveryEmail });
+    const latest = getClient(client.id);
+    if (latest) await saveClientNow(latest);
+  };
+
+  const valid =
+    pw.length >= 6 &&
+    value.trim().length > 0 &&
+    (kind === "email" ? value.includes("@") : kind === "phone" ? value.replace(/\D/g, "").length >= 7 : isValidUsername(value));
+
+  const submit = async () => {
+    const sb = getSupabase();
+    if (!sb || !valid) return;
+    setBusy(true);
+    setMsg(null);
+    setErr(null);
+    const newLoginId = toLoginId(value, kind);
+    try {
+      const { data } = await sb.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) {
+        setErr("Your session expired — sign in again.");
+        return;
+      }
+      const res = await fetch("/api/athlete/change-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ newLoginId, currentPassword: pw }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setErr(json.error || "Couldn't change your login.");
+      } else if (json.pending) {
+        setMsg(`Almost done — tap the confirm link we sent to ${value.trim()} to finish the switch.`);
+        setValue("");
+        setPw("");
+      } else {
+        setMsg(`Done. Next time, sign in with ${displayLogin(newLoginId)}.`);
+        setValue("");
+        setPw("");
+      }
+    } catch {
+      setErr("Network error — try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card className="p-4">
+      <h3 className="font-semibold mb-1">Your login</h3>
+      <p className="text-xs text-slate mb-3">
+        You sign in with <b className="text-ink">{displayLogin(current)}</b>.
+      </p>
+
+      <p className="text-[11px] text-slate font-medium mb-1">Recovery email (so you can reset your own password)</p>
+      <input
+        type="email"
+        defaultValue={client.recoveryEmail ?? ""}
+        onBlur={(e) => saveRecovery(e.target.value)}
+        placeholder="backup@example.com"
+        className="w-full mb-4 rounded-xl bg-field border border-line px-3 py-2.5 text-sm outline-none focus:border-forest"
+      />
+
+      <p className="text-[11px] text-slate font-medium mb-1">Change how you sign in</p>
+      <div className="flex gap-1 mb-2">
+        {(["email", "phone", "username"] as const).map((m) => (
+          <button
+            key={m}
+            onClick={() => setKind(m)}
+            className={`flex-1 rounded-lg py-1.5 text-xs font-semibold capitalize ${
+              kind === m ? "bg-forest text-bone" : "bg-field text-slate border border-line"
+            }`}
+          >
+            {m}
+          </button>
+        ))}
+      </div>
+      <input
+        type={kind === "phone" ? "tel" : "text"}
+        autoCapitalize="none"
+        autoCorrect="off"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder={kind === "email" ? "new@example.com" : kind === "phone" ? "(555) 123-4567" : "e.g. abbyr"}
+        className="w-full mb-2 rounded-xl bg-field border border-line px-3 py-2.5 text-sm outline-none focus:border-forest"
+      />
+      <input
+        type="password"
+        value={pw}
+        onChange={(e) => setPw(e.target.value)}
+        placeholder="Your current password"
+        className="w-full rounded-xl bg-field border border-line px-3 py-2.5 text-sm outline-none focus:border-forest"
+      />
+      {kind === "email" && (
+        <p className="text-[11px] text-slate mt-1">We&apos;ll email a confirm link before the change takes effect.</p>
+      )}
+      {msg && <p className="text-xs text-forest mt-2">{msg}</p>}
+      {err && <p className="text-xs text-brick mt-2">{err}</p>}
+      <Button className="w-full mt-3" onClick={submit} disabled={busy || !valid}>
+        {busy ? "Saving…" : "Change login"}
+      </Button>
+    </Card>
   );
 }
 

@@ -6,7 +6,15 @@ import { deleteClient, getClient, setClientArchived, updateClient } from "@/lib/
 import { flushPush, saveClientNow, setRealtimePaused } from "@/lib/sync";
 import type { Client, GoalType } from "@/lib/types";
 import { ALL_GOALS, GOALS } from "@/lib/goals";
-import { formatPhone, isPhoneLogin, phoneDigits, toLoginId } from "@/lib/login";
+import {
+  displayLogin,
+  formatPhone,
+  type LoginKind,
+  loginKind,
+  phoneDigits,
+  toLoginId,
+  usernameHandle,
+} from "@/lib/login";
 import { APP_VERSION } from "@/lib/version";
 import { Avatar, Button, Card } from "./ui";
 import AvatarCropper from "./AvatarCropper";
@@ -24,9 +32,7 @@ export default function ProfileEditor({
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
-  const [loginMode, setLoginMode] = useState<"email" | "phone">(
-    isPhoneLogin(client.athleteEmail) ? "phone" : "email",
-  );
+  const [loginMode, setLoginMode] = useState<LoginKind>(loginKind(client.athleteEmail));
   const [resetting, setResetting] = useState(false);
   const [resetDone, setResetDone] = useState<{ login: string; pw: string } | null>(null);
   const [resetErr, setResetErr] = useState<string | null>(null);
@@ -62,9 +68,7 @@ export default function ProfileEditor({
   const copyInvite = async () => {
     if (!client.athleteEmail) return;
     const origin = window.location.origin;
-    const who = isPhoneLogin(client.athleteEmail)
-      ? formatPhone(phoneDigits(client.athleteEmail))
-      : client.athleteEmail;
+    const who = displayLogin(client.athleteEmail);
     const msg =
       `You're invited to train on BUILD 💪\n\n` +
       `1. Open ${origin}/?role=athlete\n` +
@@ -128,7 +132,7 @@ export default function ProfileEditor({
         const saved = (json.loginId as string) || loginId;
         if (saved !== client.athleteEmail) updateClient(client.id, { athleteEmail: saved });
         originalEmail.current = saved;
-        const shown = isPhoneLogin(saved) ? formatPhone(phoneDigits(saved)) : saved;
+        const shown = displayLogin(saved);
         setResetDone({ login: shown, pw });
       }
     } catch {
@@ -299,18 +303,18 @@ export default function ProfileEditor({
       <Card className="p-4">
         <h3 className="font-semibold mb-1">Athlete login</h3>
         <p className="text-xs text-slate mb-2">
-          Set an email or phone so the athlete can sign in and see only their own training.
+          Pick how the athlete signs in — email, phone, or a username — so they see only their own training.
         </p>
         <div className="flex gap-1 mb-2">
-          {(["email", "phone"] as const).map((m) => (
+          {(["email", "phone", "username"] as const).map((m) => (
             <button
               key={m}
               onClick={() => setLoginMode(m)}
-              className={`flex-1 rounded-lg py-1.5 text-xs font-semibold ${
+              className={`flex-1 rounded-lg py-1.5 text-xs font-semibold capitalize ${
                 loginMode === m ? "bg-forest text-bone" : "bg-field text-slate border border-line"
               }`}
             >
-              {m === "email" ? "Email" : "Phone"}
+              {m}
             </button>
           ))}
         </div>
@@ -318,21 +322,40 @@ export default function ProfileEditor({
           <input
             key="email"
             type="email"
-            defaultValue={isPhoneLogin(client.athleteEmail) ? "" : (client.athleteEmail ?? "")}
-            onBlur={(e) => updateClient(client.id, { athleteEmail: e.target.value.trim().toLowerCase() || undefined })}
+            defaultValue={loginKind(client.athleteEmail) === "email" ? (client.athleteEmail ?? "") : ""}
+            onBlur={(e) =>
+              updateClient(client.id, {
+                athleteEmail: e.target.value.trim() ? toLoginId(e.target.value, "email") : undefined,
+              })
+            }
             placeholder="athlete@example.com"
             className="w-full rounded-xl bg-field border border-line px-3 py-2.5 text-sm outline-none focus:border-forest"
           />
-        ) : (
+        ) : loginMode === "phone" ? (
           <input
             key="phone"
             type="tel"
             defaultValue={formatPhone(phoneDigits(client.athleteEmail))}
             onBlur={(e) => {
               const digits = e.target.value.replace(/\D/g, "");
-              updateClient(client.id, { athleteEmail: digits ? toLoginId(digits) : undefined });
+              updateClient(client.id, { athleteEmail: digits ? toLoginId(digits, "phone") : undefined });
             }}
             placeholder="(555) 123-4567"
+            className="w-full rounded-xl bg-field border border-line px-3 py-2.5 text-sm outline-none focus:border-forest"
+          />
+        ) : (
+          <input
+            key="username"
+            type="text"
+            autoCapitalize="none"
+            autoCorrect="off"
+            defaultValue={usernameHandle(client.athleteEmail)}
+            onBlur={(e) =>
+              updateClient(client.id, {
+                athleteEmail: e.target.value.trim() ? toLoginId(e.target.value, "username") : undefined,
+              })
+            }
+            placeholder="e.g. abbyr (3+ chars, a letter)"
             className="w-full rounded-xl bg-field border border-line px-3 py-2.5 text-sm outline-none focus:border-forest"
           />
         )}
@@ -346,16 +369,31 @@ export default function ProfileEditor({
         </Button>
         {client.athleteEmail ? (
           <p className="text-[11px] text-slate mt-2">
-            They sign in with{" "}
-            <b className="text-ink">
-              {isPhoneLogin(client.athleteEmail)
-                ? formatPhone(phoneDigits(client.athleteEmail))
-                : client.athleteEmail}
-            </b>{" "}
-            and a password they create when they sign up.
+            They sign in with <b className="text-ink">{displayLogin(client.athleteEmail)}</b> and a password
+            they create when they sign up.
           </p>
         ) : (
-          <p className="text-[11px] text-slate mt-2">Add an email or phone above to enable the invite.</p>
+          <p className="text-[11px] text-slate mt-2">Add an email, phone, or username above to enable the invite.</p>
+        )}
+
+        {client.athleteEmail && (
+          <div className="mt-3">
+            <label className="text-[11px] text-slate font-medium">Recovery email (for password resets)</label>
+            <input
+              type="email"
+              defaultValue={client.recoveryEmail ?? ""}
+              onBlur={(e) =>
+                updateClient(client.id, { recoveryEmail: e.target.value.trim().toLowerCase() || undefined })
+              }
+              placeholder="backup@example.com"
+              className="w-full mt-1 rounded-xl bg-field border border-line px-3 py-2 text-sm outline-none focus:border-forest"
+            />
+            {loginKind(client.athleteEmail) !== "email" && (
+              <p className="text-[11px] text-slate mt-1">
+                Lets a phone/username athlete reset their own password without you.
+              </p>
+            )}
+          </div>
         )}
 
         {client.athleteEmail && (
