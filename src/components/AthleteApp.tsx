@@ -24,14 +24,14 @@ import ExerciseList from "./ExerciseList";
 import IntervalTimer, { type TimerResult } from "./IntervalTimer";
 import { useSession } from "./SessionProvider";
 
-type View = "train" | "timer" | "prs" | "library" | "install" | "profile";
+type View = "train" | "timer" | "prs" | "library" | "settings";
 
 const NAV: { id: View; label: string; icon: string }[] = [
   { id: "train", label: "Train", icon: "🔥" },
   { id: "timer", label: "Timer", icon: "⏱️" },
   { id: "prs", label: "PRs", icon: "🏆" },
   { id: "library", label: "Library", icon: "📚" },
-  { id: "install", label: "Settings", icon: "⚙️" },
+  { id: "settings", label: "Settings", icon: "⚙️" },
 ];
 
 export default function AthleteApp({ clientId }: { clientId: string }) {
@@ -70,12 +70,12 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
           </button>
           <div className="flex-1" />
           <button
-            onClick={() => setView(view === "profile" ? "train" : "profile")}
-            className={`flex items-center gap-2 ${view === "profile" ? "text-forest" : ""}`}
+            onClick={() => setView(view === "settings" ? "train" : "settings")}
+            className={`flex items-center gap-2 ${view === "settings" ? "text-forest" : ""}`}
             aria-label="Profile & settings"
           >
             {client && <Avatar src={client.avatarUrl} name={client.name} size={32} />}
-            <span className="text-xs font-medium">{view === "profile" ? "Done" : "Profile"}</span>
+            <span className="text-xs font-medium">{view === "settings" ? "Done" : "Profile"}</span>
           </button>
         </div>
       </header>
@@ -114,8 +114,6 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
             <h1 className="text-2xl font-bold mb-4">Movement library</h1>
             <ExerciseList exercises={exercises} />
           </>
-        ) : view === "install" ? (
-          <InstallGuide />
         ) : (
           <>
             <h1 className="text-2xl font-bold mb-4">Profile & settings</h1>
@@ -123,10 +121,17 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
             <div className="mt-4 space-y-3">
               <YourLoginCard client={client} />
               <ChangePasswordCard />
-              <Button variant="outline" className="w-full" onClick={() => getSupabase()?.auth.signOut()}>
-                Sign out
-              </Button>
             </div>
+            <div className="mt-6 pt-6 border-t border-line">
+              <InstallGuide />
+            </div>
+            <Button
+              variant="outline"
+              className="w-full mt-6"
+              onClick={() => getSupabase()?.auth.signOut()}
+            >
+              Sign out
+            </Button>
           </>
         )}
       </main>
