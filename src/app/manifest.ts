@@ -13,8 +13,10 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: "#19350C",
     orientation: "portrait",
     icons: [
-      { src: "/icon-app.png?v=10", sizes: "1024x1024", type: "image/png", purpose: "any" },
-      { src: "/icon-app.png?v=10", sizes: "1024x1024", type: "image/png", purpose: "maskable" },
+      { src: "/icon-192.png?v=11", sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: "/icon-512.png?v=11", sizes: "512x512", type: "image/png", purpose: "any" },
+      // padded so OS masking (circle/squircle) never clips the mark
+      { src: "/icon-maskable-512.png?v=11", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
   };
 }
