@@ -1,13 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import { useExercises, useLogsForClient } from "@/lib/store";
 import type { Client } from "@/lib/types";
 import { relativeDate, daysAgo } from "@/lib/week";
 import { Card, EmptyState, Pill } from "./ui";
+import PercentageCalculator from "./PercentageCalculator";
 
 // Personal records from the athlete's logged weights: the heaviest load recorded
 // per movement (parsed from the free-text weight field), with reps and date.
 export default function PRsView({ client }: { client: Client }) {
+  const [max, setMax] = useState("");
   const logs = useLogsForClient(client.id);
   const exercises = useExercises();
   const exById = Object.fromEntries(exercises.map((e) => [e.id, e]));
@@ -36,38 +39,55 @@ export default function PRsView({ client }: { client: Client }) {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-1">Personal records</h1>
-      <p className="text-slate text-sm mb-4">Your heaviest logged load per movement — newest first.</p>
+      <h1 className="text-2xl font-bold mb-3">Maxes &amp; %</h1>
 
-      {prs.length === 0 ? (
-        <EmptyState
-          icon="🏆"
-          title="No PRs yet"
-          hint="Log a weight on your movements during a workout and your bests show up here."
-        />
-      ) : (
-        <div className="space-y-2">
-          {prs.map((p) => {
-            const fresh = daysAgo(p.date) <= 7;
-            return (
-              <Card key={p.exId} className={`p-3 flex items-center gap-3 ${fresh ? "border-green/50" : ""}`}>
-                <span className="text-xl">🏆</span>
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-sm truncate">
-                    {exById[p.exId].name}
-                    {fresh && <Pill tone="green" className="ml-2 align-middle">New</Pill>}
-                  </p>
-                  <p className="text-xs text-slate">{relativeDate(p.date)}{p.reps ? ` · ${p.reps} reps` : ""}</p>
-                </div>
-                <div className="text-right shrink-0">
-                  <span className="text-lg font-bold text-forest">{p.weight}</span>
-                  <span className="text-xs text-slate"> lbs</span>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+      <PercentageCalculator max={max} onMaxChange={setMax} />
+
+      <div className="mt-6">
+        <h2 className="text-lg font-bold mb-1">Personal records</h2>
+        <p className="text-slate text-sm mb-3">
+          Your heaviest logged load per movement{prs.length ? " — tap one to load it into the calculator." : "."}
+        </p>
+
+        {prs.length === 0 ? (
+          <EmptyState
+            icon="🏆"
+            title="No PRs yet"
+            hint="Log a weight on your movements during a workout and your bests show up here."
+          />
+        ) : (
+          <div className="space-y-2">
+            {prs.map((p) => {
+              const fresh = daysAgo(p.date) <= 7;
+              return (
+                <Card
+                  key={p.exId}
+                  onClick={() => {
+                    setMax(String(p.weight));
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  className={`p-3 flex items-center gap-3 cursor-pointer active:scale-[0.99] transition-transform ${
+                    fresh ? "border-green/50" : ""
+                  }`}
+                >
+                  <span className="text-xl">🏆</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-sm truncate">
+                      {exById[p.exId].name}
+                      {fresh && <Pill tone="green" className="ml-2 align-middle">New</Pill>}
+                    </p>
+                    <p className="text-xs text-slate">{relativeDate(p.date)}{p.reps ? ` · ${p.reps} reps` : ""}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <span className="text-lg font-bold text-forest">{p.weight}</span>
+                    <span className="text-xs text-slate"> lbs</span>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
