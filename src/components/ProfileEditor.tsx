@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { getSupabase } from "@/lib/supabase";
 import { deleteClient, getClient, setClientArchived, updateClient } from "@/lib/store";
 import { flushPush, saveClientNow, setRealtimePaused } from "@/lib/sync";
 import type { Client, GoalType } from "@/lib/types";
@@ -26,6 +27,9 @@ export default function ProfileEditor({
   const [loginMode, setLoginMode] = useState<"email" | "phone">(
     isPhoneLogin(client.athleteEmail) ? "phone" : "email",
   );
+  const [resetting, setResetting] = useState(false);
+  const [resetPw, setResetPw] = useState<string | null>(null);
+  const [resetErr, setResetErr] = useState<string | null>(null);
 
   // While editing the profile, pause live re-pulls so a background update can't
   // revert an in-progress change; flush + resume on leave.
@@ -71,6 +75,38 @@ export default function ProfileEditor({
     }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  // Set a fresh password for this athlete and show it so the coach can relay it.
+  // Essential for phone logins, which have no inbox and so can't self-reset.
+  // The privileged work happens server-side; we only pass the coach's token.
+  const resetAthletePassword = async () => {
+    const sb = getSupabase();
+    if (!sb || !client.athleteEmail) return;
+    setResetting(true);
+    setResetErr(null);
+    setResetPw(null);
+    const pw = `build${Math.floor(1000 + Math.random() * 9000)}`;
+    try {
+      const { data } = await sb.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) {
+        setResetErr("Your session expired — sign in again.");
+        return;
+      }
+      const res = await fetch("/api/athlete/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ clientId: client.id, newPassword: pw }),
+      });
+      const json = await res.json();
+      if (!res.ok) setResetErr(json.error || "Couldn't reset the password.");
+      else setResetPw(pw);
+    } catch {
+      setResetErr("Network error — try again.");
+    } finally {
+      setResetting(false);
+    }
   };
 
   const toggleGoal = (g: GoalType) => {
@@ -291,6 +327,29 @@ export default function ProfileEditor({
           </p>
         ) : (
           <p className="text-[11px] text-slate mt-2">Add an email or phone above to enable the invite.</p>
+        )}
+
+        {client.athleteEmail && (
+          <div className="mt-3 pt-3 border-t border-line">
+            <button
+              onClick={resetAthletePassword}
+              disabled={resetting}
+              className="text-sky text-xs font-medium disabled:opacity-50"
+            >
+              {resetting ? "Setting new password…" : "Reset this athlete's password"}
+            </button>
+            {isPhoneLogin(client.athleteEmail) && !resetPw && (
+              <p className="text-[11px] text-slate mt-1">
+                Phone logins can&apos;t reset their own password — set a new one here and share it.
+              </p>
+            )}
+            {resetPw && (
+              <p className="text-[11px] text-ink mt-2">
+                New password: <b>{resetPw}</b> — send it to them, they can sign in right away.
+              </p>
+            )}
+            {resetErr && <p className="text-[11px] text-brick mt-2">{resetErr}</p>}
+          </div>
         )}
       </Card>
 
