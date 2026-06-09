@@ -14,7 +14,7 @@ import {
 } from "@/lib/login";
 import type { Client } from "@/lib/types";
 import { getSupabase } from "@/lib/supabase";
-import { Avatar, Button, Card } from "./ui";
+import { Avatar, Button } from "./ui";
 import TrainView from "./TrainView";
 import ProfileEditor from "./ProfileEditor";
 import AthleteOnboard from "./AthleteOnboard";
@@ -116,15 +116,19 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
           </>
         ) : (
           <>
-            <h1 className="text-2xl font-bold mb-4">Profile & settings</h1>
-            <ProfileEditor client={client} coachView={false} />
-            <div className="mt-4 space-y-3">
+            <h1 className="text-2xl font-bold mb-2">Settings</h1>
+            <Collapsible title="Profile" icon="👤">
+              <ProfileEditor client={client} coachView={false} />
+            </Collapsible>
+            <Collapsible title="Your login" icon="🔑">
               <YourLoginCard client={client} />
+            </Collapsible>
+            <Collapsible title="Change password" icon="🔒">
               <ChangePasswordCard />
-            </div>
-            <div className="mt-6 pt-6 border-t border-line">
-              <InstallGuide />
-            </div>
+            </Collapsible>
+            <Collapsible title="Install app" icon="📲">
+              <InstallGuide embedded />
+            </Collapsible>
             <Button
               variant="outline"
               className="w-full mt-6"
@@ -155,6 +159,29 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
           })}
         </div>
       </nav>
+    </div>
+  );
+}
+
+// A tap-to-expand settings section. Header is a plain row (no card chrome) so the
+// revealed content — which may be cards (Profile, Install) — doesn't nest.
+function Collapsible({ title, icon, children }: { title: string; icon: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="border-b border-line">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="w-full flex items-center gap-3 py-4 text-left"
+      >
+        <span className="text-lg leading-none">{icon}</span>
+        <span className="font-semibold flex-1">{title}</span>
+        <span className={`text-slate transition-transform duration-200 ${open ? "rotate-180" : ""}`} aria-hidden>
+          ▾
+        </span>
+      </button>
+      {open && <div className="pb-4 space-y-3">{children}</div>}
     </div>
   );
 }
@@ -221,8 +248,7 @@ function YourLoginCard({ client }: { client: Client }) {
   };
 
   return (
-    <Card className="p-4">
-      <h3 className="font-semibold mb-1">Your login</h3>
+    <div>
       <p className="text-xs text-slate mb-3">
         You sign in with <b className="text-ink">{displayLogin(current)}</b>.
       </p>
@@ -274,7 +300,7 @@ function YourLoginCard({ client }: { client: Client }) {
       <Button className="w-full mt-3" onClick={submit} disabled={busy || !valid}>
         {busy ? "Saving…" : "Change login"}
       </Button>
-    </Card>
+    </div>
   );
 }
 
@@ -304,8 +330,7 @@ function ChangePasswordCard() {
   };
 
   return (
-    <Card className="p-4">
-      <h3 className="font-semibold mb-2">Change password</h3>
+    <div>
       <input
         type="password"
         value={pw}
@@ -324,6 +349,6 @@ function ChangePasswordCard() {
       <Button className="w-full mt-3" onClick={save} disabled={busy || !canSave}>
         {busy ? "Saving…" : "Update password"}
       </Button>
-    </Card>
+    </div>
   );
 }

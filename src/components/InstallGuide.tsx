@@ -14,9 +14,13 @@ interface BIPEvent extends Event {
 export default function InstallGuide({
   title = "Install BUILD",
   subtitle = "Run it like a native app",
+  embedded = false,
 }: {
   title?: string;
   subtitle?: string;
+  // When embedded in the athlete Settings accordion: drop the page header (the
+  // section row already titles it) and the Face ID card (Profile already shows it).
+  embedded?: boolean;
 } = {}) {
   const [deferred, setDeferred] = useState<BIPEvent | null>(null);
   const [installed, setInstalled] = useState(false);
@@ -43,7 +47,7 @@ export default function InstallGuide({
 
   return (
     <div>
-      <PageHeader title={title} subtitle={subtitle} />
+      {!embedded && <PageHeader title={title} subtitle={subtitle} />}
 
       {installed ? (
         <Card className="p-6 text-center">
@@ -81,8 +85,8 @@ export default function InstallGuide({
         </div>
       )}
 
-      {/* Face ID app lock */}
-      <BiometricLockCard className="mt-6" />
+      {/* Face ID app lock (the athlete Settings page shows this under Profile instead) */}
+      {!embedded && <BiometricLockCard className="mt-6" />}
     </div>
   );
 }
