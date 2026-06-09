@@ -31,7 +31,7 @@ const NAV: { id: View; label: string; icon: string }[] = [
   { id: "timer", label: "Timer", icon: "⏱️" },
   { id: "prs", label: "PRs", icon: "🏆" },
   { id: "library", label: "Library", icon: "📚" },
-  { id: "install", label: "Install", icon: "📲" },
+  { id: "install", label: "Settings", icon: "⚙️" },
 ];
 
 export default function AthleteApp({ clientId }: { clientId: string }) {
