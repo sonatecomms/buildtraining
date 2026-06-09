@@ -14,6 +14,7 @@ import type { Client, Exercise, ItemResult, ProgramItem, Workout, WorkoutLog } f
 import { youtubeId } from "@/lib/youtube";
 import { runPace, speedMph } from "@/lib/activities";
 import { parseRest, formatClock } from "@/lib/rest";
+import { chime } from "@/lib/sound";
 import { pushRecent } from "@/lib/recents";
 import { DOW_LONG, isoDate, todayDow, weekDates, relativeDate } from "@/lib/week";
 import { Button, Card, Pill, Skeleton } from "./ui";
@@ -809,28 +810,3 @@ function ConditioningTimer({
   );
 }
 
-// Short two-tone chime via WebAudio; silent if unsupported or blocked.
-function chime() {
-  try {
-    const Ctx =
-      window.AudioContext ??
-      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    if (!Ctx) return;
-    const ctx = new Ctx();
-    const now = ctx.currentTime;
-    [880, 1175].forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "sine";
-      osc.frequency.value = freq;
-      const start = now + i * 0.18;
-      gain.gain.setValueAtTime(0, start);
-      gain.gain.linearRampToValueAtTime(0.25, start + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.35);
-      osc.connect(gain).connect(ctx.destination);
-      osc.start(start);
-      osc.stop(start + 0.4);
-    });
-    setTimeout(() => void ctx.close(), 1200);
-  } catch {}
-}

@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useClient, useExercises } from "@/lib/store";
+import { useClient, useExercises, logWorkout, uid } from "@/lib/store";
+import { flushPush } from "@/lib/sync";
+import { isoDate } from "@/lib/week";
+import { formatClock } from "@/lib/rest";
 import { getSupabase } from "@/lib/supabase";
 import { Avatar, Button, Card } from "./ui";
 import TrainView from "./TrainView";
@@ -10,12 +13,14 @@ import AthleteOnboard from "./AthleteOnboard";
 import PRsView from "./PRsView";
 import InstallGuide from "./InstallGuide";
 import ExerciseList from "./ExerciseList";
+import IntervalTimer, { type TimerResult } from "./IntervalTimer";
 import { useSession } from "./SessionProvider";
 
-type View = "train" | "prs" | "library" | "install" | "profile";
+type View = "train" | "timer" | "prs" | "library" | "install" | "profile";
 
 const NAV: { id: View; label: string; icon: string }[] = [
   { id: "train", label: "Train", icon: "🔥" },
+  { id: "timer", label: "Timer", icon: "⏱️" },
   { id: "prs", label: "PRs", icon: "🏆" },
   { id: "library", label: "Library", icon: "📚" },
   { id: "install", label: "Install", icon: "📲" },
@@ -27,6 +32,20 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
   const { session } = useSession();
   const [justSet, setJustSet] = useState(false);
   const [view, setView] = useState<View>("train");
+
+  // Save a finished standalone timer as a "your own work" session in the log.
+  const logTimer = (r: TimerResult) => {
+    const id = uid("timer");
+    logWorkout({
+      clientId,
+      workoutId: id,
+      workoutName: r.name,
+      date: isoDate(),
+      completedItemIds: [],
+      entries: [{ itemId: id, rounds: r.rounds, note: r.seconds != null ? formatClock(r.seconds) : undefined }],
+    });
+    void flushPush();
+  };
 
   // First sign-in (coach set a temp password) → make them set their own.
   const needsPassword = Boolean(session && !session.user.user_metadata?.password_set);
@@ -75,6 +94,11 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
             </div>
             <TrainView client={client} />
           </>
+        ) : view === "timer" ? (
+          <>
+            <h1 className="text-2xl font-bold mb-4">Timer</h1>
+            <IntervalTimer onLog={logTimer} />
+          </>
         ) : view === "prs" ? (
           <PRsView client={client} />
         ) : view === "library" ? (
@@ -99,7 +123,7 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
       </main>
 
       <nav className="fixed bottom-0 inset-x-0 z-40 border-t border-line bg-surface/95 backdrop-blur">
-        <div className="max-w-2xl mx-auto grid grid-cols-4" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+        <div className="max-w-2xl mx-auto grid grid-cols-5" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
           {NAV.map((t) => {
             const active = view === t.id;
             return (
