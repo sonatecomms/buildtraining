@@ -8,10 +8,9 @@ import { markIntroDone } from "@/lib/intro";
 // and out of the screen (depth), not side to side. It emerges deep inside the
 // screen pitched away, swings down through the bottom and OUT toward the viewer
 // (looming forward at the apex), then comes top-down, pitches back to vertical
-// and seats flat into the B. At the moment it lands its iron fill cross-fades to
-// the background colour, so the bell BECOMES the negative-space cutout (no layer
-// swap), with an impact bounce + ring on contact. Then the overlay clears
-// (~1.9s total).
+// and seats flat into the B. The bell is the background colour, so it reads as
+// the negative-space cutout wherever it overlaps the B; an impact bounce + ring
+// fire on contact. Then the overlay clears (~1.9s total).
 //
 // The mark is an exact trace of the real logo art (see markPaths.ts). Plays once
 // per app launch (sessionStorage), skipped under reduced motion, tap to skip.
@@ -63,20 +62,19 @@ export function IntroSplash() {
             />
           </svg>
 
-          {/* the swinging kettlebell, on its own layer so it can travel on the
-              y-axis (up over the top) and z-axis (in from behind, then forward
-              toward the viewer) on top of the pendulum rotation. It flies as a
-              solid cast-iron bell (.build-kb cross-fades the fill from iron to
-              the background colour as it lands) so the forward loom reads, then
-              seats as the negative-space cutout. transform-origin = the grip,
-              as a % of the box. */}
+          {/* the swinging kettlebell, on its own layer so it can pitch in depth
+              (rotateX, into/out of the screen) and travel on the z-axis (in from
+              behind, then forward toward the viewer) about the grip pivot. It is
+              the background colour, so over the forest B it reads as the cutout;
+              a depth shadow on the layer gives it presence in flight.
+              transform-origin = the grip, as a % of the box. */}
           <svg
             viewBox={`0 0 ${MARK_W} ${MARK_H}`}
             className="build-splash-swing-layer build-kb-swing"
             aria-hidden
             style={{ transformOrigin: `${(KB_PIVOT.x / MARK_W) * 100}% ${(KB_PIVOT.y / MARK_H) * 100}%` }}
           >
-            <path className="build-kb" d={KETTLEBELL_PATH} fill="var(--background)" fillRule="evenodd" />
+            <path d={KETTLEBELL_PATH} fill="var(--background)" fillRule="evenodd" />
           </svg>
         </div>
       </div>
