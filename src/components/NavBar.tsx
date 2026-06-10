@@ -105,7 +105,10 @@ export function NavBar({
         {items.map((t, i) => {
           const active = t.id === activeId;
           const inner = (
-            <span className={popped ? "build-nav-pop" : undefined} style={popped ? { animationDelay: `${i * 0.1}s` } : undefined}>
+            <span
+              className={`build-nav-stack${popped ? " build-nav-pop" : ""}`}
+              style={popped ? { animationDelay: `${i * 0.1}s` } : undefined}
+            >
               <span className="build-nav-ico">
                 <span aria-hidden>{t.icon}</span>
               </span>

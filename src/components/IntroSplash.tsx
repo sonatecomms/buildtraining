@@ -56,21 +56,14 @@ export function IntroSplash() {
               stroke="var(--color-forest)"
               strokeWidth={5}
             />
-
-            {/* the bone cutout: hidden until impact, then punches in to scale,
-                making it look like the swinging bell knocked the hole through */}
-            <path
-              className="build-kb-cut"
-              d={KETTLEBELL_PATH}
-              fill="var(--background)"
-              fillRule="evenodd"
-            />
           </svg>
 
           {/* the swinging kettlebell, on its own layer so it can travel on the
               y-axis (drops down) and z-axis (swings in from behind, in depth)
-              on top of the pendulum rotation — then fades out as the cutout
-              reveals. transform-origin = the grip, as a % of the box. */}
+              on top of the pendulum rotation, then SETTLES and holds — a bone
+              shape over the forest B reads as the cutout, so the last frame of
+              the swing IS the finished mark (no separate static layer swapped
+              in). transform-origin = the grip, as a % of the box. */}
           <svg
             viewBox={`0 0 ${MARK_W} ${MARK_H}`}
             className="build-splash-swing-layer build-kb-swing"
