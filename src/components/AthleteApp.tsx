@@ -177,7 +177,7 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
 // The greeting emoji rotates per login and truly animates via Noto Animated
 // Emoji (Lottie) — the wink actually closes an eye. It renders as the Lottie
 // from the start (resting at frame 0, no static native glyph shown first), then
-// plays once 2 seconds after the launch splash clears. The glyph + CSS motion
+// plays once 1 second after the launch splash clears. The glyph + CSS motion
 // is only a fallback if the Lottie can't load (e.g. offline).
 function GreetingEmoji() {
   const [g] = useState(nextGreeting);
@@ -204,7 +204,7 @@ function GreetingEmoji() {
       armed = true;
       animTimer = setTimeout(() => {
         if (!cancelled) setPlay(true);
-      }, 2000);
+      }, 1000);
     };
     if (isIntroDone()) arm();
     const cue = () => arm();
