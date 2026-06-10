@@ -1,7 +1,8 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useClient, useExercises, logWorkout, uid, updateClient, getClient } from "@/lib/store";
+import { isIntroDone } from "@/lib/intro";
 import { flushPush, saveClientNow } from "@/lib/sync";
 import { isoDate } from "@/lib/week";
 import { formatClock } from "@/lib/rest";
@@ -117,7 +118,9 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
         ) : view === "train" ? (
           <>
             <div className="mb-4">
-              <h1 className="text-2xl font-bold leading-tight">Hi, {client.name.split(" ")[0]} 👋</h1>
+              <h1 className="text-2xl font-bold leading-tight">
+                Hi, {client.name.split(" ")[0]} <WavingHand />
+              </h1>
               <p className="text-slate text-sm">Let&apos;s get after it.</p>
             </div>
             <TrainView client={client} />
@@ -162,6 +165,35 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
 
       <NavBar items={NAV} activeId={view} onSelect={(id) => setView(id as View)} />
     </div>
+  );
+}
+
+// The greeting hand gives a friendly wave 2 seconds after the launch splash has
+// cleared (so it lands once the screen has settled, not during the intro).
+function WavingHand() {
+  const [wave, setWave] = useState(false);
+  useEffect(() => {
+    let armed = false;
+    let waveTimer: ReturnType<typeof setTimeout>;
+    const arm = () => {
+      if (armed) return;
+      armed = true;
+      waveTimer = setTimeout(() => setWave(true), 2000);
+    };
+    if (isIntroDone()) arm();
+    const cue = () => arm();
+    window.addEventListener("build:intro-done", cue);
+    const fallback = setTimeout(arm, 2600); // in case the cue was missed
+    return () => {
+      window.removeEventListener("build:intro-done", cue);
+      clearTimeout(waveTimer);
+      clearTimeout(fallback);
+    };
+  }, []);
+  return (
+    <span className={wave ? "build-wave" : "build-wave-rest"} aria-hidden>
+      👋
+    </span>
   );
 }
 

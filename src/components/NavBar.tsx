@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { isIntroDone } from "@/lib/intro";
 
 // useLayoutEffect on the client (measure before paint), useEffect on the server.
 const useIso = typeof window !== "undefined" ? useLayoutEffect : useEffect;
@@ -37,7 +38,9 @@ export function NavBar({
   const tabRefs = useRef<Record<string, HTMLElement | null>>({});
   const [ind, setInd] = useState<Rect | null>(null);
   const [animate, setAnimate] = useState(false);
-  const [popped, setPopped] = useState(false);
+  // already-true if the splash finished before this nav mounted (session
+  // revisit) so the tabs pop in on mount instead of waiting on a missed cue
+  const [popped, setPopped] = useState(() => isIntroDone());
 
   // Track the active tab's box so the highlighter can slide to it.
   useIso(() => {
@@ -65,9 +68,11 @@ export function NavBar({
     }
   }, [ind, animate]);
 
-  // Pop the icons to size when the intro splash clears (or immediately if it was
-  // skipped). A fallback timer covers the case where the cue never fires.
+  // The tabs stay hidden until they pop in as the splash clears. (If the splash
+  // had already finished at mount, `popped` started true above.) Otherwise wait
+  // for the cue, with a fallback in case it never fires.
   useEffect(() => {
+    if (popped) return;
     const cue = () => setPopped(true);
     window.addEventListener("build:intro-done", cue);
     const fallback = window.setTimeout(cue, 2600);
@@ -75,6 +80,7 @@ export function NavBar({
       window.removeEventListener("build:intro-done", cue);
       window.clearTimeout(fallback);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

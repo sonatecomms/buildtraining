@@ -118,14 +118,17 @@ textarea {
   box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--color-forest) 40%, transparent);
 }
 /* icon-over-label layout — ALWAYS applied so the tab never reflows from a
-   horizontal pair to a vertical one when the pop cue fires */
+   horizontal pair to a vertical one when the pop cue fires. Hidden until the
+   pop reveals it, so the bare nav never shows behind the clearing splash. */
 .build-nav-stack {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
+  opacity: 0;
 }
-/* icons pop to size on first reveal (delay set inline for the stagger) */
+/* icons pop to size on first reveal (delay set inline for the stagger);
+   build-pop ends at opacity 1 and holds it (fill mode both) */
 .build-nav-pop {
   animation: build-pop 0.72s cubic-bezier(0.22, 0.8, 0.24, 1) both;
 }
@@ -230,6 +233,25 @@ textarea {
   100% { opacity: 0; }
 }
 
+/* greeting hand wave (fires 2s after the splash clears) */
+.build-wave-rest,
+.build-wave {
+  display: inline-block;
+  transform-origin: 75% 80%;
+}
+.build-wave {
+  animation: build-wave 1.5s ease-in-out 1;
+}
+@keyframes build-wave {
+  0%, 100% { transform: rotate(0deg); }
+  12% { transform: rotate(16deg); }
+  24% { transform: rotate(-12deg); }
+  36% { transform: rotate(16deg); }
+  48% { transform: rotate(-10deg); }
+  60% { transform: rotate(12deg); }
+  72% { transform: rotate(-4deg); }
+}
+
 /* pull-to-refresh spinner */
 .build-pull-spin {
   animation: build-spin 0.7s linear infinite;
@@ -242,9 +264,11 @@ textarea {
    final composed mark and instant state changes */
 @media (prefers-reduced-motion: reduce) {
   .build-nav-pop { animation: none; }
+  .build-nav-stack { opacity: 1; } /* no pop animation to reveal it, so show it */
   .build-splash,
   .build-b,
   .build-impact-ring,
   .build-kb-swing { animation: none; }
   .build-impact-ring { opacity: 0; }
+  .build-wave { animation: none; }
 }

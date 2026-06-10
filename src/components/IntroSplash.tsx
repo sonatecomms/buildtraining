@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { MARK_W, MARK_H, B_SOLID_PATH, KETTLEBELL_PATH, KB_PIVOT, KB_CENTER } from "./markPaths";
+import { markIntroDone } from "@/lib/intro";
 
 // Launch animation: a kettlebell swings in from up-and-behind on a pendulum arc,
 // falls down through the B, and at the moment it reaches rest it carves the
@@ -23,6 +24,7 @@ export function IntroSplash() {
   useEffect(() => {
     const finish = () => {
       setPhase("done");
+      markIntroDone();
       window.dispatchEvent(new Event("build:intro-done")); // cue the nav icons
     };
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
