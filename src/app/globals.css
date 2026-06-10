@@ -226,9 +226,9 @@ textarea {
   12%  { opacity: 1; }
   /* swinging down and forward, through the bottom of the arc */
   34%  { transform: translateY(-3%)  translateZ(-90px)  rotateX(-20deg); opacity: 1; }
-  /* apex of the forward swing: OUT of the screen toward the viewer — big loom +
-     up high so the swing clearly arcs at you (the cutout grows ~1.4x here) */
-  52%  { transform: translateY(-20%) translateZ(225px)  rotateX(28deg); }
+  /* apex of the forward swing: OUT of the screen toward the viewer — enough loom
+     to read clearly (the cutout grows ~1.3x here) without lunging up off the B */
+  52%  { transform: translateY(-12%) translateZ(180px)  rotateX(30deg); }
   /* top-down: pitches back through vertical and drops into the B */
   72%  { transform: translateY(0)    translateZ(0)      rotateX(-8deg); }
   /* damped settle to rest = flat cutout */
@@ -238,7 +238,7 @@ textarea {
 }
 @keyframes build-kb-shadow {
   0%   { filter: drop-shadow(0 10px 14px rgba(20, 30, 18, 0)); }
-  50%  { filter: drop-shadow(0 34px 28px rgba(20, 30, 18, 0.38)); } /* heaviest at the forward apex */
+  50%  { filter: drop-shadow(0 30px 26px rgba(20, 30, 18, 0.30)); } /* heaviest at the forward apex */
   72%, 100% { filter: drop-shadow(0 0 0 rgba(20, 30, 18, 0)); }
 }
 @keyframes build-b-impact {
