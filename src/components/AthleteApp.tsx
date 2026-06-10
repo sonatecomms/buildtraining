@@ -2,8 +2,13 @@
 
 import { useEffect, useId, useState } from "react";
 import { useClient, useExercises, logWorkout, uid, updateClient, getClient } from "@/lib/store";
+import dynamic from "next/dynamic";
 import { isIntroDone } from "@/lib/intro";
-import { nextGreeting } from "@/lib/greeting";
+import { nextGreeting, notoLottieUrl } from "@/lib/greeting";
+
+// lottie-react is only needed for the greeting flourish — code-split it out of
+// the main bundle and keep it client-only.
+const Lottie = dynamic(() => import("lottie-react"), { ssr: false });
 import { flushPush, saveClientNow } from "@/lib/sync";
 import { isoDate } from "@/lib/week";
 import { formatClock } from "@/lib/rest";
@@ -169,32 +174,64 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
   );
 }
 
-// The greeting emoji rotates per login and animates to match (wave/smile/wink/
-// thumb/flex/run), firing 2 seconds after the launch splash has cleared (so it
+// The greeting emoji rotates per login and truly animates: the Noto animated
+// emoji (Lottie) plays the real action — the wink actually closes an eye — and
+// the runner (not in Noto's set) plus any failed fetch fall back to the glyph
+// with a CSS motion. Fires 2 seconds after the launch splash has cleared (so it
 // lands once the screen has settled, not during the intro).
 function GreetingEmoji() {
   const [g] = useState(nextGreeting);
-  const [go, setGo] = useState(false);
+  const [data, setData] = useState<object | null>(null);
+  const [play, setPlay] = useState(false);
   useEffect(() => {
+    let cancelled = false;
+    // fetch the Lottie up front so it's ready to play at the 2s mark
+    if (g.cp) {
+      fetch(notoLottieUrl(g.cp))
+        .then((r) => (r.ok ? r.json() : null))
+        .then((j) => {
+          if (!cancelled && j) setData(j);
+        })
+        .catch(() => {});
+    }
     let armed = false;
     let animTimer: ReturnType<typeof setTimeout>;
     const arm = () => {
       if (armed) return;
       armed = true;
-      animTimer = setTimeout(() => setGo(true), 2000);
+      animTimer = setTimeout(() => {
+        if (!cancelled) setPlay(true);
+      }, 2000);
     };
     if (isIntroDone()) arm();
     const cue = () => arm();
     window.addEventListener("build:intro-done", cue);
     const fallback = setTimeout(arm, 2600); // in case the cue was missed
     return () => {
+      cancelled = true;
       window.removeEventListener("build:intro-done", cue);
       clearTimeout(animTimer);
       clearTimeout(fallback);
     };
-  }, []);
+  }, [g]);
+
+  if (play && data) {
+    return (
+      <Lottie
+        animationData={data}
+        loop={false}
+        aria-hidden
+        style={{ display: "inline-block", width: "1.15em", height: "1.15em", verticalAlign: "-0.22em" }}
+      />
+    );
+  }
+  // pre-play (static glyph) or fallback (glyph + CSS motion once playing)
   return (
-    <span className={`build-greet ${go ? g.anim : ""}`} style={g.origin ? { transformOrigin: g.origin } : undefined} aria-hidden>
+    <span
+      className={`build-greet ${play ? g.anim : ""}`}
+      style={g.origin ? { transformOrigin: g.origin } : undefined}
+      aria-hidden
+    >
       {g.emoji}
     </span>
   );
