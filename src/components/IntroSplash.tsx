@@ -40,40 +40,46 @@ export function IntroSplash() {
   return (
     <div className="build-splash" onClick={() => setPhase("done")} role="presentation">
       <div className="build-splash-stack">
-        <svg viewBox={`0 0 ${MARK_W} ${MARK_H}`} className="build-splash-mark" aria-label="BUILD" role="img">
-          {/* the solid B, with a subtle impact bounce when the bell lands */}
-          <path className="build-b" d={B_SOLID_PATH} fill="var(--color-forest)" />
+        {/* perspective lives on the figure so the swing layer can move in depth */}
+        <div className="build-splash-figure">
+          <svg viewBox={`0 0 ${MARK_W} ${MARK_H}`} className="build-splash-mark" aria-label="BUILD" role="img">
+            {/* the solid B, with a subtle impact bounce when the bell lands */}
+            <path className="build-b" d={B_SOLID_PATH} fill="var(--color-forest)" />
 
-          {/* faint ring that pulses out of the impact point */}
-          <circle
-            className="build-impact-ring"
-            cx={KB_CENTER.x}
-            cy={KB_CENTER.y}
-            r={88}
-            fill="none"
-            stroke="var(--color-forest)"
-            strokeWidth={5}
-          />
+            {/* faint ring that pulses out of the impact point */}
+            <circle
+              className="build-impact-ring"
+              cx={KB_CENTER.x}
+              cy={KB_CENTER.y}
+              r={88}
+              fill="none"
+              stroke="var(--color-forest)"
+              strokeWidth={5}
+            />
 
-          {/* the bone cutout: hidden until impact, then punches in to scale,
-              making it look like the swinging bell knocked the hole through */}
-          <path
-            className="build-kb-cut"
-            d={KETTLEBELL_PATH}
-            fill="var(--background)"
-            fillRule="evenodd"
-          />
+            {/* the bone cutout: hidden until impact, then punches in to scale,
+                making it look like the swinging bell knocked the hole through */}
+            <path
+              className="build-kb-cut"
+              d={KETTLEBELL_PATH}
+              fill="var(--background)"
+              fillRule="evenodd"
+            />
+          </svg>
 
-          {/* the swinging kettlebell: pendulum about a pivot at the grip, then
-              fades out the instant the cutout appears */}
-          <path
-            className="build-kb-swing"
-            d={KETTLEBELL_PATH}
-            fill="var(--background)"
-            fillRule="evenodd"
-            style={{ transformBox: "view-box", transformOrigin: `${KB_PIVOT.x}px ${KB_PIVOT.y}px` }}
-          />
-        </svg>
+          {/* the swinging kettlebell, on its own layer so it can travel on the
+              y-axis (drops down) and z-axis (swings in from behind, in depth)
+              on top of the pendulum rotation — then fades out as the cutout
+              reveals. transform-origin = the grip, as a % of the box. */}
+          <svg
+            viewBox={`0 0 ${MARK_W} ${MARK_H}`}
+            className="build-splash-swing-layer build-kb-swing"
+            aria-hidden
+            style={{ transformOrigin: `${(KB_PIVOT.x / MARK_W) * 100}% ${(KB_PIVOT.y / MARK_H) * 100}%` }}
+          >
+            <path d={KETTLEBELL_PATH} fill="var(--background)" fillRule="evenodd" />
+          </svg>
+        </div>
 
         <span className="build-word">BUILD</span>
       </div>
