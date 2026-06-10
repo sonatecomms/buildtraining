@@ -174,20 +174,24 @@ export default function IntervalTimer({ onLog }: { onLog?: (r: TimerResult) => v
 
   // ---------- setup ----------
   if (phase === "setup") {
+    const modeBtn = (m: (typeof MODES)[number]) => (
+      <button
+        key={m.id}
+        onClick={() => setMode(m.id)}
+        className={`rounded-xl py-2.5 text-sm font-semibold transition-colors ${
+          mode === m.id ? "bg-forest text-bone" : "bg-surface border border-line text-slate"
+        }`}
+      >
+        {m.label}
+      </button>
+    );
     return (
       <div className="space-y-4">
-        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-          {MODES.map((m) => (
-            <button
-              key={m.id}
-              onClick={() => setMode(m.id)}
-              className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors ${
-                mode === m.id ? "bg-forest text-bone" : "bg-surface border border-line text-slate"
-              }`}
-            >
-              {m.label}
-            </button>
-          ))}
+        {/* a tidy grid instead of a sideways-scrolling pill strip: workout
+            timers on top, the two utility timers below */}
+        <div className="space-y-2">
+          <div className="grid grid-cols-3 gap-2">{MODES.slice(0, 3).map(modeBtn)}</div>
+          <div className="grid grid-cols-2 gap-2">{MODES.slice(3).map(modeBtn)}</div>
         </div>
 
         <div className="rounded-2xl border border-line bg-surface p-4 space-y-3">

@@ -81,12 +81,14 @@ export default function ExerciseList({
           placeholder="Search movement, muscle, equipment…"
           className="w-full rounded-xl bg-surface border border-line px-4 py-2.5 text-sm outline-none focus:border-forest"
         />
-        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 mt-2.5">
+        {/* wraps into a chip cloud so every category is visible at once — no
+            sideways scrolling to hunt for a filter */}
+        <div className="flex flex-wrap gap-1.5 mt-2.5">
           {cats.map((c) => (
             <button
               key={c}
               onClick={() => setCat(c)}
-              className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+              className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
                 cat === c ? "bg-forest text-bone" : "bg-surface border border-line text-slate"
               }`}
             >
