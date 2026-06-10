@@ -14,6 +14,7 @@ import {
   startRealtime,
 } from "@/lib/sync";
 import { hydrate } from "@/lib/store";
+import { isPhoneLogin, isUsernameLogin } from "@/lib/login";
 import { buildSeedDB } from "@/lib/seed";
 import AuthGate from "./AuthGate";
 import AthleteApp from "./AthleteApp";
@@ -103,15 +104,22 @@ export default function SessionProvider({ children }: { children: React.ReactNod
       try {
         const email = s.user.email ?? "";
         emailRef.current = email;
+        // A synthetic phone/username login (`@phone.build` / `@username.build`) is
+        // ALWAYS an athlete by construction — coaches sign in with a real email.
+        // Never treat such a login as a coach or seed it a coach account, even if
+        // stale rows are linked to it: doing so once seeded an athlete the demo
+        // client and trapped them in the coach view (the "Jordan Rivera" bug).
+        const syntheticLogin = isPhoneLogin(email) || isUsernameLogin(email);
         // Did this user sign up as an athlete? (metadata is durable; the URL
         // param covers the very first sign-up before metadata is readable.)
         const athleteIntent =
+          syntheticLogin ||
           s.user.user_metadata?.intent === "athlete" ||
           new URLSearchParams(window.location.search).get("role") === "athlete";
 
         // Coach if they own clients; otherwise an athlete if their email is
         // assigned to a client; otherwise a brand-new coach (seed their account).
-        if (await coachHasClients(s.user.id)) {
+        if (!syntheticLogin && (await coachHasClients(s.user.id))) {
           setCoachId(s.user.id);
           const remote = await pullDB();
           if (remote) hydrate(remote);
