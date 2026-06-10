@@ -1,17 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { B_PATH, KETTLEBELL_PATH, KB_PIVOT } from "./BrandMark";
+import { MARK_W, MARK_H, B_SOLID_PATH, KETTLEBELL_PATH, KB_PIVOT, KB_CENTER } from "./markPaths";
 
-// Launch animation: a kettlebell swings in from up-and-behind on a pendulum
-// arc, falls down through the B, and at the moment it reaches rest it carves the
+// Launch animation: a kettlebell swings in from up-and-behind on a pendulum arc,
+// falls down through the B, and at the moment it reaches rest it carves the
 // kettlebell-shaped negative space — the swinging bell fades out exactly as the
 // cutout punches in, so the eye reads it as one object becoming the hole. Then
 // the BUILD wordmark fades up, holds, and the overlay clears (~1.9s total).
 //
-// Plays once per app launch (sessionStorage), skipped under reduced motion. Tap
-// anywhere to skip. The timings live as CSS custom props / keyframes in
-// globals.css so they stay tunable in one place.
+// The mark is an exact trace of the real logo art (see markPaths.ts). Plays once
+// per app launch (sessionStorage), skipped under reduced motion, tap to skip.
 
 const DURATION = 1900; // ms until the overlay unmounts
 
@@ -41,19 +40,19 @@ export function IntroSplash() {
   return (
     <div className="build-splash" onClick={() => setPhase("done")} role="presentation">
       <div className="build-splash-stack">
-        <svg viewBox="0 0 200 200" className="build-splash-mark" aria-label="BUILD" role="img">
+        <svg viewBox={`0 0 ${MARK_W} ${MARK_H}`} className="build-splash-mark" aria-label="BUILD" role="img">
           {/* the solid B, with a subtle impact bounce when the bell lands */}
-          <path className="build-b" d={B_PATH} fill="var(--color-forest)" />
+          <path className="build-b" d={B_SOLID_PATH} fill="var(--color-forest)" />
 
           {/* faint ring that pulses out of the impact point */}
           <circle
             className="build-impact-ring"
-            cx={KB_PIVOT.x}
-            cy={120}
-            r={42}
+            cx={KB_CENTER.x}
+            cy={KB_CENTER.y}
+            r={88}
             fill="none"
             stroke="var(--color-forest)"
-            strokeWidth={3}
+            strokeWidth={5}
           />
 
           {/* the bone cutout: hidden until impact, then punches in to scale,
@@ -65,13 +64,14 @@ export function IntroSplash() {
             fillRule="evenodd"
           />
 
-          {/* the swinging kettlebell: pendulum about a pivot above the B, then
+          {/* the swinging kettlebell: pendulum about a pivot at the grip, then
               fades out the instant the cutout appears */}
           <path
             className="build-kb-swing"
             d={KETTLEBELL_PATH}
             fill="var(--background)"
             fillRule="evenodd"
+            style={{ transformBox: "view-box", transformOrigin: `${KB_PIVOT.x}px ${KB_PIVOT.y}px` }}
           />
         </svg>
 

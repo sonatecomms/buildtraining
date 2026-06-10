@@ -163,8 +163,9 @@ textarea {
   gap: 20px;
 }
 .build-splash-mark {
-  width: 132px;
-  height: 132px;
+  height: 168px;
+  width: auto;
+  overflow: visible; /* don't clip the kettlebell while it swings outside the viewBox */
 }
 /* the solid B gives a small bounce when the bell lands */
 .build-b {
@@ -186,11 +187,10 @@ textarea {
   opacity: 1; /* reduced-motion base: cutout already present */
   animation: build-kb-reveal 0.2s cubic-bezier(0.2, 0.8, 0.3, 1) 0.82s both;
 }
-/* the swinging bell: pendulum about a pivot above the B, then fades out exactly
-   as the cutout reveals so it reads as one object becoming the hole */
+/* the swinging bell: pendulum about a pivot at the grip (transform-box +
+   transform-origin set inline from KB_PIVOT), then fades out exactly as the
+   cutout reveals so it reads as one object becoming the hole */
 .build-kb-swing {
-  transform-box: view-box;
-  transform-origin: 104px 18px;
   animation: build-kb-swing 0.85s cubic-bezier(0.45, 0, 0.55, 1) both,
     build-kb-fade 0.16s ease 0.82s forwards;
 }
