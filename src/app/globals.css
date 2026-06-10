@@ -93,3 +93,158 @@ textarea {
   50% { transform: translateY(-10px) scale(1.05); }
 }
 .animate-lift { animation: lift 1.3s ease-in-out infinite; }
+
+/* ---------- bottom nav: sliding highlighter + staggered icon pop ---------- */
+/* one shared highlighter that slides between tabs (box set inline in JS) */
+.build-nav-indicator {
+  position: absolute;
+  z-index: 0;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--color-forest) 10%, transparent);
+  pointer-events: none;
+}
+.build-nav-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 0;
+  border-radius: 12px;
+  transition: color 0.16s ease;
+}
+.build-nav-tab:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--color-forest) 40%, transparent);
+}
+/* icons pop to size on first reveal (delay set inline for the stagger) */
+.build-nav-pop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  animation: build-pop 0.72s cubic-bezier(0.22, 0.8, 0.24, 1) both;
+}
+/* inner wrapper carries the active enlarge, kept off the popping element so the
+   two transforms compose rather than fight */
+.build-nav-ico {
+  display: inline-flex;
+  font-size: 1.125rem;
+  line-height: 1;
+  transition: transform 0.34s cubic-bezier(0.22, 0.8, 0.24, 1);
+}
+.build-nav-tab[data-active="true"] .build-nav-ico {
+  transform: scale(1.12);
+}
+.build-nav-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+}
+@keyframes build-pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  55% { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ---------- launch splash: the kettlebell forges the B ---------- */
+.build-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  background: radial-gradient(circle at 50% 42%, #f4f6f0 0%, #e2e6da 72%);
+  animation: build-splash-out 1.9s ease forwards;
+}
+.build-splash-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+.build-splash-mark {
+  width: 132px;
+  height: 132px;
+}
+/* the solid B gives a small bounce when the bell lands */
+.build-b {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: build-b-impact 0.26s ease 0.82s both;
+}
+/* faint ring pulses out of the impact point */
+.build-impact-ring {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  animation: build-ring 0.5s ease-out 0.8s both;
+}
+/* the cutout: hidden until impact, then punches in to size */
+.build-kb-cut {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 1; /* reduced-motion base: cutout already present */
+  animation: build-kb-reveal 0.2s cubic-bezier(0.2, 0.8, 0.3, 1) 0.82s both;
+}
+/* the swinging bell: pendulum about a pivot above the B, then fades out exactly
+   as the cutout reveals so it reads as one object becoming the hole */
+.build-kb-swing {
+  transform-box: view-box;
+  transform-origin: 104px 18px;
+  animation: build-kb-swing 0.85s cubic-bezier(0.45, 0, 0.55, 1) both,
+    build-kb-fade 0.16s ease 0.82s forwards;
+}
+.build-word {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 2.6rem;
+  letter-spacing: -0.01em;
+  color: var(--color-forest);
+  opacity: 1; /* reduced-motion base */
+  animation: build-word-in 0.45s ease-out 1s both;
+}
+@keyframes build-kb-swing {
+  0% { transform: rotate(-115deg) scale(0.92); opacity: 0.5; }
+  12% { opacity: 1; }
+  60% { transform: rotate(8deg) scale(1); }
+  78% { transform: rotate(-3deg); }
+  90% { transform: rotate(1.2deg); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+@keyframes build-kb-fade {
+  to { opacity: 0; }
+}
+@keyframes build-kb-reveal {
+  0% { opacity: 0; transform: scale(1.18); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes build-b-impact {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.035); }
+  100% { transform: scale(1); }
+}
+@keyframes build-ring {
+  0% { opacity: 0.35; transform: scale(0.7); }
+  100% { opacity: 0; transform: scale(1.5); }
+}
+@keyframes build-word-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes build-splash-out {
+  0%, 88% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* respect reduced motion everywhere: skip the splash run + nav pop, keep the
+   final composed mark and instant state changes */
+@media (prefers-reduced-motion: reduce) {
+  .build-nav-pop { animation: none; }
+  .build-splash,
+  .build-b,
+  .build-impact-ring,
+  .build-kb-cut,
+  .build-kb-swing,
+  .build-word { animation: none; }
+  .build-impact-ring { opacity: 0; }
+}

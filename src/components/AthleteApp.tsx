@@ -22,6 +22,8 @@ import PRsView from "./PRsView";
 import InstallGuide from "./InstallGuide";
 import ExerciseList from "./ExerciseList";
 import IntervalTimer, { type TimerResult } from "./IntervalTimer";
+import { NavBar } from "./NavBar";
+import { useEdgeSwipe } from "@/lib/useEdgeSwipe";
 import { useSession } from "./SessionProvider";
 
 type View = "train" | "timer" | "prs" | "library" | "settings";
@@ -40,6 +42,15 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
   const { session } = useSession();
   const [justSet, setJustSet] = useState(false);
   const [view, setView] = useState<View>("train");
+
+  // Edge swipe walks between the bottom-nav views in tab order.
+  const swipeRef = useEdgeSwipe<HTMLDivElement>((dir) => {
+    setView((v) => {
+      const i = NAV.findIndex((t) => t.id === v);
+      const next = Math.min(NAV.length - 1, Math.max(0, i + dir));
+      return NAV[next].id;
+    });
+  });
 
   // Save a finished standalone timer as a "your own work" session in the log.
   const logTimer = (r: TimerResult) => {
@@ -62,7 +73,7 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div ref={swipeRef} className="min-h-screen flex flex-col">
       <header className="sticky top-0 z-30 bg-bone/90 backdrop-blur border-b border-line">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
           <button
@@ -144,26 +155,7 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
         )}
       </main>
 
-      <nav className="fixed bottom-0 inset-x-0 z-40 border-t border-line bg-surface/95 backdrop-blur">
-        <div className="max-w-2xl mx-auto grid grid-cols-5" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
-          {NAV.map((t) => {
-            const active = view === t.id;
-            return (
-              <button
-                key={t.id}
-                onClick={() => setView(t.id)}
-                aria-label={t.label}
-                className={`flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-forest/40 ${
-                  active ? "text-forest" : "text-slate"
-                }`}
-              >
-                <span className="text-lg leading-none">{t.icon}</span>
-                {t.label}
-              </button>
-            );
-          })}
-        </div>
-      </nav>
+      <NavBar items={NAV} activeId={view} onSelect={(id) => setView(id as View)} />
     </div>
   );
 }

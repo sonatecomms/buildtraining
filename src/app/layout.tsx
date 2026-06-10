@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { League_Spartan, Poppins } from "next/font/google";
 import "./globals.css";
-import BottomNav from "@/components/BottomNav";
+import CoachShell from "@/components/CoachShell";
 import ServiceWorker from "@/components/ServiceWorker";
 import SessionProvider from "@/components/SessionProvider";
+import { IntroSplash } from "@/components/IntroSplash";
 
 const league = League_Spartan({
   variable: "--font-league",
@@ -42,11 +43,12 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${league.variable} ${poppins.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
+        {/* SSR-visible from first paint so the app never peeks through; the
+            component itself decides when to dismiss (and skips under reduced
+            motion / after the first launch this session). */}
+        <IntroSplash />
         <SessionProvider>
-          <main className="flex-1 w-full max-w-2xl mx-auto px-4 pb-28 pt-4">
-            {children}
-          </main>
-          <BottomNav />
+          <CoachShell>{children}</CoachShell>
         </SessionProvider>
         <ServiceWorker />
       </body>
