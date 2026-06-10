@@ -211,15 +211,6 @@ textarea {
   animation: build-kb-swing 0.85s cubic-bezier(0.4, 0, 0.5, 1) both,
     build-kb-fade 0.16s ease 0.82s forwards;
 }
-.build-word {
-  font-family: var(--font-display);
-  font-weight: 900;
-  font-size: 2.6rem;
-  letter-spacing: -0.01em;
-  color: var(--color-forest);
-  opacity: 1; /* reduced-motion base */
-  animation: build-word-in 0.45s ease-out 1s both;
-}
 @keyframes build-kb-swing {
   0% { transform: translateY(-52%) translateZ(-280px) rotateZ(-94deg); opacity: 0; }
   16% { opacity: 1; }
@@ -244,10 +235,6 @@ textarea {
   0% { opacity: 0.35; transform: scale(0.7); }
   100% { opacity: 0; transform: scale(1.5); }
 }
-@keyframes build-word-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
 @keyframes build-splash-out {
   0%, 88% { opacity: 1; }
   100% { opacity: 0; }
@@ -269,7 +256,6 @@ textarea {
   .build-b,
   .build-impact-ring,
   .build-kb-cut,
-  .build-kb-swing,
-  .build-word { animation: none; }
+  .build-kb-swing { animation: none; }
   .build-impact-ring { opacity: 0; }
 }

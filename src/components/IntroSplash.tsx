@@ -80,8 +80,6 @@ export function IntroSplash() {
             <path d={KETTLEBELL_PATH} fill="var(--background)" fillRule="evenodd" />
           </svg>
         </div>
-
-        <span className="build-word">BUILD</span>
       </div>
     </div>
   );
