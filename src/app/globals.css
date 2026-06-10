@@ -244,7 +244,7 @@ textarea {
 .build-anim-wink { animation: build-wink 1.1s ease-in-out 1; }
 .build-anim-thumb { animation: build-thumb 1.3s ease-in-out 1; }
 .build-anim-flex { animation: build-flex 1.4s ease-in-out 1; }
-.build-anim-run { animation: build-run 0.85s ease-in-out 2; }
+.build-anim-raise { animation: build-raise 1.2s ease-in-out 1; }
 
 @keyframes build-wave {
   0%, 100% { transform: rotate(0deg); }
@@ -282,11 +282,12 @@ textarea {
   55% { transform: scale(1.3) rotate(-6deg); }
   75% { transform: scale(1.12) rotate(5deg); }
 }
-@keyframes build-run { /* scurrying in place */
-  0%, 100% { transform: translateX(0) translateY(0) rotate(-5deg); }
-  25% { transform: translateX(5px) translateY(-4px) rotate(3deg); }
-  50% { transform: translateX(0) translateY(0) rotate(-5deg); }
-  75% { transform: translateX(-3px) translateY(-3px) rotate(3deg); }
+@keyframes build-raise { /* hands raised in celebration */
+  0%, 100% { transform: translateY(0); }
+  25% { transform: translateY(-22%); }
+  45% { transform: translateY(-6%); }
+  65% { transform: translateY(-18%); }
+  85% { transform: translateY(-2%); }
 }
 
 /* pull-to-refresh spinner */

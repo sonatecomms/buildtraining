@@ -1,12 +1,10 @@
-// The athlete greeting emoji rotates on each login, and each one truly animates:
-// a hand waves, a face smiles, a wink actually closes an eye, a thumb jabs, a
-// bicep flexes — these use Google's Noto Animated Emoji (Lottie, fetched by
-// codepoint, real articulation). The runner isn't in Noto's animated set, so it
-// keeps the glyph with a CSS running motion (`anim`), which is also the fallback
-// for any Lottie that fails to load.
+// The athlete greeting emoji rotates on each login, and each one truly animates
+// using Google's Noto Animated Emoji (Lottie, fetched by codepoint — real
+// articulation: the wink actually closes an eye). `anim`/`origin` are a CSS
+// motion used only as a fallback if a Lottie fails to load (e.g. offline).
 export interface Greeting {
   emoji: string;
-  cp?: string; // Noto animated-emoji codepoint (omit → CSS-only)
+  cp: string; // Noto animated-emoji codepoint
   anim: string; // CSS fallback class in globals.css
   origin?: string; // transform-origin override (CSS fallback)
 }
@@ -17,7 +15,7 @@ export const GREETINGS: Greeting[] = [
   { emoji: "😉", cp: "1f609", anim: "build-anim-wink" },
   { emoji: "👍", cp: "1f44d", anim: "build-anim-thumb", origin: "50% 80%" },
   { emoji: "💪", cp: "1f4aa", anim: "build-anim-flex" },
-  { emoji: "🏃", anim: "build-anim-run" },
+  { emoji: "🙌", cp: "1f64c", anim: "build-anim-raise" },
 ];
 
 // The Noto animated-emoji Lottie endpoint for a codepoint.

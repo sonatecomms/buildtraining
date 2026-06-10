@@ -174,30 +174,33 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
   );
 }
 
-// The greeting emoji rotates per login and truly animates: the Noto animated
-// emoji (Lottie) plays the real action — the wink actually closes an eye — and
-// the runner (not in Noto's set) plus any failed fetch fall back to the glyph
-// with a CSS motion. Fires 2 seconds after the launch splash has cleared (so it
-// lands once the screen has settled, not during the intro).
+// The greeting emoji rotates per login and truly animates via Noto Animated
+// Emoji (Lottie) — the wink actually closes an eye. It renders as the Lottie
+// from the start (resting at frame 0, no static native glyph shown first), then
+// plays once 2 seconds after the launch splash clears. The glyph + CSS motion
+// is only a fallback if the Lottie can't load (e.g. offline).
 function GreetingEmoji() {
   const [g] = useState(nextGreeting);
   const [data, setData] = useState<object | null>(null);
+  const [failed, setFailed] = useState(false);
   const [play, setPlay] = useState(false);
   useEffect(() => {
     let cancelled = false;
-    // fetch the Lottie up front so it's ready to play at the 2s mark
-    if (g.cp) {
-      fetch(notoLottieUrl(g.cp))
-        .then((r) => (r.ok ? r.json() : null))
-        .then((j) => {
-          if (!cancelled && j) setData(j);
-        })
-        .catch(() => {});
-    }
+    // fetch the Lottie up front so it's resting and ready to play at the 2s mark
+    fetch(notoLottieUrl(g.cp))
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("noto"))))
+      .then((j) => {
+        if (!cancelled) setData(j);
+      })
+      .catch(() => {
+        if (!cancelled) setFailed(true);
+      });
+
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let armed = false;
     let animTimer: ReturnType<typeof setTimeout>;
     const arm = () => {
-      if (armed) return;
+      if (armed || reduce) return; // reduced motion: leave the emoji resting
       armed = true;
       animTimer = setTimeout(() => {
         if (!cancelled) setPlay(true);
@@ -215,26 +218,21 @@ function GreetingEmoji() {
     };
   }, [g]);
 
-  if (play && data) {
+  const box = { display: "inline-block", width: "1.15em", height: "1.15em", verticalAlign: "-0.22em" } as const;
+
+  if (data) {
+    // keyed on `play` so flipping to play remounts and runs once from frame 0;
+    // before that it sits at frame 0 (the resting emoji), not a native glyph
+    return <Lottie key={play ? "play" : "rest"} animationData={data} autoplay={play} loop={false} aria-hidden style={box} />;
+  }
+  if (failed) {
     return (
-      <Lottie
-        animationData={data}
-        loop={false}
-        aria-hidden
-        style={{ display: "inline-block", width: "1.15em", height: "1.15em", verticalAlign: "-0.22em" }}
-      />
+      <span className={`build-greet ${play ? g.anim : ""}`} style={g.origin ? { transformOrigin: g.origin } : undefined} aria-hidden>
+        {g.emoji}
+      </span>
     );
   }
-  // pre-play (static glyph) or fallback (glyph + CSS motion once playing)
-  return (
-    <span
-      className={`build-greet ${play ? g.anim : ""}`}
-      style={g.origin ? { transformOrigin: g.origin } : undefined}
-      aria-hidden
-    >
-      {g.emoji}
-    </span>
-  );
+  return <span aria-hidden style={box} />; // hold the slot while the Lottie loads
 }
 
 // A tap-to-expand settings section. Header is a plain row (no card chrome) so the
