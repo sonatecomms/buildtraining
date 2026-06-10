@@ -222,23 +222,23 @@ textarea {
 }
 @keyframes build-kb-swing {
   /* deep INSIDE the screen, pitched away from the viewer, small + faded */
-  0%   { transform: translateY(-6%)  translateZ(-300px) rotateX(-42deg); opacity: 0; }
+  0%   { transform: translateY(-10%) translateZ(-340px) rotateX(-52deg); opacity: 0; }
   12%  { opacity: 1; }
   /* swinging down and forward, through the bottom of the arc */
-  34%  { transform: translateY(-2%)  translateZ(-70px)  rotateX(-16deg); opacity: 1; }
-  /* apex of the forward swing: OUT of the screen toward the viewer — pulled in
-     so the cutout stays over the B and the pitch never flattens to a card */
-  52%  { transform: translateY(-9%)  translateZ(110px)  rotateX(19deg); }
+  34%  { transform: translateY(-3%)  translateZ(-90px)  rotateX(-20deg); opacity: 1; }
+  /* apex of the forward swing: OUT of the screen toward the viewer — big loom +
+     up high so the swing clearly arcs at you (the cutout grows ~1.4x here) */
+  52%  { transform: translateY(-20%) translateZ(225px)  rotateX(28deg); }
   /* top-down: pitches back through vertical and drops into the B */
-  72%  { transform: translateY(0)    translateZ(0)      rotateX(-7deg); }
+  72%  { transform: translateY(0)    translateZ(0)      rotateX(-8deg); }
   /* damped settle to rest = flat cutout */
-  85%  { transform: translateY(0)    translateZ(0)      rotateX(3.5deg); }
-  93%  { transform: translateY(0)    translateZ(0)      rotateX(-1.2deg); }
+  85%  { transform: translateY(0)    translateZ(0)      rotateX(4deg); }
+  93%  { transform: translateY(0)    translateZ(0)      rotateX(-1.4deg); }
   100% { transform: translateY(0)    translateZ(0)      rotateX(0deg); }
 }
 @keyframes build-kb-shadow {
-  0%   { filter: drop-shadow(0 8px 12px rgba(20, 30, 18, 0)); }
-  50%  { filter: drop-shadow(0 22px 20px rgba(20, 30, 18, 0.24)); } /* heaviest at the forward apex */
+  0%   { filter: drop-shadow(0 10px 14px rgba(20, 30, 18, 0)); }
+  50%  { filter: drop-shadow(0 34px 28px rgba(20, 30, 18, 0.38)); } /* heaviest at the forward apex */
   72%, 100% { filter: drop-shadow(0 0 0 rgba(20, 30, 18, 0)); }
 }
 @keyframes build-b-impact {
