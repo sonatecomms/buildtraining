@@ -205,13 +205,16 @@ textarea {
   opacity: 0;
   animation: build-ring 0.5s ease-out 0.72s both;
 }
-/* the swinging bell: a pendulum (rotateZ about the grip) that arrives out of
-   depth from BEHIND the B (negative translateZ), swings down through the bottom
-   and up + FORWARD toward the viewer (positive translateZ = looms closer under
-   the figure's perspective), then comes top-down back through the z-plane and
-   seats into the B, damping to rest. transform-origin (the grip) is set inline.
-   The fill cross-fade (.build-kb) turns the iron bell into the cutout on landing
-   and the layer carries a depth shadow that fades as it seats. */
+/* the swinging bell: a SAGITTAL pendulum — it pitches about a horizontal axis
+   at the grip (rotateX, into/out of the screen), NOT in the screen plane
+   (rotateZ would read as a left-right clock-pendulum). It arrives deep INSIDE
+   the screen pitched away (negative translateZ + negative rotateX), swings down
+   through the bottom and OUT toward the viewer (positive translateZ = looms +
+   positive rotateX = pitched to face you), then comes top-down, pitches back to
+   vertical and seats flat into the B, damping to rest. transform-origin (the
+   grip) is set inline. The fill cross-fade (.build-kb) turns the iron bell into
+   the cutout on landing; the layer carries a depth shadow that fades as it
+   seats. */
 .build-kb-swing {
   animation:
     build-kb-swing 1.05s cubic-bezier(0.33, 0.04, 0.3, 1) both,
@@ -223,19 +226,20 @@ textarea {
   animation: build-kb-fill 1.05s ease both;
 }
 @keyframes build-kb-swing {
-  /* behind the B, up and rotated back, emerging from depth */
-  0%   { transform: translateY(-30%) translateZ(-320px) rotateZ(-104deg); opacity: 0; }
+  /* deep INSIDE the screen, pitched away from the viewer, small + faded */
+  0%   { transform: translateY(-6%)  translateZ(-360px) rotateX(-56deg); opacity: 0; }
   12%  { opacity: 1; }
-  /* through the bottom of the arc, gaining speed */
-  34%  { transform: translateY(-2%)  translateZ(-40px)  rotateZ(-26deg);  opacity: 1; }
-  /* apex of the forward swing: up over the top and looming TOWARD the viewer */
-  50%  { transform: translateY(-22%) translateZ(190px)  rotateZ(30deg); }
-  /* top-down: descends back through the z-plane and drives into the B */
-  72%  { transform: translateY(0)    translateZ(0)      rotateZ(-7deg); }
-  /* damped settle to rest = the finished cutout */
-  85%  { transform: translateY(0)    translateZ(0)      rotateZ(3deg); }
-  93%  { transform: translateY(0)    translateZ(0)      rotateZ(-1.2deg); }
-  100% { transform: translateY(0)    translateZ(0)      rotateZ(0deg); }
+  /* swinging down and forward, through the bottom of the arc */
+  34%  { transform: translateY(-2%)  translateZ(-80px)  rotateX(-22deg); opacity: 1; }
+  /* apex of the forward swing: OUT of the screen toward the viewer, pitched to
+     face you and looming large */
+  52%  { transform: translateY(-12%) translateZ(180px)  rotateX(30deg); }
+  /* top-down: pitches back through vertical and drops into the B */
+  72%  { transform: translateY(0)    translateZ(0)      rotateX(-8deg); }
+  /* damped settle to rest = flat cutout */
+  85%  { transform: translateY(0)    translateZ(0)      rotateX(4deg); }
+  93%  { transform: translateY(0)    translateZ(0)      rotateX(-1.5deg); }
+  100% { transform: translateY(0)    translateZ(0)      rotateX(0deg); }
 }
 @keyframes build-kb-fill {
   0%, 58%   { fill: #34392f; }            /* cast iron, in flight */

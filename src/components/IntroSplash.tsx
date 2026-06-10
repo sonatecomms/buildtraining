@@ -4,13 +4,14 @@ import { useEffect, useState } from "react";
 import { MARK_W, MARK_H, B_SOLID_PATH, KETTLEBELL_PATH, KB_PIVOT, KB_CENTER } from "./markPaths";
 import { markIntroDone } from "@/lib/intro";
 
-// Launch animation: a cast-iron kettlebell emerges from behind the B (deep in
-// the z-plane), swings down through the bottom and up TOWARD the viewer on a
-// real kettlebell-swing arc — looming forward at the apex — then comes top-down
-// back through the z-plane and seats into the B. At the moment it lands its iron
-// fill cross-fades to the background colour, so the bell BECOMES the negative-
-// space cutout (no layer swap), with an impact bounce + ring on contact. Then
-// the overlay clears (~1.9s total).
+// Launch animation: a cast-iron kettlebell swings in the SAGITTAL plane — into
+// and out of the screen (depth), not side to side. It emerges deep inside the
+// screen pitched away, swings down through the bottom and OUT toward the viewer
+// (looming forward at the apex), then comes top-down, pitches back to vertical
+// and seats flat into the B. At the moment it lands its iron fill cross-fades to
+// the background colour, so the bell BECOMES the negative-space cutout (no layer
+// swap), with an impact bounce + ring on contact. Then the overlay clears
+// (~1.9s total).
 //
 // The mark is an exact trace of the real logo art (see markPaths.ts). Plays once
 // per app launch (sessionStorage), skipped under reduced motion, tap to skip.
