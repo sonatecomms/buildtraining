@@ -171,11 +171,13 @@ textarea {
   align-items: center;
   gap: 20px;
 }
-/* perspective on the figure so the swing layer can travel in depth (z-axis) */
+/* perspective on the figure so the swing layer can travel in depth (z-axis).
+   tightened so the forward loom toward the viewer reads with real weight. */
 .build-splash-figure {
   position: relative;
   line-height: 0;
-  perspective: 900px;
+  perspective: 760px;
+  perspective-origin: 50% 38%;
 }
 .build-splash-mark {
   height: 168px;
@@ -190,34 +192,59 @@ textarea {
   height: 100%;
   overflow: visible;
 }
-/* the solid B gives a small bounce when the bell lands */
+/* the solid B gives a small bounce when the bell seats into it */
 .build-b {
   transform-box: fill-box;
   transform-origin: center;
-  animation: build-b-impact 0.26s ease 0.82s both;
+  animation: build-b-impact 0.26s ease 0.74s both;
 }
 /* faint ring pulses out of the impact point */
 .build-impact-ring {
   transform-box: fill-box;
   transform-origin: center;
   opacity: 0;
-  animation: build-ring 0.5s ease-out 0.8s both;
+  animation: build-ring 0.5s ease-out 0.72s both;
 }
-/* the swinging bell: a pendulum (rotateZ) that also drops in on the y-axis and
-   arrives out of depth on the z-axis (translateZ under the figure's
-   perspective), then settles and HOLDS its final frame (fill-mode both). A bone
-   shape over the forest B reads as the cutout, so the settled swing is the
-   finished mark. transform-origin (the grip) is set inline. */
+/* the swinging bell: a pendulum (rotateZ about the grip) that arrives out of
+   depth from BEHIND the B (negative translateZ), swings down through the bottom
+   and up + FORWARD toward the viewer (positive translateZ = looms closer under
+   the figure's perspective), then comes top-down back through the z-plane and
+   seats into the B, damping to rest. transform-origin (the grip) is set inline.
+   The fill cross-fade (.build-kb) turns the iron bell into the cutout on landing
+   and the layer carries a depth shadow that fades as it seats. */
 .build-kb-swing {
-  animation: build-kb-swing 0.85s cubic-bezier(0.4, 0, 0.5, 1) both;
+  animation:
+    build-kb-swing 1.05s cubic-bezier(0.33, 0.04, 0.3, 1) both,
+    build-kb-shadow 1.05s ease both;
+}
+/* the bell flies solid cast-iron, then BECOMES the background-coloured cutout
+   exactly as it lands in the B (no layer swap). */
+.build-kb {
+  animation: build-kb-fill 1.05s ease both;
 }
 @keyframes build-kb-swing {
-  0% { transform: translateY(-52%) translateZ(-280px) rotateZ(-94deg); opacity: 0; }
-  16% { opacity: 1; }
-  58% { transform: translateY(3%) translateZ(0) rotateZ(8deg); opacity: 1; }
-  76% { transform: translateY(0) translateZ(0) rotateZ(-3deg); }
-  90% { transform: translateY(0) translateZ(0) rotateZ(1.4deg); }
-  100% { transform: translateY(0) translateZ(0) rotateZ(0deg); }
+  /* behind the B, up and rotated back, emerging from depth */
+  0%   { transform: translateY(-30%) translateZ(-320px) rotateZ(-104deg); opacity: 0; }
+  12%  { opacity: 1; }
+  /* through the bottom of the arc, gaining speed */
+  34%  { transform: translateY(-2%)  translateZ(-40px)  rotateZ(-26deg);  opacity: 1; }
+  /* apex of the forward swing: up over the top and looming TOWARD the viewer */
+  50%  { transform: translateY(-22%) translateZ(190px)  rotateZ(30deg); }
+  /* top-down: descends back through the z-plane and drives into the B */
+  72%  { transform: translateY(0)    translateZ(0)      rotateZ(-7deg); }
+  /* damped settle to rest = the finished cutout */
+  85%  { transform: translateY(0)    translateZ(0)      rotateZ(3deg); }
+  93%  { transform: translateY(0)    translateZ(0)      rotateZ(-1.2deg); }
+  100% { transform: translateY(0)    translateZ(0)      rotateZ(0deg); }
+}
+@keyframes build-kb-fill {
+  0%, 58%   { fill: #34392f; }            /* cast iron, in flight */
+  72%, 100% { fill: var(--background); }  /* becomes the cutout on landing */
+}
+@keyframes build-kb-shadow {
+  0%   { filter: drop-shadow(0 10px 14px rgba(20, 30, 18, 0)); }
+  50%  { filter: drop-shadow(0 30px 26px rgba(20, 30, 18, 0.30)); } /* heaviest at the forward apex */
+  72%, 100% { filter: drop-shadow(0 0 0 rgba(20, 30, 18, 0)); }
 }
 @keyframes build-b-impact {
   0% { transform: scale(1); }
@@ -306,7 +333,8 @@ textarea {
   .build-splash,
   .build-b,
   .build-impact-ring,
-  .build-kb-swing { animation: none; }
+  .build-kb,
+  .build-kb-swing { animation: none; } /* bell rests as the cutout via its inline background fill */
   .build-impact-ring { opacity: 0; }
   [class*="build-anim-"] { animation: none; }
 }

@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import { MARK_W, MARK_H, B_SOLID_PATH, KETTLEBELL_PATH, KB_PIVOT, KB_CENTER } from "./markPaths";
 import { markIntroDone } from "@/lib/intro";
 
-// Launch animation: a kettlebell swings in from up-and-behind on a pendulum arc,
-// falls down through the B, and at the moment it reaches rest it carves the
-// kettlebell-shaped negative space — the swinging bell fades out exactly as the
-// cutout punches in, so the eye reads it as one object becoming the hole. Then
-// the BUILD wordmark fades up, holds, and the overlay clears (~1.9s total).
+// Launch animation: a cast-iron kettlebell emerges from behind the B (deep in
+// the z-plane), swings down through the bottom and up TOWARD the viewer on a
+// real kettlebell-swing arc — looming forward at the apex — then comes top-down
+// back through the z-plane and seats into the B. At the moment it lands its iron
+// fill cross-fades to the background colour, so the bell BECOMES the negative-
+// space cutout (no layer swap), with an impact bounce + ring on contact. Then
+// the overlay clears (~1.9s total).
 //
 // The mark is an exact trace of the real logo art (see markPaths.ts). Plays once
 // per app launch (sessionStorage), skipped under reduced motion, tap to skip.
@@ -61,18 +63,19 @@ export function IntroSplash() {
           </svg>
 
           {/* the swinging kettlebell, on its own layer so it can travel on the
-              y-axis (drops down) and z-axis (swings in from behind, in depth)
-              on top of the pendulum rotation, then SETTLES and holds — a bone
-              shape over the forest B reads as the cutout, so the last frame of
-              the swing IS the finished mark (no separate static layer swapped
-              in). transform-origin = the grip, as a % of the box. */}
+              y-axis (up over the top) and z-axis (in from behind, then forward
+              toward the viewer) on top of the pendulum rotation. It flies as a
+              solid cast-iron bell (.build-kb cross-fades the fill from iron to
+              the background colour as it lands) so the forward loom reads, then
+              seats as the negative-space cutout. transform-origin = the grip,
+              as a % of the box. */}
           <svg
             viewBox={`0 0 ${MARK_W} ${MARK_H}`}
             className="build-splash-swing-layer build-kb-swing"
             aria-hidden
             style={{ transformOrigin: `${(KB_PIVOT.x / MARK_W) * 100}% ${(KB_PIVOT.y / MARK_H) * 100}%` }}
           >
-            <path d={KETTLEBELL_PATH} fill="var(--background)" fillRule="evenodd" />
+            <path className="build-kb" d={KETTLEBELL_PATH} fill="var(--background)" fillRule="evenodd" />
           </svg>
         </div>
       </div>
