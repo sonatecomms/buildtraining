@@ -233,15 +233,19 @@ textarea {
   100% { opacity: 0; }
 }
 
-/* greeting hand wave (fires 2s after the splash clears) */
-.build-wave-rest,
-.build-wave {
+/* greeting emoji — rotates per login, each animates to match (fires 2s after
+   the splash clears). transform-origin per-emoji is set inline. */
+.build-greet {
   display: inline-block;
-  transform-origin: 75% 80%;
+  transform-origin: center;
 }
-.build-wave {
-  animation: build-wave 1.5s ease-in-out 1;
-}
+.build-anim-wave { animation: build-wave 1.5s ease-in-out 1; }
+.build-anim-smile { animation: build-smile 1.2s ease-in-out 1; }
+.build-anim-wink { animation: build-wink 1.1s ease-in-out 1; }
+.build-anim-thumb { animation: build-thumb 1.3s ease-in-out 1; }
+.build-anim-flex { animation: build-flex 1.4s ease-in-out 1; }
+.build-anim-run { animation: build-run 0.85s ease-in-out 2; }
+
 @keyframes build-wave {
   0%, 100% { transform: rotate(0deg); }
   12% { transform: rotate(16deg); }
@@ -250,6 +254,39 @@ textarea {
   48% { transform: rotate(-10deg); }
   60% { transform: rotate(12deg); }
   72% { transform: rotate(-4deg); }
+}
+@keyframes build-smile { /* a happy bounce */
+  0%, 100% { transform: scale(1); }
+  25% { transform: scale(1.28); }
+  45% { transform: scale(0.95); }
+  65% { transform: scale(1.12); }
+  82% { transform: scale(0.99); }
+}
+@keyframes build-wink { /* a quick blink + slight head tilt */
+  0%, 40%, 100% { transform: scaleY(1) rotate(0deg); }
+  50% { transform: scaleY(0.12) rotate(-6deg); }
+  60% { transform: scaleY(1) rotate(-6deg); }
+  78% { transform: rotate(4deg); }
+}
+@keyframes build-thumb { /* two upward jabs */
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  20% { transform: translateY(-30%) rotate(-12deg); }
+  40% { transform: translateY(0) rotate(0deg); }
+  60% { transform: translateY(-18%) rotate(-8deg); }
+  80% { transform: translateY(0) rotate(0deg); }
+}
+@keyframes build-flex { /* a pumping, wiggling muscle */
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  15% { transform: scale(1.22) rotate(-8deg); }
+  35% { transform: scale(1.18) rotate(8deg); }
+  55% { transform: scale(1.3) rotate(-6deg); }
+  75% { transform: scale(1.12) rotate(5deg); }
+}
+@keyframes build-run { /* scurrying in place */
+  0%, 100% { transform: translateX(0) translateY(0) rotate(-5deg); }
+  25% { transform: translateX(5px) translateY(-4px) rotate(3deg); }
+  50% { transform: translateX(0) translateY(0) rotate(-5deg); }
+  75% { transform: translateX(-3px) translateY(-3px) rotate(3deg); }
 }
 
 /* pull-to-refresh spinner */
@@ -270,5 +307,5 @@ textarea {
   .build-impact-ring,
   .build-kb-swing { animation: none; }
   .build-impact-ring { opacity: 0; }
-  .build-wave { animation: none; }
+  [class*="build-anim-"] { animation: none; }
 }

@@ -3,6 +3,7 @@
 import { useEffect, useId, useState } from "react";
 import { useClient, useExercises, logWorkout, uid, updateClient, getClient } from "@/lib/store";
 import { isIntroDone } from "@/lib/intro";
+import { nextGreeting } from "@/lib/greeting";
 import { flushPush, saveClientNow } from "@/lib/sync";
 import { isoDate } from "@/lib/week";
 import { formatClock } from "@/lib/rest";
@@ -119,7 +120,7 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
           <>
             <div className="mb-4">
               <h1 className="text-2xl font-bold leading-tight">
-                Hi, {client.name.split(" ")[0]} <WavingHand />
+                Hi, {client.name.split(" ")[0]} <GreetingEmoji />
               </h1>
               <p className="text-slate text-sm">Let&apos;s get after it.</p>
             </div>
@@ -168,17 +169,19 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
   );
 }
 
-// The greeting hand gives a friendly wave 2 seconds after the launch splash has
-// cleared (so it lands once the screen has settled, not during the intro).
-function WavingHand() {
-  const [wave, setWave] = useState(false);
+// The greeting emoji rotates per login and animates to match (wave/smile/wink/
+// thumb/flex/run), firing 2 seconds after the launch splash has cleared (so it
+// lands once the screen has settled, not during the intro).
+function GreetingEmoji() {
+  const [g] = useState(nextGreeting);
+  const [go, setGo] = useState(false);
   useEffect(() => {
     let armed = false;
-    let waveTimer: ReturnType<typeof setTimeout>;
+    let animTimer: ReturnType<typeof setTimeout>;
     const arm = () => {
       if (armed) return;
       armed = true;
-      waveTimer = setTimeout(() => setWave(true), 2000);
+      animTimer = setTimeout(() => setGo(true), 2000);
     };
     if (isIntroDone()) arm();
     const cue = () => arm();
@@ -186,13 +189,13 @@ function WavingHand() {
     const fallback = setTimeout(arm, 2600); // in case the cue was missed
     return () => {
       window.removeEventListener("build:intro-done", cue);
-      clearTimeout(waveTimer);
+      clearTimeout(animTimer);
       clearTimeout(fallback);
     };
   }, []);
   return (
-    <span className={wave ? "build-wave" : "build-wave-rest"} aria-hidden>
-      👋
+    <span className={`build-greet ${go ? g.anim : ""}`} style={g.origin ? { transformOrigin: g.origin } : undefined} aria-hidden>
+      {g.emoji}
     </span>
   );
 }
