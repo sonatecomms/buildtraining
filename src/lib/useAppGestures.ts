@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from "react";
 
 const SLOP = 12; // px before we commit to an axis
 const SWIPE_MIN = 55; // px of horizontal travel to switch view
-const PULL_DAMP = 0.5; // resistance on the pull-to-refresh drag
-const PULL_TRIGGER = 70; // px (after damping) to fire a refresh
+const PULL_DAMP = 0.7; // resistance on the pull-to-refresh drag; lighter = shorter drag,
+                       // so the pull can start anywhere on screen (not just near the top)
+const PULL_TRIGGER = 52; // px (after damping) to fire a refresh
 const PULL_MAX = 120; // px (after damping) the indicator travels
 
 // Walk up from the touch target: if any ancestor scrolls horizontally, this
