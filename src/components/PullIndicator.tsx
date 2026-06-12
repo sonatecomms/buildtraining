@@ -3,12 +3,14 @@
 // The little badge that follows a pull-to-refresh drag down from the top of the
 // screen: a circular arrow that rotates with the pull, then spins once the
 // refresh fires. Driven by `pull` (px) / `refreshing` from useAppGestures.
-const TRIGGER = 70;
+// TRIGGER is shared with the hook so the "ready" state always matches the fire point.
+import { PULL_TRIGGER as TRIGGER } from "@/lib/useAppGestures";
 
 export function PullIndicator({ pull, refreshing }: { pull: number; refreshing: boolean }) {
   if (pull <= 0 && !refreshing) return null;
   const progress = Math.min(1, pull / TRIGGER);
   const ready = pull >= TRIGGER || refreshing;
+  const stroke = ready ? "var(--color-forest)" : "var(--color-slate)";
   return (
     <div
       aria-hidden
@@ -24,16 +26,16 @@ export function PullIndicator({ pull, refreshing }: { pull: number; refreshing: 
           height="18"
           viewBox="0 0 24 24"
           fill="none"
+          stroke={stroke}
+          strokeWidth="2.4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
           className={refreshing ? "build-pull-spin" : undefined}
           style={!refreshing ? { transform: `rotate(${progress * 270}deg)` } : undefined}
         >
-          <path
-            d="M12 5a7 7 0 1 0 6.7 5"
-            stroke={ready ? "var(--color-forest)" : "var(--color-slate)"}
-            strokeWidth="2.4"
-            strokeLinecap="round"
-          />
-          <path d="M18.5 3.5L19 10l-6.4-1" stroke={ready ? "var(--color-forest)" : "var(--color-slate)"} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+          {/* clean circular-arrow refresh glyph (Feather rotate-cw), arrowhead tangent to the arc */}
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+          <path d="M23 4v6h-6" />
         </svg>
       </div>
     </div>

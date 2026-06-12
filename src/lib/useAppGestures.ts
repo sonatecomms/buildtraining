@@ -6,7 +6,7 @@ const SLOP = 12; // px before we commit to an axis
 const SWIPE_MIN = 55; // px of horizontal travel to switch view
 const PULL_DAMP = 0.7; // resistance on the pull-to-refresh drag; lighter = shorter drag,
                        // so the pull can start anywhere on screen (not just near the top)
-const PULL_TRIGGER = 52; // px (after damping) to fire a refresh
+export const PULL_TRIGGER = 52; // px (after damping) to fire a refresh (shared with the indicator)
 const PULL_MAX = 120; // px (after damping) the indicator travels
 
 // Walk up from the touch target: if any ancestor scrolls horizontally, this
