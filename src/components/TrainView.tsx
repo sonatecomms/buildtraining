@@ -496,11 +496,11 @@ function RunnerItem({
           {activity ? (
             <div className="space-y-1.5">
               <div className="grid grid-cols-2 gap-2">
-                <LogField label="Duration" value={r.duration} placeholder="30 min" onChange={(v) => onChange({ duration: v })} />
+                <LogField label="Duration" value={r.duration} placeholder="30 min" inputMode="decimal" onChange={(v) => onChange({ duration: v })} />
                 {ex?.intensity ? (
                   <LogField label="Intensity" value={r.intensity} placeholder="Easy / Hard" onChange={(v) => onChange({ intensity: v })} />
                 ) : (
-                  <LogField label="Distance" value={r.distance} placeholder="3 mi" onChange={(v) => onChange({ distance: v })} />
+                  <LogField label="Distance" value={r.distance} placeholder="3 mi" inputMode="decimal" onChange={(v) => onChange({ distance: v })} />
                 )}
               </div>
               {speed && (
@@ -512,10 +512,10 @@ function RunnerItem({
           ) : (
             <div className={`grid ${bodyweight ? "grid-cols-2" : "grid-cols-3"} gap-2`}>
               {!bodyweight && (
-                <LogField label="Weight" value={r.weight} placeholder="lbs" onChange={(v) => onChange({ weight: v })} />
+                <LogField label="Weight" value={r.weight} placeholder="lbs" inputMode="decimal" onChange={(v) => onChange({ weight: v })} />
               )}
-              <LogField label="Sets" value={r.setsDone} placeholder={String(item.sets)} onChange={(v) => onChange({ setsDone: v })} />
-              <LogField label="Reps" value={r.repsDone} placeholder={item.reps} onChange={(v) => onChange({ repsDone: v })} />
+              <LogField label="Sets" value={r.setsDone} placeholder={String(item.sets)} inputMode="numeric" onChange={(v) => onChange({ setsDone: v })} />
+              <LogField label="Reps" value={r.repsDone} placeholder={item.reps} inputMode="numeric" onChange={(v) => onChange({ repsDone: v })} />
             </div>
           )}
           {restSeconds != null && onRest && (
@@ -568,11 +568,13 @@ function LogField({
   value,
   placeholder,
   onChange,
+  inputMode,
 }: {
   label: string;
   value?: string;
   placeholder?: string;
   onChange: (v: string) => void;
+  inputMode?: "numeric" | "decimal";
 }) {
   return (
     <label className="block min-w-0">
@@ -580,6 +582,7 @@ function LogField({
       <input
         value={value ?? ""}
         placeholder={placeholder}
+        inputMode={inputMode}
         onChange={(e) => onChange(e.target.value)}
         className="w-full min-w-0 mt-0.5 rounded-lg bg-surface border border-line px-2 py-1.5 text-sm outline-none focus:border-forest"
       />
