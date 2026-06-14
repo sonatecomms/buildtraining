@@ -607,16 +607,20 @@ function MetricField({
   };
 
   return (
-    <label className="block min-w-0">
-      <select
-        value={metric}
-        onChange={(e) => pick(e.target.value as MetricKey)}
-        className="block max-w-full text-[10px] uppercase tracking-wide text-slate bg-transparent outline-none cursor-pointer"
-      >
-        {METRIC_ORDER.map((k) => (
-          <option key={k} value={k}>{METRICS[k].label}</option>
-        ))}
-      </select>
+    <div className="block min-w-0">
+      {/* a select dressed to match LogField's tiny label so both inputs align */}
+      <span className="flex items-center gap-0.5 h-[15px]">
+        <select
+          value={metric}
+          onChange={(e) => pick(e.target.value as MetricKey)}
+          className="appearance-none bg-transparent text-[10px] uppercase tracking-wide text-slate leading-none p-0 m-0 outline-none cursor-pointer"
+        >
+          {METRIC_ORDER.map((k) => (
+            <option key={k} value={k}>{METRICS[k].label}</option>
+          ))}
+        </select>
+        <span aria-hidden className="text-[8px] text-slate leading-none">▾</span>
+      </span>
       <input
         value={result[m.field] ?? ""}
         placeholder={m.placeholder}
@@ -624,7 +628,7 @@ function MetricField({
         onChange={(e) => onChange({ [m.field]: e.target.value } as Partial<ItemResult>)}
         className="w-full min-w-0 mt-0.5 rounded-lg bg-surface border border-line px-2 py-1.5 text-sm outline-none focus:border-forest"
       />
-    </label>
+    </div>
   );
 }
 
@@ -643,7 +647,7 @@ function LogField({
 }) {
   return (
     <label className="block min-w-0">
-      <span className="text-[10px] uppercase tracking-wide text-slate">{label}</span>
+      <span className="flex items-center h-[15px] text-[10px] uppercase tracking-wide text-slate">{label}</span>
       <input
         value={value ?? ""}
         placeholder={placeholder}
