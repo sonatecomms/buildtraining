@@ -57,6 +57,9 @@ export interface Exercise {
   speedUnit?: "mph";
   // distance-less activities (yoga, pilates, mobility, sport) log intensity instead
   intensity?: boolean;
+  // erg/air-bike machines (row, ski, bike erg, echo/assault) default the metric
+  // picker to calories rather than distance
+  calories?: boolean;
 }
 
 export type BlockType = "single" | "superset" | "circuit" | "note";
@@ -136,6 +139,7 @@ export interface ItemResult {
   repsDone?: string;
   duration?: string; // activities: "30 min", "1:05:00"
   distance?: string; // activities: "3 mi", "5k"
+  calories?: string; // erg/air-bike machines: "20 cal"
   intensity?: string; // distance-less activities: "Easy", "Hard", "RPE 7"
   feeling?: number; // 1 (rough) … 5 (great)
   note?: string;

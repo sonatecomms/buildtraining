@@ -81,7 +81,7 @@ export default function TrainView({ client }: { client: Client }) {
     // logging real data implicitly checks the movement off — so an athlete who
     // fills in their sets never has to remember to also tap the circle.
     const meaningful =
-      patch.weight || patch.setsDone || patch.repsDone || patch.duration || patch.distance || patch.intensity || patch.feeling || patch.note;
+      patch.weight || patch.setsDone || patch.repsDone || patch.duration || patch.distance || patch.calories || patch.intensity || patch.feeling || patch.note;
     if (meaningful) setDone((d) => (d.has(itemId) ? d : new Set(d).add(itemId)));
   };
 
@@ -119,7 +119,7 @@ export default function TrainView({ client }: { client: Client }) {
     extras.forEach((x) => (exOf[x.id] = x.exerciseId));
     // keep only results that actually carry data
     const entries = Object.values(results)
-      .filter((e) => e.weight || e.setsDone || e.repsDone || e.duration || e.distance || e.intensity || e.feeling || e.note || e.rounds)
+      .filter((e) => e.weight || e.setsDone || e.repsDone || e.duration || e.distance || e.calories || e.intensity || e.feeling || e.note || e.rounds)
       .map((e) => ({ ...e, exerciseId: exOf[e.itemId], extra: extraIds.has(e.itemId) || undefined }));
     const allDone = totalItems > 0 && done.size >= totalItems;
     logWorkout({
@@ -446,7 +446,7 @@ function RunnerItem({
     : null;
   // Collapse by default so the runner reads as a scannable checklist instead of a
   // wall of inputs; auto-open extras (just added) and anything already logged.
-  const hasData = !!(r.weight || r.setsDone || r.repsDone || r.duration || r.distance || r.intensity || r.feeling || r.note);
+  const hasData = !!(r.weight || r.setsDone || r.repsDone || r.duration || r.distance || r.calories || r.intensity || r.feeling || r.note);
   const [open, setOpen] = useState<boolean>(isExtra || hasData);
   const [playing, setPlaying] = useState(false);
 
@@ -468,7 +468,7 @@ function RunnerItem({
           </span>
           <span className="text-xs text-slate">
             {activity ? (
-              "log your time & distance"
+              "log your time + distance, calories or reps"
             ) : isExtra ? (
               "your own movement"
             ) : (
@@ -500,7 +500,7 @@ function RunnerItem({
                 {ex?.intensity ? (
                   <LogField label="Intensity" value={r.intensity} placeholder="Easy / Hard" onChange={(v) => onChange({ intensity: v })} />
                 ) : (
-                  <LogField label="Distance" value={r.distance} placeholder="3 mi" inputMode="decimal" onChange={(v) => onChange({ distance: v })} />
+                  <MetricField result={r} defaultMetric={ex?.calories ? "calories" : "distance"} onChange={onChange} />
                 )}
               </div>
               {speed && (
@@ -560,6 +560,63 @@ function RunnerItem({
 
       {playing && <VideoModal url={url} title={ex?.name} onClose={() => setPlaying(false)} />}
     </div>
+  );
+}
+
+// Conditioning movements are logged by whichever metric the workout prescribes,
+// so instead of a fixed field the athlete picks one (Distance / Calories / Reps)
+// from a dropdown and the value input's keypad + placeholder switch to match.
+// One metric at a time: switching clears the others so the log stays unambiguous.
+const METRICS = {
+  distance: { field: "distance", label: "Distance", placeholder: "500 m", inputMode: "decimal" },
+  calories: { field: "calories", label: "Calories", placeholder: "20 cal", inputMode: "numeric" },
+  reps: { field: "repsDone", label: "Reps", placeholder: "60", inputMode: "numeric" },
+} as const;
+type MetricKey = keyof typeof METRICS;
+const METRIC_ORDER: MetricKey[] = ["distance", "calories", "reps"];
+
+function MetricField({
+  result,
+  defaultMetric,
+  onChange,
+}: {
+  result: ItemResult;
+  defaultMetric: MetricKey;
+  onChange: (patch: Partial<ItemResult>) => void;
+}) {
+  // open on whichever metric already has a logged value, else the exercise default
+  const logged = METRIC_ORDER.find((k) => result[METRICS[k].field]);
+  const [metric, setMetric] = useState<MetricKey>(logged ?? defaultMetric);
+  const m = METRICS[metric];
+
+  const pick = (next: MetricKey) => {
+    setMetric(next);
+    const patch: Partial<ItemResult> = {};
+    for (const k of METRIC_ORDER) {
+      if (k !== next) (patch as Record<string, string | undefined>)[METRICS[k].field] = undefined;
+    }
+    onChange(patch);
+  };
+
+  return (
+    <label className="block min-w-0">
+      <select
+        value={metric}
+        onChange={(e) => pick(e.target.value as MetricKey)}
+        className="block max-w-full text-[10px] uppercase tracking-wide text-slate bg-transparent outline-none cursor-pointer"
+      >
+        {METRIC_ORDER.map((k) => (
+          <option key={k} value={k}>{METRICS[k].label}</option>
+        ))}
+      </select>
+      <input
+        value={result[m.field] ?? ""}
+        placeholder={m.placeholder}
+        inputMode={m.inputMode}
+        onChange={(e) => onChange({ [m.field]: e.target.value } as Partial<ItemResult>)}
+        className="w-full min-w-0 mt-0.5 rounded-lg bg-surface border border-line px-2 py-1.5 text-sm outline-none focus:border-forest"
+      />
+    </label>
   );
 }
 

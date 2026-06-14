@@ -34,8 +34,8 @@ export const SEED_EXERCISES: Exercise[] = [
   { id: "ex-pallof", name: "Pallof Press", category: "Core", equipment: "Cable", primaryMuscle: "Anti-Rotation", youtubeUrl: "https://www.youtube.com/watch?v=AH_QZLm_0-s" },
   { id: "ex-deadbug", name: "Dead Bug", category: "Core", equipment: "Bodyweight", primaryMuscle: "Core", youtubeUrl: "https://www.youtube.com/watch?v=4XLEnwUr1d8" },
 
-  { id: "ex-row-erg", name: "Rowing Erg", category: "Cardio", equipment: "Cardio Machine", primaryMuscle: "Full Body", activity: true, youtubeUrl: "https://www.youtube.com/watch?v=H0r_ZPXJLtg" },
-  { id: "ex-assaultbike", name: "Assault Bike", category: "Cardio", equipment: "Cardio Machine", primaryMuscle: "Full Body", activity: true, speedUnit: "mph", youtubeUrl: "https://www.youtube.com/watch?v=zV2DPjFvtb4" },
+  { id: "ex-row-erg", name: "Rowing Erg", category: "Cardio", equipment: "Cardio Machine", primaryMuscle: "Full Body", activity: true, calories: true, youtubeUrl: "https://www.youtube.com/watch?v=H0r_ZPXJLtg" },
+  { id: "ex-assaultbike", name: "Assault Bike", category: "Cardio", equipment: "Cardio Machine", primaryMuscle: "Full Body", activity: true, calories: true, speedUnit: "mph", youtubeUrl: "https://www.youtube.com/watch?v=zV2DPjFvtb4" },
   { id: "ex-run", name: "Treadmill Run", category: "Cardio", equipment: "Cardio Machine", primaryMuscle: "Legs / Heart", activity: true, youtubeUrl: "" },
   { id: "ex-jumprope", name: "Jump Rope", category: "Cardio", equipment: "Other", primaryMuscle: "Calves / Heart", youtubeUrl: "https://www.youtube.com/watch?v=u3zgHI8QnqE" },
 
