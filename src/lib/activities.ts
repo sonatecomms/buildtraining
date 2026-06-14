@@ -70,6 +70,16 @@ export function runPace(duration?: string, distance?: string): string | null {
   return `${m}:${String(sec).padStart(2, "0")} / mi`;
 }
 
+// Calorie rate as "X.X cal/min" from a duration + calories, or null if not derivable.
+export function calsPerMin(duration?: string, calories?: string): string | null {
+  const min = parseDurationMin(duration);
+  const cal = calories ? parseFloat(calories) : NaN;
+  if (min == null || min <= 0 || Number.isNaN(cal) || cal <= 0) return null;
+  const rate = cal / min;
+  if (!Number.isFinite(rate) || rate > 100) return null; // sanity guard
+  return `${rate.toFixed(1)} cal/min`;
+}
+
 // Average speed as "X.X mph" from a duration + distance, or null if not derivable.
 export function speedMph(duration?: string, distance?: string): string | null {
   const min = parseDurationMin(duration);

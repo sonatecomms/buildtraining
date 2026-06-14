@@ -12,7 +12,7 @@ import {
 import { flushPush } from "@/lib/sync";
 import type { Client, Exercise, ItemResult, ProgramItem, Workout, WorkoutLog } from "@/lib/types";
 import { youtubeId } from "@/lib/youtube";
-import { runPace, speedMph } from "@/lib/activities";
+import { calsPerMin, runPace, speedMph } from "@/lib/activities";
 import { parseRest, formatClock } from "@/lib/rest";
 import { chime } from "@/lib/sound";
 import { pushRecent } from "@/lib/recents";
@@ -444,6 +444,9 @@ function RunnerItem({
       ? speedMph(r.duration, r.distance)
       : runPace(r.duration, r.distance)
     : null;
+  // calorie-rate readout when the athlete logged calories (one metric at a time,
+  // so this and the distance pace/speed never both show)
+  const output = activity ? calsPerMin(r.duration, r.calories) : null;
   // Collapse by default so the runner reads as a scannable checklist instead of a
   // wall of inputs; auto-open extras (just added) and anything already logged.
   const hasData = !!(r.weight || r.setsDone || r.repsDone || r.duration || r.distance || r.calories || r.intensity || r.feeling || r.note);
@@ -506,6 +509,11 @@ function RunnerItem({
               {speed && (
                 <p className="text-xs text-slate text-right">
                   {speedLabel} <span className="font-semibold text-forest">{speed}</span>
+                </p>
+              )}
+              {output && (
+                <p className="text-xs text-slate text-right">
+                  Output <span className="font-semibold text-forest">{output}</span>
                 </p>
               )}
             </div>
