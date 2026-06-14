@@ -499,6 +499,7 @@ function SortableBlock({
                     ×
                     <input
                       type="number"
+                      inputMode="numeric"
                       min={1}
                       value={block.rounds ?? 3}
                       onChange={(e) => setBlockRounds(clientId, workoutId, block.id, Math.max(1, +e.target.value))}
@@ -512,6 +513,7 @@ function SortableBlock({
                     cap
                     <input
                       type="number"
+                      inputMode="numeric"
                       min={1}
                       value={Math.round((block.capSec ?? 1200) / 60)}
                       onChange={(e) => setBlockConfig(clientId, workoutId, block.id, { capSec: Math.max(1, +e.target.value) * 60 })}
@@ -536,6 +538,7 @@ function SortableBlock({
                     ×
                     <input
                       type="number"
+                      inputMode="numeric"
                       min={1}
                       value={block.rounds ?? 10}
                       onChange={(e) => setBlockConfig(clientId, workoutId, block.id, { rounds: Math.max(1, +e.target.value) })}
@@ -726,11 +729,13 @@ function Field({
   value,
   onChange,
   type = "text",
+  inputMode,
 }: {
   label: string;
   value: string | number;
   onChange: (v: string) => void;
   type?: string;
+  inputMode?: "numeric" | "decimal";
 }) {
   const [saved, setSaved] = useState(false);
   useEffect(() => {
@@ -743,6 +748,7 @@ function Field({
       <span className="text-[10px] uppercase tracking-wide text-slate">{label}</span>
       <input
         type={type}
+        inputMode={inputMode ?? (type === "number" ? "numeric" : undefined)}
         defaultValue={value}
         onBlur={(e) => {
           onChange(e.target.value);

@@ -388,6 +388,7 @@ function NumRow({
         </button>
         <input
           type="number"
+          inputMode="numeric"
           value={value}
           min={min}
           max={max}

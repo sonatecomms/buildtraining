@@ -236,21 +236,21 @@ export default function ProfileEditor({
           <div className="col-span-2">
             <Labeled label="Height">
               <div className="flex items-center gap-2">
-                <input type="number" className={inputCls} placeholder="5" defaultValue={client.stats.heightFt ?? ""} onBlur={(e) => stat("heightFt", e.target.value)} />
+                <input type="number" inputMode="numeric" className={inputCls} placeholder="5" defaultValue={client.stats.heightFt ?? ""} onBlur={(e) => stat("heightFt", e.target.value)} />
                 <span className="text-slate text-sm">ft</span>
-                <input type="number" className={inputCls} placeholder="10" defaultValue={client.stats.heightIn ?? ""} onBlur={(e) => stat("heightIn", e.target.value)} />
+                <input type="number" inputMode="numeric" className={inputCls} placeholder="10" defaultValue={client.stats.heightIn ?? ""} onBlur={(e) => stat("heightIn", e.target.value)} />
                 <span className="text-slate text-sm">in</span>
               </div>
             </Labeled>
           </div>
           <Labeled label="Weight (lbs)">
-            <input type="number" className={inputCls} defaultValue={client.stats.weightLb ?? ""} onBlur={(e) => stat("weightLb", e.target.value)} />
+            <input type="number" inputMode="decimal" className={inputCls} defaultValue={client.stats.weightLb ?? ""} onBlur={(e) => stat("weightLb", e.target.value)} />
           </Labeled>
           <Labeled label="Age">
-            <input type="number" className={inputCls} defaultValue={client.stats.age ?? ""} onBlur={(e) => stat("age", e.target.value)} />
+            <input type="number" inputMode="numeric" className={inputCls} defaultValue={client.stats.age ?? ""} onBlur={(e) => stat("age", e.target.value)} />
           </Labeled>
           <Labeled label="Body fat (%)">
-            <input type="number" className={inputCls} defaultValue={client.stats.bodyfatPct ?? ""} onBlur={(e) => stat("bodyfatPct", e.target.value)} />
+            <input type="number" inputMode="decimal" className={inputCls} defaultValue={client.stats.bodyfatPct ?? ""} onBlur={(e) => stat("bodyfatPct", e.target.value)} />
           </Labeled>
         </div>
       </Card>
