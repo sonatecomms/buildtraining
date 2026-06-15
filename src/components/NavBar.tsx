@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import type { LucideIcon } from "lucide-react";
 import { isIntroDone } from "@/lib/intro";
 
 // useLayoutEffect on the client (measure before paint), useEffect on the server.
@@ -10,7 +11,7 @@ const useIso = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 export interface NavItem {
   id: string;
   label: string;
-  icon: string;
+  icon: LucideIcon; // crisp line icon (chrome); emoji is reserved for moments
   href?: string; // present → renders a <Link> (coach, route-based nav)
 }
 
@@ -110,13 +111,14 @@ export function NavBar({
         />
         {items.map((t, i) => {
           const active = t.id === activeId;
+          const Icon = t.icon;
           const inner = (
             <span
               className={`build-nav-stack${popped ? " build-nav-pop" : ""}`}
               style={popped ? { animationDelay: `${i * 0.1}s` } : undefined}
             >
               <span className="build-nav-ico">
-                <span aria-hidden>{t.icon}</span>
+                <Icon size={22} strokeWidth={1.75} aria-hidden />
               </span>
               <span className="build-nav-label">{t.label}</span>
             </span>

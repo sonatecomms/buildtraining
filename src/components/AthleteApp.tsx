@@ -20,6 +20,7 @@ import {
   toLoginId,
 } from "@/lib/login";
 import type { Client } from "@/lib/types";
+import { Dumbbell, Timer, Calculator, BookOpen, type LucideIcon } from "lucide-react";
 import { getSupabase } from "@/lib/supabase";
 import { Avatar, Button } from "./ui";
 import TrainView from "./TrainView";
@@ -36,12 +37,13 @@ import { useSession } from "./SessionProvider";
 
 type View = "train" | "timer" | "prs" | "library" | "settings";
 
-const NAV: { id: View; label: string; icon: string }[] = [
-  { id: "train", label: "Train", icon: "🔥" },
-  { id: "timer", label: "Timer", icon: "⏱️" },
-  { id: "prs", label: "Numbers", icon: "🔢" },
-  { id: "library", label: "Library", icon: "📚" },
-  { id: "settings", label: "Settings", icon: "⚙️" },
+// Bottom nav = the 4 day-to-day views. Settings/Profile is reached via the header
+// avatar (it was a redundant 5th tab) — leaner thumb reach.
+const NAV: { id: View; label: string; icon: LucideIcon }[] = [
+  { id: "train", label: "Train", icon: Dumbbell },
+  { id: "timer", label: "Timer", icon: Timer },
+  { id: "prs", label: "Numbers", icon: Calculator },
+  { id: "library", label: "Library", icon: BookOpen },
 ];
 
 export default function AthleteApp({ clientId }: { clientId: string }) {

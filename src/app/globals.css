@@ -28,6 +28,19 @@
   --font-sans: var(--font-poppins), system-ui, sans-serif;
   --font-display: var(--font-league), var(--font-poppins), system-ui, sans-serif;
   --radius-xl2: 1.25rem;
+
+  /* facelift: elevation + shape system (Blend + Bold) */
+  --radius-card: 1.375rem; /* 22px — standard card */
+  --radius-hero: 1.625rem; /* 26px — gradient hero cards */
+  --shadow-card: 0 1px 2px rgba(25, 53, 12, 0.04), 0 10px 28px -12px rgba(25, 53, 12, 0.16);
+  --shadow-hero: 0 16px 36px -14px rgba(25, 53, 12, 0.55);
+  --shadow-fab: 0 10px 24px -8px rgba(25, 53, 12, 0.6);
+}
+
+/* forest→green energetic hero fill (streak, PR, metcon score) */
+.build-hero {
+  background-image: linear-gradient(135deg, var(--color-forest), var(--color-green));
+  color: var(--color-bone);
 }
 
 :root {
