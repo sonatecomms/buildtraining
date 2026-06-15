@@ -125,11 +125,14 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
           </div>
         ) : view === "train" ? (
           <>
-            <div className="mb-4">
-              <h1 className="text-2xl font-bold leading-tight">
-                Hi, {client.name.split(" ")[0]} <GreetingEmoji />
-              </h1>
-              <p className="text-slate text-sm">Let&apos;s get after it.</p>
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h1 className="text-2xl font-bold leading-tight">
+                  Hi, {client.name.split(" ")[0]} <GreetingEmoji />
+                </h1>
+                <p className="text-slate text-sm">Let&apos;s get after it.</p>
+              </div>
+              <TodayBadge />
             </div>
             <TrainView client={client} />
           </>
@@ -172,6 +175,25 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
       </main>
 
       <NavBar items={NAV} activeId={view} onSelect={(id) => setView(id as View)} />
+    </div>
+  );
+}
+
+// Today's date, right-aligned beside the greeting — fills the dead space and
+// orients the athlete on the day. Mounted-gated so the server (UTC) and client
+// (local) never disagree on the date → no hydration mismatch.
+function TodayBadge() {
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => setNow(new Date()), []);
+  if (!now) return <div className="shrink-0" aria-hidden />;
+  const weekday = now.toLocaleDateString(undefined, { weekday: "short" });
+  const month = now.toLocaleDateString(undefined, { month: "short" });
+  const day = now.getDate();
+  return (
+    <div className="shrink-0 text-right leading-tight">
+      <p className="text-[10px] uppercase tracking-[0.12em] text-slate/70">{weekday}</p>
+      <p className="font-display text-2xl text-forest leading-none mt-0.5">{day}</p>
+      <p className="text-[11px] text-slate">{month}</p>
     </div>
   );
 }
