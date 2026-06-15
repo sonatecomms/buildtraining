@@ -257,7 +257,7 @@ export default function ProgramBuilder({ clientId }: { clientId: string }) {
               + Add {DOW_LONG[day]} workout
             </Button>
             <Button variant="outline" onClick={() => setGenerating(true)}>
-              ✨ Generate workout
+              Build a workout
             </Button>
           </div>
         </Card>
@@ -289,13 +289,13 @@ export default function ProgramBuilder({ clientId }: { clientId: string }) {
 
       {!readOnly && dayWorkouts.length > 0 && (
         <Button variant="outline" className="w-full" onClick={() => setGenerating(true)}>
-          ✨ Generate another workout
+          Build another workout
         </Button>
       )}
 
       {!readOnly && client && (
         <div className="fixed bottom-24 right-4 z-30" style={{ marginBottom: "env(safe-area-inset-bottom)" }}>
-          <Fab label="Generate workout" onClick={() => setGenerating(true)}>
+          <Fab label="Build a workout" onClick={() => setGenerating(true)}>
             <Plus size={26} />
           </Fab>
         </div>

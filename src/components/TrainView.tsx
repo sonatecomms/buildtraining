@@ -476,7 +476,7 @@ export default function TrainView({
       {/* athlete-only floating action: build me a workout */}
       {!coachView && !readOnly && (
         <div className="fixed bottom-24 right-4 z-30" style={{ marginBottom: "env(safe-area-inset-bottom)" }}>
-          <Fab label="Build me a workout" onClick={() => setGenerating(true)}>
+          <Fab label="Build a workout" onClick={() => setGenerating(true)}>
             <Plus size={26} />
           </Fab>
         </div>
