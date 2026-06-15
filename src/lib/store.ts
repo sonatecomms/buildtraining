@@ -622,7 +622,15 @@ function startOfWeek(d: Date): Date {
   return x;
 }
 
+// A log with nothing checked off and nothing logged isn't a real session — it's
+// the residue of an athlete clearing everything out of an own-work entry. Treat
+// it as no session: hidden from views, uncounted by the streak/volume math.
+export function isEmptyLog(l: WorkoutLog): boolean {
+  return (l.entries?.length ?? 0) === 0 && l.completedItemIds.length === 0;
+}
+
 export function computeStreak(logs: WorkoutLog[], weeklyTarget: number): StreakInfo {
+  logs = logs.filter((l) => !isEmptyLog(l));
   const days = Array.from(new Set(logs.map((l) => l.date))).sort(); // asc
   const totalSessions = logs.length;
 

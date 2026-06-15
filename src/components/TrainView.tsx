@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type TouchEvent as RTouchEvent } from "react";
 import {
   computeStreak,
+  isEmptyLog,
   logWorkout,
   uid,
   useExercises,
@@ -47,7 +48,11 @@ export default function TrainView({
   coachView?: boolean;
 }) {
   const program = useProgramForClient(client.id);
-  const logs = useLogsForClient(client.id);
+  const rawLogs = useLogsForClient(client.id);
+  // Drop "empty" logs (an own-work entry the athlete cleared out) from every
+  // view + the streak — they read as no session at all. rawLogs is kept so
+  // finish() can still find and blank the underlying row.
+  const logs = rawLogs.filter((l) => !isEmptyLog(l));
   const exercises = useExercises();
   const byId = Object.fromEntries(exercises.map((e) => [e.id, e]));
   const streak = computeStreak(logs, client.intendedFrequency);
@@ -170,6 +175,31 @@ export default function TrainView({
         entries.push({ itemId: x.id, exerciseId: x.exerciseId, extra: true });
       }
     }
+    // Nothing checked off, nothing logged (e.g. the athlete deleted their only
+    // own-work movement). This isn't a session: don't celebrate or touch the
+    // streak. If a saved row already exists for this slot, blank it so the day
+    // resets to the +add state — athletes can't DELETE rows, only update, so we
+    // clear it in place; isEmptyLog then hides it everywhere.
+    if (entries.length === 0 && done.size === 0) {
+      const existed = rawLogs.some(
+        (l) => l.clientId === client.id && l.workoutId === running.id && l.date === selectedDate,
+      );
+      if (existed) {
+        logWorkout({
+          clientId: client.id,
+          workoutId: running.id,
+          workoutName: running.name,
+          date: selectedDate,
+          completedItemIds: [],
+          entries: [],
+          workoutSnapshot: undefined,
+        });
+        void flushPush();
+      }
+      setRunning(null);
+      return;
+    }
+
     const allDone = totalItems > 0 && done.size >= totalItems;
     logWorkout({
       clientId: client.id,
