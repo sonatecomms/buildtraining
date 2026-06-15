@@ -239,7 +239,6 @@ export default function ProgramBuilder({ clientId }: { clientId: string }) {
         {pasted && <span className="text-xs text-forest font-medium w-full">✓ Pasted into this week</span>}
       </div>
 
-      <p className="text-sm font-semibold text-slate -mb-1">{DOW_LONG[day]}</p>
 
       {readOnly ? (
         dayWorkouts.length === 0 ? (

@@ -376,7 +376,6 @@ export default function TrainView({
       )}
 
       <div>
-        <p className="text-sm font-semibold text-slate mb-2">{DOW_LONG[day]}</p>
         <div className="space-y-2">
           {!ready && (
             <>
