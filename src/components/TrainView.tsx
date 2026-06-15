@@ -75,6 +75,16 @@ export default function TrainView({
   const logByWorkout = Object.fromEntries(
     logs.filter((l) => l.date === selectedDate).map((l) => [l.workoutId, l]),
   );
+  // sessions logged on this day whose workout isn't in this week's programming
+  // (e.g. older sessions from before the program changed) — surfaced so paging
+  // back still shows completed work instead of a blank day.
+  const programmedIds = new Set(dayWorkouts.map((w) => w.id));
+  const orphanLogs = logs.filter(
+    (l) =>
+      l.date === selectedDate &&
+      !programmedIds.has(l.workoutId) &&
+      l.workoutId !== `extra-${selectedDate}`,
+  );
   // A coach paging back into a past week gets a read-only review (programming +
   // the athlete's logged responses), not the interactive runner. The athlete can
   // edit any week; the coach's current week stays interactive too.
@@ -348,13 +358,14 @@ export default function TrainView({
             <ReviewRegion
               dayWorkouts={dayWorkouts}
               logByWorkout={logByWorkout}
+              orphanLogs={orphanLogs}
               byId={byId}
               day={day}
               selectedDate={selectedDate}
               firstName={client.name.split(" ")[0]}
             />
           )}
-          {ready && !readOnly && dayWorkouts.length === 0 && (() => {
+          {ready && !readOnly && dayWorkouts.length === 0 && orphanLogs.length === 0 && (() => {
             // find the next scheduled day so a rest day still answers "what's next?"
             const nextDow = marked.size
               ? Array.from({ length: 7 }, (_, i) => (day + 1 + i) % 7).find((d) => marked.has(d))
@@ -393,6 +404,17 @@ export default function TrainView({
               </Card>
             );
           })}
+
+          {/* sessions completed this day whose programming has since moved/changed */}
+          {ready && !readOnly && orphanLogs.map((l) => (
+            <ReviewCard
+              key={l.id}
+              workout={{ id: l.workoutId, name: l.workoutName, dow: day, blocks: [] }}
+              log={l}
+              byId={byId}
+              firstName={client.name.split(" ")[0]}
+            />
+          ))}
 
           {/* log your own session, any day */}
           {ready && !readOnly && (() => {
@@ -971,6 +993,7 @@ function ConditioningTimer({
 function ReviewRegion({
   dayWorkouts,
   logByWorkout,
+  orphanLogs,
   byId,
   day,
   selectedDate,
@@ -978,6 +1001,7 @@ function ReviewRegion({
 }: {
   dayWorkouts: Workout[];
   logByWorkout: Record<string, WorkoutLog>;
+  orphanLogs: WorkoutLog[];
   byId: Record<string, Exercise>;
   day: number;
   selectedDate: string;
@@ -986,7 +1010,7 @@ function ReviewRegion({
   const extraId = `extra-${selectedDate}`;
   const extraLog = logByWorkout[extraId];
 
-  if (dayWorkouts.length === 0 && !extraLog) {
+  if (dayWorkouts.length === 0 && !extraLog && orphanLogs.length === 0) {
     return (
       <Card className="p-6 text-center">
         <div className="text-3xl mb-1">🧘</div>
@@ -1000,6 +1024,15 @@ function ReviewRegion({
     <>
       {dayWorkouts.map((w) => (
         <ReviewCard key={w.id} workout={w} log={logByWorkout[w.id]} byId={byId} firstName={firstName} />
+      ))}
+      {orphanLogs.map((l) => (
+        <ReviewCard
+          key={l.id}
+          workout={{ id: l.workoutId, name: l.workoutName, dow: day, blocks: [] }}
+          log={l}
+          byId={byId}
+          firstName={firstName}
+        />
       ))}
       {extraLog && (
         <ReviewCard
@@ -1078,7 +1111,9 @@ function ReviewCard({
 
       {extras.length > 0 && (
         <div className="space-y-2">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate">Added by {firstName}</p>
+          {workout.blocks.length > 0 && (
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate">Added by {firstName}</p>
+          )}
           {extras.map((e) => (
             <ReviewItem
               key={e.itemId}
