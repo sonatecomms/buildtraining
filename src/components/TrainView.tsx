@@ -432,23 +432,60 @@ export default function TrainView({
         ) : logs.length === 0 ? (
           <p className="text-slate text-sm">No sessions logged yet.</p>
         ) : (
-          <div className="space-y-2">
-            {logs.slice(0, 8).map((l) => {
-              const count = l.entries?.length ?? 0;
-              const feeling = l.entries?.find((e) => e.feeling)?.feeling;
-              return (
-                <div key={l.id} className="flex items-center gap-3 text-sm">
-                  <span>{feeling ? FEELINGS[feeling - 1] : "✅"}</span>
-                  <span className="flex-1 truncate">{l.workoutName}</span>
-                  <span className="text-slate text-xs shrink-0">
-                    {count > 0 ? `${count} logged · ` : ""}{relativeDate(l.date)}
-                  </span>
-                </div>
-              );
-            })}
+          <div className="space-y-1">
+            {logs.slice(0, 8).map((l) => (
+              <RecentRow key={l.id} log={l} byId={byId} />
+            ))}
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// A row in the Recent activity feed. Collapsed it shows the session summary;
+// tapping expands it to the athlete's logged movements — their responses, effort,
+// and any notes they wrote — so the coach can read them without opening a session.
+function RecentRow({ log, byId }: { log: WorkoutLog; byId: Record<string, Exercise> }) {
+  const [open, setOpen] = useState(false);
+  // real logged movements (skip block-level AMRAP/EMOM rounds, which have no exercise)
+  const entries = (log.entries ?? []).filter((e) => e.exerciseId);
+  const feeling = entries.find((e) => e.feeling != null)?.feeling;
+  const noteCount = entries.filter((e) => e.note?.trim()).length;
+  const hasDetail = entries.length > 0;
+
+  return (
+    <div className="rounded-xl border border-line bg-surface">
+      <button
+        onClick={() => hasDetail && setOpen((o) => !o)}
+        className="w-full flex items-center gap-3 text-sm px-2.5 py-2 text-left"
+        aria-expanded={hasDetail ? open : undefined}
+      >
+        <span>{feeling ? FEELINGS[feeling - 1] : "✅"}</span>
+        <span className="flex-1 truncate">{log.workoutName}</span>
+        {noteCount > 0 && (
+          <span className="text-xs text-sky-dark shrink-0" title={`${noteCount} note${noteCount === 1 ? "" : "s"}`}>
+            💬{noteCount > 1 ? ` ${noteCount}` : ""}
+          </span>
+        )}
+        <span className="text-slate text-xs shrink-0">
+          {entries.length > 0 ? `${entries.length} logged · ` : ""}{relativeDate(log.date)}
+        </span>
+        {hasDetail && <span className="text-slate text-[10px] shrink-0 w-3">{open ? "▲" : "▼"}</span>}
+      </button>
+      {open && (
+        <div className="px-2.5 pb-2.5 space-y-2">
+          {entries.map((e) => (
+            <ReviewItem
+              key={e.itemId}
+              item={{ id: e.itemId, exerciseId: e.exerciseId!, sets: 0, reps: "", rest: "" }}
+              ex={byId[e.exerciseId!]}
+              r={e}
+              isExtra
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
