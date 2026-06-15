@@ -152,6 +152,10 @@ export interface Client {
   athleteEmail?: string; // login id (email, or synthetic phone/username) for athlete sign-in
   recoveryEmail?: string; // real address for password recovery when login is phone/username
   archived?: boolean; // hidden from the active roster, recoverable
+  // Coach-granted access to the athlete-facing "Build a workout" AI generator.
+  // Off by default for everyone — athletes without it never see the feature.
+  // The coach flips this per individual from the athlete's profile.
+  generatorEnabled?: boolean;
   createdAt: string;
 }
 

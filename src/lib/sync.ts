@@ -65,6 +65,7 @@ const clientRow = (c: Client) => ({
   athlete_email: c.athleteEmail ?? null,
   recovery_email: c.recoveryEmail ?? null,
   archived: c.archived ?? false,
+  generator_enabled: c.generatorEnabled ?? false,
   created_at: c.createdAt,
 });
 
@@ -79,6 +80,7 @@ const rowClient = (r: Record<string, unknown>): Client => ({
   athleteEmail: (r.athlete_email as string) ?? undefined,
   recoveryEmail: (r.recovery_email as string) ?? undefined,
   archived: (r.archived as boolean) ?? false,
+  generatorEnabled: (r.generator_enabled as boolean) ?? false,
   createdAt: r.created_at as string,
 });
 

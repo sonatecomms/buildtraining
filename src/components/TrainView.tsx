@@ -155,10 +155,21 @@ export default function TrainView({
     running.blocks.forEach((b) => b.items.forEach((it) => (exOf[it.id] = it.exerciseId)));
     const extraIds = new Set(extras.map((x) => x.id));
     extras.forEach((x) => (exOf[x.id] = x.exerciseId));
-    // keep only results that actually carry data
+    // keep results that carry data — plus every movement the athlete added
+    // themselves, even with no numbers yet: adding it is intent, so it must
+    // survive Finish to stay editable/deletable when the session is reopened.
+    const hasData = (e: ItemResult) =>
+      e.weight || e.setsDone || e.repsDone || e.duration || e.distance || e.calories || e.intensity || e.feeling || e.note || e.rounds || e.level;
     const entries = Object.values(results)
-      .filter((e) => e.weight || e.setsDone || e.repsDone || e.duration || e.distance || e.calories || e.intensity || e.feeling || e.note || e.rounds || e.level)
+      .filter((e) => extraIds.has(e.itemId) || hasData(e))
       .map((e) => ({ ...e, exerciseId: exOf[e.itemId], extra: extraIds.has(e.itemId) || undefined }));
+    // extras the athlete added but never typed into have no results row at all —
+    // append a bare entry so they persist (and can later be edited or removed).
+    for (const x of extras) {
+      if (!entries.some((e) => e.itemId === x.id)) {
+        entries.push({ itemId: x.id, exerciseId: x.exerciseId, extra: true });
+      }
+    }
     const allDone = totalItems > 0 && done.size >= totalItems;
     logWorkout({
       clientId: client.id,
@@ -416,19 +427,22 @@ export default function TrainView({
             const count = w.blocks.reduce((n, b) => n + b.items.length, 0);
             const logged = logByWorkout[w.id];
             return (
-              <Card key={w.id} className="p-4 flex items-center gap-3">
+              <Card
+                key={w.id}
+                className="p-4 flex items-center gap-3"
+                onClick={() => start(w, logged ?? undefined)}
+              >
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold truncate">{w.name}</p>
                   <p className="text-xs text-slate">
                     {logged ? "✓ Completed — tap to review or revise" : `${count} movements`}
                   </p>
                 </div>
+                {/* visual affordance only — the whole card is the tap target */}
                 {logged ? (
-                  <Button size="sm" variant="outline" onClick={() => start(w, logged)}>
-                    View / edit
-                  </Button>
+                  <Button size="sm" variant="outline">View / edit</Button>
                 ) : (
-                  <Button size="sm" onClick={() => start(w)}>Start</Button>
+                  <Button size="sm">Start</Button>
                 )}
               </Card>
             );
@@ -451,18 +465,18 @@ export default function TrainView({
             const extraLog = logByWorkout[extraId];
             const extraWorkout: Workout = { id: extraId, name: "Your own work", dow: day, blocks: [] };
             return (
-              <Card className="p-4 flex items-center gap-3 border-dashed">
+              <Card
+                className="p-4 flex items-center gap-3 border-dashed"
+                onClick={() => start(extraWorkout, extraLog)}
+              >
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold truncate">Your own work</p>
                   <p className="text-xs text-slate">
                     {extraLog ? "✓ Logged — tap to review or add more" : "Log a run, walk, yoga, lift — anything, on or off plan"}
                   </p>
                 </div>
-                <Button
-                  size="sm"
-                  variant={extraLog ? "outline" : "primary"}
-                  onClick={() => start(extraWorkout, extraLog)}
-                >
+                {/* visual affordance only — the whole card is the tap target */}
+                <Button size="sm" variant={extraLog ? "outline" : "primary"}>
                   {extraLog ? "View / edit" : "+ Log"}
                 </Button>
               </Card>
@@ -472,8 +486,9 @@ export default function TrainView({
         </div>
       </div>
 
-      {/* athlete-only floating action: build me a workout */}
-      {!coachView && !readOnly && (
+      {/* athlete-only floating action: build me a workout.
+          Off by default — only athletes the coach has granted access see it. */}
+      {!coachView && !readOnly && client.generatorEnabled && (
         <div className="fixed bottom-24 right-4 z-30" style={{ marginBottom: "env(safe-area-inset-bottom)" }}>
           <Fab label="Build a workout" onClick={() => setGenerating(true)}>
             <Plus size={26} />
@@ -481,7 +496,7 @@ export default function TrainView({
         </div>
       )}
 
-      {generating && (
+      {generating && client.generatorEnabled && (
         <WorkoutGeneratorModal
           client={client}
           dow={day}

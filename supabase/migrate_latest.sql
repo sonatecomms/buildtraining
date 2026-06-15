@@ -6,6 +6,9 @@
 alter table clients add column if not exists athlete_email text;
 alter table clients add column if not exists recovery_email text;
 alter table clients add column if not exists archived boolean not null default false;
+-- Coach-granted access to the athlete-facing "Build a workout" AI generator.
+-- Off for everyone by default; the coach enables it per athlete.
+alter table clients add column if not exists generator_enabled boolean not null default false;
 alter table workout_logs add column if not exists entries jsonb not null default '[]'::jsonb;
 -- prescription snapshot for sessions not in the synced program (generator-built
 -- workouts, "your own work") so the coach can review what the athlete did

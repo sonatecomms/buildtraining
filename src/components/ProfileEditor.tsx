@@ -302,6 +302,35 @@ export default function ProfileEditor({
 
       {coachView && (
       <>
+      {/* AI workout generator access — off by default, granted per athlete */}
+      <Card className="p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="font-semibold">Build a workout (AI)</h3>
+            <p className="text-[11px] text-slate mt-0.5">
+              {client.generatorEnabled
+                ? "On — this athlete can generate their own workouts."
+                : "Off — the athlete never sees this feature."}
+            </p>
+          </div>
+          <button
+            role="switch"
+            aria-checked={!!client.generatorEnabled}
+            aria-label="Build a workout access"
+            onClick={() => updateClient(client.id, { generatorEnabled: !client.generatorEnabled })}
+            className={`relative shrink-0 h-7 w-12 rounded-full transition-colors ${
+              client.generatorEnabled ? "bg-forest" : "bg-line"
+            }`}
+          >
+            <span
+              className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                client.generatorEnabled ? "translate-x-6" : "translate-x-1"
+              }`}
+            />
+          </button>
+        </div>
+      </Card>
+
       {/* notes */}
       <Card className="p-4">
         <h3 className="font-semibold mb-2">Coach notes</h3>
