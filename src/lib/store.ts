@@ -598,6 +598,7 @@ export interface StreakInfo {
   weekProgressPct: number;
   points: number;
   level: number;
+  totalVolume: number; // total lbs moved (weight × sets × reps) across all logged entries
   badges: Badge[];
 }
 
@@ -656,6 +657,18 @@ export function computeStreak(logs: WorkoutLog[], weeklyTarget: number): StreakI
   const points = totalSessions * 50 + longest * 25;
   const level = Math.floor(points / 500) + 1;
 
+  // total weight moved across every logged set: weight × sets × reps (free-text
+  // fields parsed leniently; non-numeric loads like "BW"/bands just don't count)
+  let totalVolume = 0;
+  for (const l of logs) {
+    for (const e of l.entries ?? []) {
+      const w = parseFloat(e.weight ?? "");
+      const reps = parseFloat(e.repsDone ?? "");
+      const sets = parseFloat(e.setsDone ?? "") || 1;
+      if (w > 0 && reps > 0) totalVolume += w * reps * sets;
+    }
+  }
+
   const badges: Badge[] = [
     { id: "first", label: "First Rep", icon: "🎯", hint: "Log your first workout", earned: totalSessions >= 1 },
     { id: "week", label: "Hot Streak", icon: "🔥", hint: "3-day streak", earned: longest >= 3 },
@@ -665,5 +678,5 @@ export function computeStreak(logs: WorkoutLog[], weeklyTarget: number): StreakI
     { id: "fifty", label: "Half Century", icon: "⭐", hint: "50 total sessions", earned: totalSessions >= 50 },
   ];
 
-  return { current, longest, totalSessions, thisWeek, weeklyTarget, weekProgressPct, points, level, badges };
+  return { current, longest, totalSessions, thisWeek, weeklyTarget, weekProgressPct, points, level, totalVolume, badges };
 }

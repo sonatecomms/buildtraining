@@ -3,6 +3,14 @@
 import type { StreakInfo } from "@/lib/store";
 import { Hero } from "./ui";
 
+// Compact total-volume readout: 950 → "950", 12_400 → "12.4k", 1_200_000 → "1.2M".
+function formatVolume(v: number): string {
+  if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
+  if (v >= 10_000) return `${Math.round(v / 1000)}k`;
+  if (v >= 1_000) return `${(v / 1000).toFixed(1)}k`;
+  return String(Math.round(v));
+}
+
 function Ring({ pct, light = false }: { pct: number; light?: boolean }) {
   const r = 26;
   const c = 2 * Math.PI * r;
@@ -28,7 +36,7 @@ function Ring({ pct, light = false }: { pct: number; light?: boolean }) {
 export default function StreakHeader({ streak }: { streak: StreakInfo }) {
   return (
     <div className="space-y-3">
-      {/* energetic gradient hero (the streak/level moment) */}
+      {/* energetic gradient hero (the streak moment) */}
       <Hero className="p-4">
         <div className="flex items-center gap-4">
           <div className="text-center">
@@ -38,14 +46,10 @@ export default function StreakHeader({ streak }: { streak: StreakInfo }) {
           </div>
 
           <div className="flex-1 min-w-0 border-l border-bone/20 pl-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-xs text-bone/70">Level</div>
-                <div className="font-display text-xl">{streak.level}</div>
-              </div>
-              <div className="text-right">
-                <div className="text-xs text-bone/70">Points</div>
-                <div className="font-display text-xl">{streak.points.toLocaleString()}</div>
+            <div>
+              <div className="text-xs text-bone/70">Volume lifted</div>
+              <div className="font-display text-xl">
+                {formatVolume(streak.totalVolume)} <span className="text-sm font-normal text-bone/70">lbs</span>
               </div>
             </div>
             <div className="flex gap-4 mt-3 text-xs text-bone/80">

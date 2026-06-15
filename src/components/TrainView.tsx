@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type TouchEvent as RTouchEvent } from "react";
 import {
   computeStreak,
   logWorkout,
@@ -314,10 +314,13 @@ export default function TrainView({
           + Add an extra movement
         </Button>
 
-        {/* sticky so Finish is always reachable on a long workout (sits above the nav) */}
+        {/* sticky so the action is always reachable on a long workout (sits above the nav) */}
         <div className="sticky bottom-20 z-30 -mx-4 px-4 pt-2 pb-2 bg-gradient-to-t from-bone via-bone/95 to-transparent">
           <Button className="w-full" onClick={finish}>
-            {totalItems > 0 && done.size >= totalItems ? (
+            {/* "Your own work" is just logging, so it reads "Save", not "Finish workout" */}
+            {running.id.startsWith("extra-") ? (
+              done.size > 0 ? "Save ✓" : "Save"
+            ) : totalItems > 0 && done.size >= totalItems ? (
               "Finish workout ✓"
             ) : (
               <span className="flex flex-col leading-tight">
@@ -621,8 +624,52 @@ function RunnerItem({
   const [open, setOpen] = useState<boolean>(isExtra || hasData);
   const [playing, setPlaying] = useState(false);
 
+  // Swipe-left-to-delete, available on movements the athlete added themselves.
+  // (data-noswipe on the wrapper keeps the app's page-swipe from also firing.)
+  const swipeable = isExtra && !!onRemove;
+  const DELETE_AT = 92; // px of left-drag that triggers the delete on release
+  const [dx, setDx] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const sw = useRef<{ x: number; y: number; axis: "" | "x" | "y" } | null>(null);
+  const onSwipeStart = (e: RTouchEvent) => {
+    const t = e.touches[0];
+    sw.current = { x: t.clientX, y: t.clientY, axis: "" };
+  };
+  const onSwipeMove = (e: RTouchEvent) => {
+    if (!sw.current) return;
+    const t = e.touches[0];
+    const ddx = t.clientX - sw.current.x;
+    const ddy = t.clientY - sw.current.y;
+    if (!sw.current.axis) {
+      if (Math.abs(ddx) < 8 && Math.abs(ddy) < 8) return;
+      sw.current.axis = Math.abs(ddx) > Math.abs(ddy) * 1.2 ? "x" : "y";
+      if (sw.current.axis === "x") setDragging(true);
+    }
+    if (sw.current.axis === "x") setDx(Math.max(-140, Math.min(0, ddx))); // left only, capped
+  };
+  const onSwipeEnd = () => {
+    if (sw.current?.axis === "x" && dx <= -DELETE_AT) onRemove?.();
+    sw.current = null;
+    setDragging(false);
+    setDx(0);
+  };
+
   return (
-    <div className={`rounded-xl border p-2.5 ${checked ? "border-green/50 bg-green/10" : "border-line bg-field"}`}>
+    <div className="relative" data-noswipe={swipeable ? "" : undefined}>
+      {/* delete affordance revealed as the row is dragged left */}
+      {swipeable && dx < 0 && (
+        <div className="absolute inset-0 rounded-xl bg-brick text-bone flex items-center justify-end pr-5 text-sm font-semibold">
+          Delete ✕
+        </div>
+      )}
+      <div
+        onTouchStart={swipeable ? onSwipeStart : undefined}
+        onTouchMove={swipeable ? onSwipeMove : undefined}
+        onTouchEnd={swipeable ? onSwipeEnd : undefined}
+        onTouchCancel={swipeable ? onSwipeEnd : undefined}
+        style={swipeable ? { transform: `translateX(${dx}px)`, transition: dragging ? "none" : "transform 160ms ease" } : undefined}
+        className={`relative rounded-xl border p-2.5 ${checked ? "border-green/50 bg-green/10" : "border-line bg-field"}`}
+      >
       <div className="flex items-center gap-3">
         <button
           onClick={onToggle}
@@ -654,7 +701,13 @@ function RunnerItem({
           <button onClick={() => setPlaying(true)} className="text-sky-dark text-xs shrink-0" aria-label="Play demo">▶</button>
         )}
         {isExtra && onRemove ? (
-          <button onClick={onRemove} className="text-slate hover:text-brick text-sm shrink-0" aria-label="Remove">✕</button>
+          <button
+            onClick={onRemove}
+            className="ml-1.5 -mr-1 px-2 py-1 text-xl leading-none text-slate hover:text-brick active:text-brick shrink-0"
+            aria-label="Remove movement"
+          >
+            ✕
+          </button>
         ) : (
           <button onClick={() => setOpen((o) => !o)} className="text-slate text-xs shrink-0 font-medium">
             {open ? "▲" : "＋ log"}
@@ -733,6 +786,7 @@ function RunnerItem({
           />
         </div>
       )}
+      </div>
 
       {playing && <VideoModal url={url} title={ex?.name} onClose={() => setPlaying(false)} />}
     </div>

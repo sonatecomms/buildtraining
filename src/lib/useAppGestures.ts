@@ -2,8 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 
-const SLOP = 12; // px before we commit to an axis
-const SWIPE_MIN = 55; // px of horizontal travel to switch view
+const SLOP = 10; // px before we commit to an axis
+const SWIPE_MIN = 60; // px of horizontal travel to switch view on a slow drag
+const FLICK_V = 0.5; // px/ms — a quick flick switches view even on a short drag
+const FLICK_MIN = 28; // px minimum travel for a flick to count
+const X_DOMINANCE = 1.25; // horizontal must beat vertical by this much to own the gesture
 const PULL_DAMP = 0.7; // resistance on the pull-to-refresh drag; lighter = shorter drag,
                        // so the pull can start anywhere on screen (not just near the top)
 export const PULL_TRIGGER = 52; // px (after damping) to fire a refresh (shared with the indicator)
@@ -52,6 +55,7 @@ export function useAppGestures<T extends HTMLElement>({
 
     let sx = 0;
     let sy = 0;
+    let stime = 0;
     let axis: "" | "x" | "y" = "";
     let blocked = false; // gesture began on a scroller/slider → leave it alone
     let atTop = false;
@@ -65,6 +69,7 @@ export function useAppGestures<T extends HTMLElement>({
       const t = e.touches[0];
       sx = t.clientX;
       sy = t.clientY;
+      stime = e.timeStamp;
       axis = "";
       pulling = false;
       const target = e.target as HTMLElement;
@@ -80,10 +85,12 @@ export function useAppGestures<T extends HTMLElement>({
       const dx = t.clientX - sx;
       const dy = t.clientY - sy;
 
-      // commit to an axis exactly once, then stick with it for the gesture
+      // commit to an axis exactly once, then stick with it for the gesture.
+      // Horizontal has to clearly dominate to claim the gesture, so a slightly
+      // diagonal scroll never gets hijacked into a page swipe (the "tighter" feel).
       if (!axis) {
         if (Math.abs(dx) < SLOP && Math.abs(dy) < SLOP) return;
-        axis = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+        axis = Math.abs(dx) > Math.abs(dy) * X_DOMINANCE ? "x" : "y";
       }
 
       if (axis === "x") {
@@ -101,11 +108,14 @@ export function useAppGestures<T extends HTMLElement>({
         const t = e.changedTouches[0];
         const dx = t.clientX - sx;
         const dy = t.clientY - sy;
+        const vx = Math.abs(dx) / Math.max(1, e.timeStamp - stime); // px/ms
+        // fire on a long-enough drag OR a quick flick, as long as the motion
+        // stayed dominantly horizontal — crisper than a pure distance gate
         if (
           axis === "x" &&
           cb.current.onSwipe &&
-          Math.abs(dx) >= SWIPE_MIN &&
-          Math.abs(dx) > Math.abs(dy) * 1.3
+          Math.abs(dx) > Math.abs(dy) * 1.3 &&
+          (Math.abs(dx) >= SWIPE_MIN || (vx >= FLICK_V && Math.abs(dx) >= FLICK_MIN))
         ) {
           cb.current.onSwipe(dx < 0 ? 1 : -1); // left → next, right → prev
         }
