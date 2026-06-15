@@ -8,6 +8,7 @@ import {
   useExercises,
   useLogsForClient,
   useProgramForClient,
+  workoutsForWeek,
 } from "@/lib/store";
 import { flushPush } from "@/lib/sync";
 import type { Client, Exercise, ItemResult, ProgramItem, Workout, WorkoutLog } from "@/lib/types";
@@ -16,7 +17,15 @@ import { calsPerMin, runPace, speedMph } from "@/lib/activities";
 import { parseRest, formatClock } from "@/lib/rest";
 import { chime } from "@/lib/sound";
 import { pushRecent } from "@/lib/recents";
-import { DOW_LONG, isoDate, todayDow, weekDates, relativeDate } from "@/lib/week";
+import {
+  DOW_LONG,
+  isoDate,
+  todayDow,
+  weekDatesForOffset,
+  weekLabel,
+  weekStartIso,
+  relativeDate,
+} from "@/lib/week";
 import { Button, Card, Pill, Skeleton } from "./ui";
 import StreakHeader from "./StreakHeader";
 import WeekStrip from "./WeekStrip";
@@ -27,7 +36,13 @@ const BLOCK_LABEL = { single: "", superset: "Superset", circuit: "Circuit", note
 
 export const FEELINGS = ["😣", "😕", "😐", "🙂", "😄"]; // 1..5
 
-export default function TrainView({ client }: { client: Client }) {
+export default function TrainView({
+  client,
+  coachView = false,
+}: {
+  client: Client;
+  coachView?: boolean;
+}) {
   const program = useProgramForClient(client.id);
   const logs = useLogsForClient(client.id);
   const exercises = useExercises();
@@ -35,6 +50,7 @@ export default function TrainView({ client }: { client: Client }) {
   const streak = computeStreak(logs, client.intendedFrequency);
 
   const [day, setDay] = useState<number>(todayDow());
+  const [weekOffset, setWeekOffset] = useState(0);
   const [running, setRunning] = useState<Workout | null>(null);
   const [done, setDone] = useState<Set<string>>(new Set());
   const [results, setResults] = useState<Record<string, ItemResult>>({});
@@ -51,13 +67,18 @@ export default function TrainView({ client }: { client: Client }) {
   const [ready, setReady] = useState(false);
   useEffect(() => setReady(true), []);
 
-  const workouts = program?.workouts ?? [];
+  const weekStart = weekStartIso(weekOffset);
+  const { workouts } = workoutsForWeek(program, weekStart);
   const marked = new Set(workouts.map((w) => w.dow));
   const dayWorkouts = workouts.filter((w) => w.dow === day);
-  const selectedDate = isoDate(weekDates()[day]);
+  const selectedDate = isoDate(weekDatesForOffset(weekOffset)[day]);
   const logByWorkout = Object.fromEntries(
     logs.filter((l) => l.date === selectedDate).map((l) => [l.workoutId, l]),
   );
+  // A coach paging back into a past week gets a read-only review (programming +
+  // the athlete's logged responses), not the interactive runner. The athlete can
+  // edit any week; the coach's current week stays interactive too.
+  const readOnly = coachView && weekOffset < 0;
 
   // Start fresh, or re-open a completed session pre-filled with what was logged.
   const start = (w: Workout, existing?: WorkoutLog) => {
@@ -298,7 +319,21 @@ export default function TrainView({ client }: { client: Client }) {
         </button>
       )}
 
-      <WeekStrip selected={day} onSelect={setDay} marked={marked} />
+      <WeekStrip
+        selected={day}
+        onSelect={setDay}
+        marked={marked}
+        weekOffset={weekOffset}
+        onWeekOffset={setWeekOffset}
+        maxOffset={0}
+      />
+
+      {readOnly && (
+        <div className="-mt-2 rounded-xl border border-sky/40 bg-sky/5 px-3 py-2 text-xs text-ink/80">
+          Reviewing <span className="font-semibold">{weekLabel(weekOffset)}</span> — programming and{" "}
+          {client.name.split(" ")[0]}&apos;s logged responses. Read-only.
+        </div>
+      )}
 
       <div>
         <p className="text-sm font-semibold text-slate mb-2">{DOW_LONG[day]}</p>
@@ -309,7 +344,17 @@ export default function TrainView({ client }: { client: Client }) {
               <Skeleton className="h-[68px] rounded-2xl" />
             </>
           )}
-          {ready && dayWorkouts.length === 0 && (() => {
+          {ready && readOnly && (
+            <ReviewRegion
+              dayWorkouts={dayWorkouts}
+              logByWorkout={logByWorkout}
+              byId={byId}
+              day={day}
+              selectedDate={selectedDate}
+              firstName={client.name.split(" ")[0]}
+            />
+          )}
+          {ready && !readOnly && dayWorkouts.length === 0 && (() => {
             // find the next scheduled day so a rest day still answers "what's next?"
             const nextDow = marked.size
               ? Array.from({ length: 7 }, (_, i) => (day + 1 + i) % 7).find((d) => marked.has(d))
@@ -327,7 +372,7 @@ export default function TrainView({ client }: { client: Client }) {
               </Card>
             );
           })()}
-          {ready && dayWorkouts.map((w) => {
+          {ready && !readOnly && dayWorkouts.map((w) => {
             const count = w.blocks.reduce((n, b) => n + b.items.length, 0);
             const logged = logByWorkout[w.id];
             return (
@@ -350,7 +395,7 @@ export default function TrainView({ client }: { client: Client }) {
           })}
 
           {/* log your own session, any day */}
-          {ready && (() => {
+          {ready && !readOnly && (() => {
             const extraId = `extra-${selectedDate}`;
             const extraLog = logByWorkout[extraId];
             const extraWorkout: Workout = { id: extraId, name: "Your own work", dow: day, blocks: [] };
@@ -878,6 +923,194 @@ function ConditioningTimer({
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ---- read-only review (coach paging back through past weeks) ----------------
+
+// The day's programmed workouts (plus any "your own work") shown as read-only
+// review cards: what was prescribed, alongside the athlete's logged responses.
+function ReviewRegion({
+  dayWorkouts,
+  logByWorkout,
+  byId,
+  day,
+  selectedDate,
+  firstName,
+}: {
+  dayWorkouts: Workout[];
+  logByWorkout: Record<string, WorkoutLog>;
+  byId: Record<string, Exercise>;
+  day: number;
+  selectedDate: string;
+  firstName: string;
+}) {
+  const extraId = `extra-${selectedDate}`;
+  const extraLog = logByWorkout[extraId];
+
+  if (dayWorkouts.length === 0 && !extraLog) {
+    return (
+      <Card className="p-6 text-center">
+        <div className="text-3xl mb-1">🧘</div>
+        <p className="font-semibold">Rest day</p>
+        <p className="text-slate text-sm">Nothing was programmed for this day.</p>
+      </Card>
+    );
+  }
+
+  return (
+    <>
+      {dayWorkouts.map((w) => (
+        <ReviewCard key={w.id} workout={w} log={logByWorkout[w.id]} byId={byId} firstName={firstName} />
+      ))}
+      {extraLog && (
+        <ReviewCard
+          workout={{ id: extraId, name: "Your own work", dow: day, blocks: [] }}
+          log={extraLog}
+          byId={byId}
+          firstName={firstName}
+        />
+      )}
+    </>
+  );
+}
+
+function ReviewCard({
+  workout,
+  log,
+  byId,
+  firstName,
+}: {
+  workout: Workout;
+  log?: WorkoutLog;
+  byId: Record<string, Exercise>;
+  firstName: string;
+}) {
+  const resultByItem: Record<string, ItemResult> = {};
+  for (const e of log?.entries ?? []) resultByItem[e.itemId] = e;
+  const programItemIds = new Set(workout.blocks.flatMap((b) => b.items.map((i) => i.id)));
+  // athlete-added movements (logged but not in the program)
+  const extras = (log?.entries ?? []).filter(
+    (e) => e.exerciseId && (e.extra || !programItemIds.has(e.itemId)),
+  );
+
+  return (
+    <Card className="p-4 space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className="font-semibold truncate">{workout.name}</p>
+        <span className={`text-xs shrink-0 ${log ? "text-forest font-medium" : "text-slate"}`}>
+          {log ? "✓ logged" : "— not logged"}
+        </span>
+      </div>
+
+      {workout.blocks.map((block) => {
+        if (block.type === "note") {
+          return (
+            <div key={block.id} className="rounded-xl border border-sky/40 bg-sky/5 p-2.5">
+              {block.title && <p className="font-semibold text-sm mb-1">{block.title}</p>}
+              {block.text && <p className="text-sm whitespace-pre-wrap text-ink/90">{block.text}</p>}
+            </div>
+          );
+        }
+        const mode = block.type === "circuit" ? block.mode ?? "rounds" : undefined;
+        const timed = mode === "amrap" || mode === "emom";
+        const rounds = resultByItem[block.id]?.rounds;
+        return (
+          <div key={block.id} className="rounded-xl border border-line bg-field/40 p-2.5 space-y-2">
+            {block.type !== "single" && (
+              <Pill tone={block.type === "circuit" ? "brick" : "sky"}>
+                {timed
+                  ? mode === "amrap"
+                    ? `AMRAP ${formatClock(block.capSec ?? 1200)}`
+                    : `EMOM ${formatClock(block.intervalSec ?? 60)} ×${block.rounds ?? 10}`
+                  : `${BLOCK_LABEL[block.type]}${block.type === "circuit" && block.rounds ? ` ×${block.rounds}` : ""}`}
+              </Pill>
+            )}
+            {block.items.map((it) => (
+              <ReviewItem key={it.id} item={it} ex={byId[it.exerciseId]} r={resultByItem[it.id]} />
+            ))}
+            {timed && rounds != null && (
+              <p className="text-xs text-slate">
+                Rounds completed: <span className="font-semibold text-forest">{rounds}</span>
+              </p>
+            )}
+          </div>
+        );
+      })}
+
+      {extras.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate">Added by {firstName}</p>
+          {extras.map((e) => (
+            <ReviewItem
+              key={e.itemId}
+              item={{ id: e.itemId, exerciseId: e.exerciseId!, sets: 0, reps: "", rest: "" }}
+              ex={byId[e.exerciseId!]}
+              r={e}
+              isExtra
+            />
+          ))}
+        </div>
+      )}
+
+      {workout.blocks.length === 0 && extras.length === 0 && (
+        <p className="text-sm text-slate">Logged with no movement details.</p>
+      )}
+    </Card>
+  );
+}
+
+// One movement in a review card: the prescription and, beside it, what the
+// athlete actually logged (load, reps, effort, note).
+function ReviewItem({
+  item,
+  ex,
+  r,
+  isExtra,
+}: {
+  item: ProgramItem;
+  ex?: Exercise;
+  r?: ItemResult;
+  isExtra?: boolean;
+}) {
+  // chips summarizing the athlete's logged response
+  const chips: string[] = [];
+  if (r?.weight) chips.push(r.weight);
+  if (r?.setsDone || r?.repsDone) chips.push(`${r.setsDone ?? "?"}×${r.repsDone ?? "?"}`);
+  if (r?.duration) chips.push(r.duration);
+  if (r?.distance) chips.push(r.distance);
+  if (r?.calories) chips.push(`${r.calories} cal`);
+  if (r?.intensity) chips.push(r.intensity);
+  const logged = chips.length > 0 || r?.feeling != null || !!r?.note;
+
+  return (
+    <div className="rounded-lg border border-line bg-surface p-2.5">
+      <div className="flex items-baseline justify-between gap-2">
+        <p className="font-medium text-sm truncate">
+          {ex?.name ?? "Movement"}
+          {item.variant && <span className="text-forest"> · {item.variant}</span>}
+        </p>
+        {r?.feeling != null && <span className="text-base shrink-0">{FEELINGS[r.feeling - 1]}</span>}
+      </div>
+      {!isExtra && !ex?.activity && (item.sets > 0 || item.reps) && (
+        <p className="text-[11px] text-slate">
+          Prescribed: {item.sets > 0 ? `${item.sets} × ` : ""}{item.reps || "—"}
+          {item.rest ? ` · ${item.rest} rest` : ""}
+        </p>
+      )}
+      {logged ? (
+        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+          {chips.map((c, i) => (
+            <span key={i} className="text-xs rounded-full bg-green/10 text-forest px-2 py-0.5 font-medium">
+              {c}
+            </span>
+          ))}
+        </div>
+      ) : (
+        <p className="text-[11px] text-slate mt-1">— not logged</p>
+      )}
+      {r?.note && <p className="text-xs text-ink/80 mt-1.5 whitespace-pre-wrap">“{r.note}”</p>}
     </div>
   );
 }

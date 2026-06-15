@@ -23,6 +23,8 @@ import {
   addItemToBlock,
   addNoteBlock,
   addWorkout,
+  copyWeekProgramming,
+  customizeWeek,
   deleteWorkout,
   duplicateWorkout,
   moveItemToBlock,
@@ -31,6 +33,7 @@ import {
   renameProgram,
   renameWorkout,
   reorderBlocks,
+  revertWeekToDefault,
   setBlockRounds,
   setBlockConfig,
   setBlockText,
@@ -40,11 +43,12 @@ import {
   updateItem,
   useExercises,
   useProgramForClient,
+  workoutsForWeek,
 } from "@/lib/store";
 import type { Block, BlockMode, BlockType, Exercise, ProgramItem, Workout } from "@/lib/types";
 import { pushRecent } from "@/lib/recents";
 import { youtubeId, youtubeThumb } from "@/lib/youtube";
-import { DOW_LONG, todayDow } from "@/lib/week";
+import { DOW_LONG, todayDow, weekLabel, weekStartIso } from "@/lib/week";
 import { Button, Card, EmptyState, Pill } from "./ui";
 import ExercisePickerModal from "./ExercisePickerModal";
 import VideoPicker from "./VideoPicker";
@@ -116,13 +120,24 @@ export default function ProgramBuilder({ clientId }: { clientId: string }) {
   const byId = exMap(exercises);
 
   const [day, setDay] = useState<number>(todayDow());
+  const [weekOffset, setWeekOffset] = useState(0);
   const [picker, setPicker] = useState<PickerState>(null);
   const [video, setVideo] = useState<VideoState>(null);
   const [editingName, setEditingName] = useState(false);
+  // a week the coach has "copied", ready to paste into another week
+  const [copied, setCopied] = useState<{ ws: string; label: string } | null>(null);
+  const [pasted, setPasted] = useState(false);
 
-  const workouts = program?.workouts ?? [];
+  const weekStart = weekStartIso(weekOffset);
+  const { workouts, custom } = workoutsForWeek(program, weekStart);
   const marked = new Set(workouts.map((w) => w.dow));
   const dayWorkouts = workouts.filter((w) => w.dow === day);
+
+  useEffect(() => {
+    if (!pasted) return;
+    const t = setTimeout(() => setPasted(false), 2000);
+    return () => clearTimeout(t);
+  }, [pasted]);
 
   return (
     <div className="space-y-4">
@@ -145,14 +160,69 @@ export default function ProgramBuilder({ clientId }: { clientId: string }) {
         </button>
       )}
 
-      <WeekStrip selected={day} onSelect={setDay} marked={marked} />
+      <WeekStrip
+        selected={day}
+        onSelect={setDay}
+        marked={marked}
+        weekOffset={weekOffset}
+        onWeekOffset={setWeekOffset}
+        maxOffset={12}
+      />
+
+      {/* default-vs-custom status + copy/paste between weeks */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 -mt-1">
+        {custom ? (
+          <>
+            <Pill tone="green">Custom · {weekLabel(weekOffset)}</Pill>
+            <ConfirmX
+              title="Revert to default plan"
+              onConfirm={() => revertWeekToDefault(clientId, weekStart)}
+            />
+          </>
+        ) : (
+          <>
+            <span className="text-xs text-slate">
+              Following the default plan — edits change every non-custom week.
+            </span>
+            <button
+              onClick={() => customizeWeek(clientId, weekStart)}
+              className="text-xs font-semibold text-forest"
+            >
+              Customize this week
+            </button>
+          </>
+        )}
+        <span className="flex-1" />
+        {copied && copied.ws !== weekStart ? (
+          <button
+            onClick={() => {
+              copyWeekProgramming(clientId, copied.ws, weekStart);
+              setCopied(null);
+              setPasted(true);
+            }}
+            className="text-xs font-semibold text-sky-dark rounded-full border border-sky/40 px-2.5 py-1"
+          >
+            Paste {copied.label} here
+          </button>
+        ) : (
+          <button
+            onClick={() => setCopied({ ws: weekStart, label: weekLabel(weekOffset) })}
+            className={`text-xs font-semibold rounded-full border px-2.5 py-1 ${
+              copied?.ws === weekStart ? "border-forest text-forest" : "border-line text-slate"
+            }`}
+          >
+            {copied?.ws === weekStart ? "Copied ✓" : "Copy week"}
+          </button>
+        )}
+        {pasted && <span className="text-xs text-forest font-medium w-full">✓ Pasted into this week</span>}
+      </div>
 
       <p className="text-sm font-semibold text-slate -mb-1">{DOW_LONG[day]}</p>
 
       {dayWorkouts.length === 0 ? (
         <Card className="p-5 text-center">
           <p className="text-slate text-sm mb-3">Rest day — nothing scheduled.</p>
-          <Button onClick={() => addWorkout(clientId, DOW_LONG[day], day)}>
+          <Button onClick={() => addWorkout(clientId, DOW_LONG[day], day, custom ? weekStart : undefined)}>
             + Add {DOW_LONG[day]} workout
           </Button>
         </Card>

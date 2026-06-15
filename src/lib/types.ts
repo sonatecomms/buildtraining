@@ -98,6 +98,11 @@ export interface Workout {
   name: string; // "Lower", "Push"…
   dow: number; // day of week the workout is scheduled, 0 = Sunday … 6 = Saturday
   blocks: Block[];
+  // Per-week override: yyyy-mm-dd of the week's Sunday this workout belongs to.
+  // Undefined = part of the recurring DEFAULT plan that fills every week that
+  // hasn't been customized. A week with any weekStart-stamped workouts is "custom"
+  // and shows only those (the default is overridden for that week).
+  weekStart?: string;
 }
 
 export interface Program {

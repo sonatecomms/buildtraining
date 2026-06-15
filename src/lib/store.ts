@@ -196,9 +196,78 @@ export function renameProgram(clientId: string, name: string) {
   saveProgram({ ...prog, name });
 }
 
-export function addWorkout(clientId: string, name: string, dow: number): Workout {
+// ---- per-week programming ---------------------------------------------------
+// Programming is a recurring DEFAULT plan (workouts with no weekStart) that fills
+// every week, plus optional per-week OVERRIDES (workouts stamped with a weekStart).
+// A week that has any stamped workouts is "custom" and shows only those.
+
+// Resolve the workouts shown for a given week: the week's custom override if it
+// has one, otherwise the recurring default plan.
+export function workoutsForWeek(
+  program: Program | undefined,
+  weekStart: string,
+): { workouts: Workout[]; custom: boolean } {
+  if (!program) return { workouts: [], custom: false };
+  const custom = program.workouts.filter((w) => w.weekStart === weekStart);
+  if (custom.length > 0) return { workouts: custom, custom: true };
+  return { workouts: program.workouts.filter((w) => !w.weekStart), custom: false };
+}
+
+function cloneWorkout(w: Workout, patch: Partial<Workout>): Workout {
+  return {
+    ...w,
+    id: uid("w"),
+    blocks: w.blocks.map((b) => ({
+      ...b,
+      id: uid("b"),
+      items: b.items.map((it) => ({ ...it, id: uid("i") })),
+    })),
+    ...patch,
+  };
+}
+
+// Turn a week that's following the default plan into its own editable copy, so
+// edits there no longer touch the default. No-op if it's already customized.
+export function customizeWeek(clientId: string, weekStart: string) {
   const prog = ensureProgram(clientId);
-  const w: Workout = { id: uid("w"), name, dow, blocks: [] };
+  if (prog.workouts.some((w) => w.weekStart === weekStart)) return;
+  const clones = prog.workouts
+    .filter((w) => !w.weekStart)
+    .map((w) => cloneWorkout(w, { weekStart }));
+  saveProgram({ ...prog, workouts: [...prog.workouts, ...clones] });
+}
+
+// Drop a week's custom override so it follows the default plan again.
+export function revertWeekToDefault(clientId: string, weekStart: string) {
+  const prog = ensureProgram(clientId);
+  saveProgram({ ...prog, workouts: prog.workouts.filter((w) => w.weekStart !== weekStart) });
+}
+
+// Copy whatever's programmed for `fromWeekStart` (custom or default) into
+// `toWeekStart` as a custom override, replacing anything already there.
+export function copyWeekProgramming(
+  clientId: string,
+  fromWeekStart: string,
+  toWeekStart: string,
+) {
+  if (fromWeekStart === toWeekStart) return;
+  const prog = ensureProgram(clientId);
+  const { workouts: src } = workoutsForWeek(prog, fromWeekStart);
+  const others = prog.workouts.filter((w) => w.weekStart !== toWeekStart);
+  const clones = src.map((w) => cloneWorkout(w, { weekStart: toWeekStart }));
+  saveProgram({ ...prog, workouts: [...others, ...clones] });
+}
+
+// Add a workout. `weekStart` stamps it onto a custom week; omit it to add to the
+// recurring default plan.
+export function addWorkout(
+  clientId: string,
+  name: string,
+  dow: number,
+  weekStart?: string,
+): Workout {
+  const prog = ensureProgram(clientId);
+  const w: Workout = { id: uid("w"), name, dow, blocks: [], weekStart };
   saveProgram({ ...prog, workouts: [...prog.workouts, w] });
   return w;
 }

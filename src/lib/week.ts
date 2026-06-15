@@ -58,3 +58,30 @@ export function weekDates(ref = new Date()): Date[] {
     return d;
   });
 }
+
+// The seven dates of the week `offset` weeks from this one (0 = current week,
+// -1 = last week, +1 = next week).
+export function weekDatesForOffset(offset: number): Date[] {
+  const ref = new Date();
+  ref.setDate(ref.getDate() + offset * 7);
+  return weekDates(ref);
+}
+
+// yyyy-mm-dd of the Sunday that anchors the week `offset` weeks from now. This is
+// the key a per-week program override is stamped with.
+export function weekStartIso(offset: number): string {
+  return isoDate(weekDatesForOffset(offset)[0]);
+}
+
+// Friendly label for the week strip: "This week" / "Last week" / "Next week",
+// else a "May 25 – 31" date range.
+export function weekLabel(offset: number): string {
+  if (offset === 0) return "This week";
+  if (offset === -1) return "Last week";
+  if (offset === 1) return "Next week";
+  const [a, , , , , , b] = weekDatesForOffset(offset);
+  const month = (d: Date) => d.toLocaleDateString(undefined, { month: "short" });
+  const left = `${month(a)} ${a.getDate()}`;
+  const right = month(a) === month(b) ? String(b.getDate()) : `${month(b)} ${b.getDate()}`;
+  return `${left} – ${right}`;
+}

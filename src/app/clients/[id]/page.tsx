@@ -65,7 +65,7 @@ export default function ClientPage() {
 
       {tab === "program" && <ProgramBuilder clientId={client.id} />}
       {tab === "profile" && <ProfileEditor client={client} />}
-      {tab === "train" && <TrainView client={client} />}
+      {tab === "train" && <TrainView client={client} coachView />}
     </div>
   );
 }
