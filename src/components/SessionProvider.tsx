@@ -1,7 +1,6 @@
 "use client";
 
 import { createContext, useContext, useEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase";
 import {
@@ -46,7 +45,6 @@ export default function SessionProvider({ children }: { children: React.ReactNod
   const emailRef = useRef<string>("");
   const realtimeOff = useRef<(() => void) | null>(null);
   const repullTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pathname = usePathname();
 
   useEffect(() => {
     if (!sb) return; // local mode
@@ -180,14 +178,6 @@ export default function SessionProvider({ children }: { children: React.ReactNod
       if (repullTimer.current) clearTimeout(repullTimer.current);
     };
   }, [sb]);
-
-  // Local-only design-direction preview (/preview): render it without the auth
-  // gate or athlete redirect so it's viewable regardless of sign-in state.
-  if (pathname?.startsWith("/preview")) {
-    return (
-      <SessionCtx.Provider value={{ session, cloud, role }}>{children}</SessionCtx.Provider>
-    );
-  }
 
   if (cloud && status === "loading") {
     return (
