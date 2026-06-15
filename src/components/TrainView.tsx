@@ -194,8 +194,8 @@ export default function TrainView({
           <h2 className="text-xl font-bold">{running.name}</h2>
           <button onClick={() => setRunning(null)} className="text-slate text-sm">Exit</button>
         </div>
-        <div className="h-1.5 rounded-full bg-line overflow-hidden">
-          <div className="h-full bg-forest transition-all" style={{ width: `${totalItems ? (done.size / totalItems) * 100 : 0}%` }} />
+        <div className="h-2 rounded-full bg-line overflow-hidden">
+          <div className="h-full bg-gradient-to-r from-forest to-green transition-all" style={{ width: `${totalItems ? (done.size / totalItems) * 100 : 0}%` }} />
         </div>
 
         {running.blocks.map((block) => {
@@ -600,12 +600,12 @@ function RunnerItem({
   const [playing, setPlaying] = useState(false);
 
   return (
-    <div className={`rounded-xl border p-2.5 ${checked ? "border-forest bg-green/10" : "border-line bg-field"}`}>
+    <div className={`rounded-xl border p-2.5 ${checked ? "border-green/50 bg-green/10" : "border-line bg-field"}`}>
       <div className="flex items-center gap-3">
         <button
           onClick={onToggle}
-          className={`w-6 h-6 rounded-full border-2 grid place-items-center text-xs shrink-0 ${
-            checked ? "bg-forest border-forest text-bone" : "border-slate"
+          className={`w-7 h-7 rounded-full border-2 grid place-items-center text-xs shrink-0 ${
+            checked ? "bg-green border-green text-bone" : "border-slate"
           }`}
         >
           {checked ? "✓" : ""}
