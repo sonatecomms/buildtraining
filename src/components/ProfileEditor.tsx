@@ -318,13 +318,13 @@ export default function ProfileEditor({
             aria-checked={!!client.generatorEnabled}
             aria-label="Build a workout access"
             onClick={() => updateClient(client.id, { generatorEnabled: !client.generatorEnabled })}
-            className={`relative shrink-0 h-7 w-12 rounded-full transition-colors ${
+            className={`shrink-0 inline-flex items-center h-7 w-12 rounded-full p-1 transition-colors ${
               client.generatorEnabled ? "bg-forest" : "bg-line"
             }`}
           >
             <span
-              className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-transform ${
-                client.generatorEnabled ? "translate-x-6" : "translate-x-1"
+              className={`h-5 w-5 rounded-full bg-surface shadow-card transition-transform duration-200 ${
+                client.generatorEnabled ? "translate-x-5" : "translate-x-0"
               }`}
             />
           </button>
