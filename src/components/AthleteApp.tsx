@@ -103,7 +103,7 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
             className={`flex items-center gap-2 ${view === "settings" ? "text-forest" : ""}`}
             aria-label="Profile & settings"
           >
-            {client && <Avatar src={client.avatarUrl} name={client.name} size={32} />}
+            {client && <Avatar src={client.avatarUrl} name={client.name} size={32} gradient />}
             <span className="text-xs font-medium">{view === "settings" ? "Done" : "Profile"}</span>
           </button>
         </div>
