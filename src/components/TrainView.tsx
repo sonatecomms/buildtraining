@@ -27,7 +27,8 @@ import {
   weekStartIso,
   relativeDate,
 } from "@/lib/week";
-import { Button, Card, Pill, Skeleton } from "./ui";
+import { Plus } from "lucide-react";
+import { Button, Card, Fab, Pill, Skeleton } from "./ui";
 import StreakHeader from "./StreakHeader";
 import WeekStrip from "./WeekStrip";
 import VideoModal from "./VideoModal";
@@ -469,13 +470,17 @@ export default function TrainView({
             );
           })()}
 
-          {ready && !readOnly && (
-            <Button variant="outline" className="w-full" onClick={() => setGenerating(true)}>
-              ✨ Build me a workout
-            </Button>
-          )}
         </div>
       </div>
+
+      {/* athlete-only floating action: build me a workout */}
+      {!coachView && !readOnly && (
+        <div className="fixed bottom-24 right-4 z-30" style={{ marginBottom: "env(safe-area-inset-bottom)" }}>
+          <Fab label="Build me a workout" onClick={() => setGenerating(true)}>
+            <Plus size={26} />
+          </Fab>
+        </div>
+      )}
 
       {generating && (
         <WorkoutGeneratorModal

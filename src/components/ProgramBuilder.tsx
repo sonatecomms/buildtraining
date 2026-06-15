@@ -49,7 +49,8 @@ import type { Block, BlockMode, BlockType, Exercise, ProgramItem, ScoreType, Wor
 import { pushRecent } from "@/lib/recents";
 import { youtubeId, youtubeThumb } from "@/lib/youtube";
 import { DOW_LONG, todayDow, weekLabel, weekStartIso } from "@/lib/week";
-import { Button, Card, EmptyState, Pill } from "./ui";
+import { Plus } from "lucide-react";
+import { Button, Card, EmptyState, Fab, Pill } from "./ui";
 import ExercisePickerModal from "./ExercisePickerModal";
 import VideoPicker from "./VideoPicker";
 import WeekStrip from "./WeekStrip";
@@ -290,6 +291,14 @@ export default function ProgramBuilder({ clientId }: { clientId: string }) {
         <Button variant="outline" className="w-full" onClick={() => setGenerating(true)}>
           ✨ Generate another workout
         </Button>
+      )}
+
+      {!readOnly && client && (
+        <div className="fixed bottom-24 right-4 z-30" style={{ marginBottom: "env(safe-area-inset-bottom)" }}>
+          <Fab label="Generate workout" onClick={() => setGenerating(true)}>
+            <Plus size={26} />
+          </Fab>
+        </div>
       )}
 
       {generating && client && (

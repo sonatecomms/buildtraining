@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Plus } from "lucide-react";
 import { useClients, useLogsForClient, addClient, setClientArchived } from "@/lib/store";
-import { Avatar, Button, Card, EmptyState, PageHeader, Pill, Skeleton } from "@/components/ui";
+import { Avatar, Button, Card, EmptyState, Fab, PageHeader, Pill, Skeleton } from "@/components/ui";
 import { GOALS } from "@/lib/goals";
 import { relativeDate, daysAgo, weekDates, isoDate } from "@/lib/week";
 import type { Client } from "@/lib/types";
@@ -143,6 +144,18 @@ export default function CoachHome() {
           )}
         </div>
       )}
+
+      <div className="fixed bottom-24 right-4 z-30" style={{ marginBottom: "env(safe-area-inset-bottom)" }}>
+        <Fab
+          label="Add athlete"
+          onClick={() => {
+            setAdding(true);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+        >
+          <Plus size={26} />
+        </Fab>
+      </div>
     </div>
   );
 }
