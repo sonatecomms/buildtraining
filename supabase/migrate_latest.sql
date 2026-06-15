@@ -7,6 +7,9 @@ alter table clients add column if not exists athlete_email text;
 alter table clients add column if not exists recovery_email text;
 alter table clients add column if not exists archived boolean not null default false;
 alter table workout_logs add column if not exists entries jsonb not null default '[]'::jsonb;
+-- prescription snapshot for sessions not in the synced program (generator-built
+-- workouts, "your own work") so the coach can review what the athlete did
+alter table workout_logs add column if not exists workout_snapshot jsonb;
 
 -- let a signed-in athlete UPDATE their own profile (photo, stats, goals)
 drop policy if exists "athlete updates own client" on clients;

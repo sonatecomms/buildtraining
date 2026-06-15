@@ -11,7 +11,7 @@ import {
   workoutsForWeek,
 } from "@/lib/store";
 import { flushPush } from "@/lib/sync";
-import type { Client, Exercise, ItemResult, ProgramItem, Workout, WorkoutLog } from "@/lib/types";
+import type { Client, Exercise, ItemResult, ProgramItem, ScoreType, Workout, WorkoutLog } from "@/lib/types";
 import { youtubeId } from "@/lib/youtube";
 import { calsPerMin, runPace, speedMph } from "@/lib/activities";
 import { parseRest, formatClock } from "@/lib/rest";
@@ -31,6 +31,7 @@ import StreakHeader from "./StreakHeader";
 import WeekStrip from "./WeekStrip";
 import VideoModal from "./VideoModal";
 import ExercisePickerModal from "./ExercisePickerModal";
+import WorkoutGeneratorModal from "./WorkoutGeneratorModal";
 
 const BLOCK_LABEL = { single: "", superset: "Superset", circuit: "Circuit", note: "Note" } as const;
 
@@ -57,6 +58,7 @@ export default function TrainView({
   // movements the athlete adds beyond the program: { id, exerciseId }
   const [extras, setExtras] = useState<{ id: string; exerciseId: string }[]>([]);
   const [picking, setPicking] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [celebrate, setCelebrate] = useState<{ title: string; sub: string } | null>(null);
   // active rest countdown (one at a time); bumping `key` restarts the timer.
   const [rest, setRest] = useState<{ seconds: number; label: string; key: number } | null>(null);
@@ -112,7 +114,7 @@ export default function TrainView({
     // logging real data implicitly checks the movement off — so an athlete who
     // fills in their sets never has to remember to also tap the circle.
     const meaningful =
-      patch.weight || patch.setsDone || patch.repsDone || patch.duration || patch.distance || patch.calories || patch.intensity || patch.feeling || patch.note;
+      patch.weight || patch.setsDone || patch.repsDone || patch.duration || patch.distance || patch.calories || patch.intensity || patch.feeling || patch.note || patch.rounds;
     if (meaningful) setDone((d) => (d.has(itemId) ? d : new Set(d).add(itemId)));
   };
 
@@ -138,7 +140,10 @@ export default function TrainView({
     setResults((r) => ({ ...r, [blockId]: { ...r[blockId], itemId: blockId, rounds: Math.max(0, n) } }));
 
   const totalItems = running
-    ? running.blocks.reduce((n, b) => n + (b.type === "note" ? 0 : b.items.length), 0) + extras.length
+    ? running.blocks.reduce(
+        (n, b) => n + (b.type === "note" ? (b.logResult ? 1 : 0) : b.items.length),
+        0,
+      ) + extras.length
     : 0;
 
   const finish = () => {
@@ -160,6 +165,10 @@ export default function TrainView({
       date: selectedDate,
       completedItemIds: [...done],
       entries,
+      // Carry the prescription on the log so the coach can review sessions that
+      // aren't in their synced program — generator-built workouts (athletes can't
+      // write the programs table) and "your own work".
+      workoutSnapshot: running.blocks.length ? { name: running.name, blocks: running.blocks } : undefined,
     });
     void flushPush(); // persist the session to the cloud right away
     // project the streak with this session included so the toast isn't one behind
@@ -194,6 +203,21 @@ export default function TrainView({
               <Card key={block.id} className="p-3 border-sky/40 bg-sky/5">
                 {block.title && <p className="font-semibold text-sm mb-1">{block.title}</p>}
                 {block.text && <p className="text-sm whitespace-pre-wrap text-ink/90">{block.text}</p>}
+                {block.logResult && (
+                  <MetconResult
+                    scoreType={block.scoreType ?? "time"}
+                    checked={done.has(block.id)}
+                    result={results[block.id]}
+                    onToggle={() =>
+                      setDone((prev) => {
+                        const next = new Set(prev);
+                        next.has(block.id) ? next.delete(block.id) : next.add(block.id);
+                        return next;
+                      })
+                    }
+                    onChange={(patch) => updateResult(block.id, patch)}
+                  />
+                )}
               </Card>
             );
           }
@@ -439,8 +463,24 @@ export default function TrainView({
               </Card>
             );
           })()}
+
+          {ready && !readOnly && (
+            <Button variant="outline" className="w-full" onClick={() => setGenerating(true)}>
+              ✨ Build me a workout
+            </Button>
+          )}
         </div>
       </div>
+
+      {generating && (
+        <WorkoutGeneratorModal
+          client={client}
+          dow={day}
+          weekStart={weekStart}
+          onClose={() => setGenerating(false)}
+          onAdded={() => setDay(day)}
+        />
+      )}
 
       {ready ? <StreakHeader streak={streak} /> : <Skeleton className="h-24 rounded-2xl" />}
 
@@ -671,6 +711,110 @@ function RunnerItem({
       )}
 
       {playing && <VideoModal url={url} title={ex?.name} onClose={() => setPlaying(false)} />}
+    </div>
+  );
+}
+
+// A reportable note block (a metcon programmed as free text). Renders the score
+// field the coach chose, plus the shared effort + note inputs. The result is
+// stored as an ItemResult keyed by the block id (like AMRAP/EMOM rounds).
+function MetconResult({
+  scoreType,
+  checked,
+  result,
+  onToggle,
+  onChange,
+}: {
+  scoreType: ScoreType;
+  checked: boolean;
+  result?: ItemResult;
+  onToggle: () => void;
+  onChange: (patch: Partial<ItemResult>) => void;
+}) {
+  const r = result ?? ({} as ItemResult);
+  return (
+    <div
+      className={`mt-2.5 rounded-xl border p-2.5 ${
+        checked ? "border-forest bg-green/10" : "border-line bg-surface"
+      }`}
+    >
+      <div className="flex items-center gap-2 mb-2">
+        <button
+          onClick={onToggle}
+          className={`w-6 h-6 rounded-full border-2 grid place-items-center text-xs shrink-0 ${
+            checked ? "bg-forest border-forest text-bone" : "border-slate"
+          }`}
+          aria-label={checked ? "Mark not done" : "Mark done"}
+        >
+          {checked ? "✓" : ""}
+        </button>
+        <span className="text-xs font-semibold uppercase tracking-wide text-slate">Your result</span>
+      </div>
+
+      {scoreType === "time" && (
+        <LogField label="Time" value={r.duration} placeholder="mm:ss" onChange={(v) => onChange({ duration: v })} />
+      )}
+      {scoreType === "rounds" && (
+        <div className="grid grid-cols-2 gap-2 items-end">
+          <div>
+            <span className="flex items-center h-[15px] text-[10px] uppercase tracking-wide text-slate">Rounds</span>
+            <div className="mt-0.5 flex items-center gap-3">
+              <button
+                onClick={() => onChange({ rounds: Math.max(0, (r.rounds ?? 0) - 1) })}
+                className="w-8 h-8 rounded-full bg-surface border border-line grid place-items-center text-lg leading-none"
+                aria-label="One fewer round"
+              >
+                −
+              </button>
+              <span className="font-display text-xl tabular-nums w-6 text-center">{r.rounds ?? 0}</span>
+              <button
+                onClick={() => onChange({ rounds: (r.rounds ?? 0) + 1 })}
+                className="w-8 h-8 rounded-full bg-forest text-bone grid place-items-center text-lg leading-none"
+                aria-label="One more round"
+              >
+                +
+              </button>
+            </div>
+          </div>
+          <LogField label="+ Reps" value={r.repsDone} placeholder="extra reps" inputMode="numeric" onChange={(v) => onChange({ repsDone: v })} />
+        </div>
+      )}
+      {scoreType === "reps" && (
+        <LogField label="Reps" value={r.repsDone} placeholder="total reps" inputMode="numeric" onChange={(v) => onChange({ repsDone: v })} />
+      )}
+      {scoreType === "load" && (
+        <LogField label="Load" value={r.weight} placeholder="lbs" inputMode="decimal" onChange={(v) => onChange({ weight: v })} />
+      )}
+
+      <div className="mt-2.5">
+        <span className="text-[10px] uppercase tracking-wide text-slate">How it felt (effort)</span>
+        <div className="flex items-center gap-1.5 mt-1">
+          <span className="text-[10px] text-slate shrink-0">Brutal</span>
+          {FEELINGS.map((f, i) => {
+            const val = i + 1;
+            return (
+              <button
+                key={i}
+                onClick={() => onChange({ feeling: r.feeling === val ? undefined : val })}
+                className={`text-xl rounded-lg px-1.5 py-0.5 transition-all ${
+                  r.feeling === val ? "bg-green/10 ring-1 ring-forest scale-110" : "opacity-60 hover:opacity-100"
+                }`}
+                aria-label={`Felt ${val} of 5`}
+              >
+                {f}
+              </button>
+            );
+          })}
+          <span className="text-[10px] text-slate shrink-0">Great</span>
+        </div>
+      </div>
+      <textarea
+        value={r.note ?? ""}
+        onChange={(e) => onChange({ note: e.target.value })}
+        placeholder="Notes — how it went, scaling (Rx / Scale)…"
+        rows={2}
+        className="mt-2 w-full rounded-lg bg-surface border border-line px-2.5 py-1.5 text-sm outline-none focus:border-forest resize-y"
+      />
     </div>
   );
 }
@@ -1059,7 +1203,11 @@ function ReviewCard({
 }) {
   const resultByItem: Record<string, ItemResult> = {};
   for (const e of log?.entries ?? []) resultByItem[e.itemId] = e;
-  const programItemIds = new Set(workout.blocks.flatMap((b) => b.items.map((i) => i.id)));
+  // For sessions not in the synced program (generator-built, "your own work"),
+  // fall back to the prescription snapshot carried on the log so the coach still
+  // sees what was prescribed alongside the results.
+  const blocks = workout.blocks.length ? workout.blocks : log?.workoutSnapshot?.blocks ?? [];
+  const programItemIds = new Set(blocks.flatMap((b) => b.items.map((i) => i.id)));
   // athlete-added movements (logged but not in the program)
   const extras = (log?.entries ?? []).filter(
     (e) => e.exerciseId && (e.extra || !programItemIds.has(e.itemId)),
@@ -1074,12 +1222,39 @@ function ReviewCard({
         </span>
       </div>
 
-      {workout.blocks.map((block) => {
+      {blocks.map((block) => {
         if (block.type === "note") {
+          const r = block.logResult ? resultByItem[block.id] : undefined;
+          const chips: string[] = [];
+          if (r?.duration) chips.push(r.duration);
+          if (r?.rounds != null) chips.push(`${r.rounds} rounds${r.repsDone ? ` + ${r.repsDone}` : ""}`);
+          else if (r?.repsDone) chips.push(`${r.repsDone} reps`);
+          if (r?.weight) chips.push(r.weight);
+          const logged = chips.length > 0 || r?.feeling != null || !!r?.note;
           return (
             <div key={block.id} className="rounded-xl border border-sky/40 bg-sky/5 p-2.5">
               {block.title && <p className="font-semibold text-sm mb-1">{block.title}</p>}
               {block.text && <p className="text-sm whitespace-pre-wrap text-ink/90">{block.text}</p>}
+              {block.logResult && (
+                <div className="mt-2 rounded-lg border border-line bg-surface p-2">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-slate">Result</span>
+                    {r?.feeling != null && <span className="text-base shrink-0">{FEELINGS[r.feeling - 1]}</span>}
+                  </div>
+                  {logged ? (
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                      {chips.map((c, i) => (
+                        <span key={i} className="text-xs rounded-full bg-green/10 text-forest px-2 py-0.5 font-medium">
+                          {c}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-slate mt-1">— not logged</p>
+                  )}
+                  {r?.note && <p className="text-xs text-ink/80 mt-1.5 whitespace-pre-wrap">“{r.note}”</p>}
+                </div>
+              )}
             </div>
           );
         }
@@ -1111,7 +1286,7 @@ function ReviewCard({
 
       {extras.length > 0 && (
         <div className="space-y-2">
-          {workout.blocks.length > 0 && (
+          {blocks.length > 0 && (
             <p className="text-[11px] font-semibold uppercase tracking-wide text-slate">Added by {firstName}</p>
           )}
           {extras.map((e) => (
@@ -1126,7 +1301,7 @@ function ReviewCard({
         </div>
       )}
 
-      {workout.blocks.length === 0 && extras.length === 0 && (
+      {blocks.length === 0 && extras.length === 0 && (
         <p className="text-sm text-slate">Logged with no movement details.</p>
       )}
     </Card>

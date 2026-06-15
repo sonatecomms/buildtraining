@@ -34,16 +34,18 @@ import {
   reorderBlocks,
   setBlockRounds,
   setBlockConfig,
+  setBlockResultConfig,
   setBlockText,
   setBlockType,
   setItemVideo,
   setWorkoutDow,
   updateItem,
+  useClient,
   useExercises,
   useProgramForClient,
   workoutsForWeek,
 } from "@/lib/store";
-import type { Block, BlockMode, BlockType, Exercise, ProgramItem, Workout } from "@/lib/types";
+import type { Block, BlockMode, BlockType, Exercise, ProgramItem, ScoreType, Workout } from "@/lib/types";
 import { pushRecent } from "@/lib/recents";
 import { youtubeId, youtubeThumb } from "@/lib/youtube";
 import { DOW_LONG, todayDow, weekLabel, weekStartIso } from "@/lib/week";
@@ -51,6 +53,7 @@ import { Button, Card, EmptyState, Pill } from "./ui";
 import ExercisePickerModal from "./ExercisePickerModal";
 import VideoPicker from "./VideoPicker";
 import WeekStrip from "./WeekStrip";
+import WorkoutGeneratorModal from "./WorkoutGeneratorModal";
 
 const BLOCK_LABEL: Record<BlockType, string> = {
   single: "Single",
@@ -58,6 +61,15 @@ const BLOCK_LABEL: Record<BlockType, string> = {
   circuit: "Circuit",
   note: "Note",
 };
+
+const SCORE_TYPE_LABEL: Record<ScoreType, string> = {
+  time: "For time",
+  rounds: "Rounds + reps",
+  reps: "Reps",
+  load: "Load",
+  done: "Just done",
+};
+const SCORE_TYPES = Object.keys(SCORE_TYPE_LABEL) as ScoreType[];
 
 const BLOCK_DESC: Record<"superset" | "circuit", string> = {
   superset: "Alternate these movements back-to-back, rest only after the pair.",
@@ -114,11 +126,13 @@ type VideoState = {
 
 export default function ProgramBuilder({ clientId }: { clientId: string }) {
   const program = useProgramForClient(clientId);
+  const client = useClient(clientId);
   const exercises = useExercises();
   const byId = exMap(exercises);
 
   const [day, setDay] = useState<number>(todayDow());
   const [weekOffset, setWeekOffset] = useState(0);
+  const [generating, setGenerating] = useState(false);
   const [picker, setPicker] = useState<PickerState>(null);
   const [video, setVideo] = useState<VideoState>(null);
   const [editingName, setEditingName] = useState(false);
@@ -237,9 +251,14 @@ export default function ProgramBuilder({ clientId }: { clientId: string }) {
       ) : dayWorkouts.length === 0 ? (
         <Card className="p-5 text-center">
           <p className="text-slate text-sm mb-3">Rest day — nothing scheduled.</p>
-          <Button onClick={() => addWorkout(clientId, DOW_LONG[day], day, weekStart)}>
-            + Add {DOW_LONG[day]} workout
-          </Button>
+          <div className="flex flex-col gap-2 items-stretch max-w-xs mx-auto">
+            <Button onClick={() => addWorkout(clientId, DOW_LONG[day], day, weekStart)}>
+              + Add {DOW_LONG[day]} workout
+            </Button>
+            <Button variant="outline" onClick={() => setGenerating(true)}>
+              ✨ Generate workout
+            </Button>
+          </div>
         </Card>
       ) : (
         dayWorkouts.map((w) => (
@@ -265,6 +284,21 @@ export default function ProgramBuilder({ clientId }: { clientId: string }) {
             }}
           />
         ))
+      )}
+
+      {!readOnly && dayWorkouts.length > 0 && (
+        <Button variant="outline" className="w-full" onClick={() => setGenerating(true)}>
+          ✨ Generate another workout
+        </Button>
+      )}
+
+      {generating && client && (
+        <WorkoutGeneratorModal
+          client={client}
+          dow={day}
+          weekStart={weekStart}
+          onClose={() => setGenerating(false)}
+        />
       )}
 
       {picker && (
@@ -573,6 +607,40 @@ function SortableBlock({
           placeholder="Type instructions — e.g. 3 rounds: 10 air squats, 10 push-ups, 200m run…"
           className="w-full rounded-lg bg-surface border border-line px-2.5 py-2 text-sm outline-none focus:border-forest resize-y"
         />
+        {/* Reportable workout toggle: turn this note into a metcon the athlete can score */}
+        <label className="flex items-center gap-2 mt-2 text-sm cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={block.logResult ?? false}
+            onChange={(e) =>
+              setBlockResultConfig(clientId, workoutId, block.id, {
+                logResult: e.target.checked,
+                // default to a sensible score type the first time it's enabled
+                scoreType: e.target.checked ? block.scoreType ?? "time" : block.scoreType,
+              })
+            }
+            className="w-4 h-4 accent-forest"
+          />
+          <span className="font-medium">Athletes log a result</span>
+        </label>
+        {block.logResult && (
+          <div className="flex items-center gap-1.5 flex-wrap mt-2">
+            <span className="text-[11px] text-slate mr-0.5">Score</span>
+            {SCORE_TYPES.map((s) => (
+              <button
+                key={s}
+                onClick={() => setBlockResultConfig(clientId, workoutId, block.id, { scoreType: s })}
+                className={`text-[11px] font-semibold rounded-full px-2 py-0.5 ${
+                  (block.scoreType ?? "time") === s
+                    ? "bg-forest text-bone"
+                    : "bg-surface text-slate border border-line"
+                }`}
+              >
+                {SCORE_TYPE_LABEL[s]}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="flex items-center justify-between mt-2">
           <span className="text-[11px] text-slate">Saved automatically</span>
           <Button

@@ -49,6 +49,7 @@ create table if not exists workout_logs (
   completed_item_ids text[] not null default '{}',
   rpe int,
   entries jsonb not null default '[]'::jsonb, -- athlete's per-movement results
+  workout_snapshot jsonb, -- prescription for sessions not in the synced program
   unique (client_id, workout_id, date)
 );
 

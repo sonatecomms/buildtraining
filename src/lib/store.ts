@@ -7,6 +7,7 @@ import type {
   DB,
   Exercise,
   Program,
+  ScoreType,
   Workout,
   WorkoutLog,
 } from "./types";
@@ -268,6 +269,12 @@ export function addWorkout(
   return w;
 }
 
+// Insert an already-built workout (e.g. from the generator) into the program.
+export function addWorkoutObject(clientId: string, workout: Workout) {
+  const prog = ensureProgram(clientId);
+  saveProgram({ ...prog, workouts: [...prog.workouts, workout] });
+}
+
 export function renameWorkout(clientId: string, workoutId: string, name: string) {
   const prog = ensureProgram(clientId);
   saveProgram({
@@ -332,6 +339,20 @@ export function setBlockText(
   workoutId: string,
   blockId: string,
   patch: { title?: string; text?: string },
+) {
+  mutateWorkout(clientId, workoutId, (w) => ({
+    ...w,
+    blocks: w.blocks.map((b) => (b.id === blockId ? { ...b, ...patch } : b)),
+  }));
+}
+
+// Toggle a note block into a reportable workout (and pick how it's scored), so
+// the athlete gets a result field for a metcon programmed as free text.
+export function setBlockResultConfig(
+  clientId: string,
+  workoutId: string,
+  blockId: string,
+  patch: { logResult?: boolean; scoreType?: ScoreType },
 ) {
   mutateWorkout(clientId, workoutId, (w) => ({
     ...w,

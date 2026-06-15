@@ -64,6 +64,15 @@ export interface Exercise {
 
 export type BlockType = "single" | "superset" | "circuit" | "note";
 
+// How a reportable "note" workout (e.g. a metcon) is scored. The coach picks
+// this; the athlete sees the matching result field.
+//   time   → For Time      → duration
+//   rounds → AMRAP / rounds + reps → rounds (number) + repsDone
+//   reps   → total reps    → repsDone
+//   load   → a top load    → weight
+//   done   → no score, just mark complete + effort/note
+export type ScoreType = "time" | "rounds" | "reps" | "load" | "done";
+
 // How a circuit is run: a fixed number of rounds, an AMRAP (as many rounds as
 // possible inside a time cap), or an EMOM (one round every interval).
 export type BlockMode = "rounds" | "amrap" | "emom";
@@ -91,6 +100,12 @@ export interface Block {
   // for "note" blocks: free text with no movements (warm-ups, metcons, cues)
   title?: string;
   text?: string;
+  // "note" blocks only: when a coach marks the note as a reportable workout
+  // (e.g. a metcon programmed as text), the athlete gets a result field for it.
+  // The result is logged as an ItemResult keyed by this block's id — the same
+  // mechanism AMRAP/EMOM rounds use.
+  logResult?: boolean;
+  scoreType?: ScoreType;
 }
 
 export interface Workout {
@@ -162,6 +177,11 @@ export interface WorkoutLog {
   completedItemIds: string[];
   rpe?: number; // rate of perceived exertion 1-10
   entries?: ItemResult[]; // per-movement results the athlete logged
+  // Prescription snapshot carried with the log for workouts that don't live in
+  // the synced coach program — generator-built sessions and "your own work".
+  // Athletes can't write the programs table (RLS is coach-scoped), so this rides
+  // along inside the (athlete-writable) log so the coach can review what was done.
+  workoutSnapshot?: { name: string; blocks: Block[] };
 }
 
 export interface DB {

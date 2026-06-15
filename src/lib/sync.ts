@@ -110,6 +110,9 @@ const logRow = (l: WorkoutLog) => ({
   completed_item_ids: l.completedItemIds,
   rpe: l.rpe ?? null,
   entries: l.entries ?? [],
+  // Only sent when present, so log writes still work on a DB that hasn't run the
+  // workout_snapshot migration yet (the column is rejected only if included).
+  ...(l.workoutSnapshot ? { workout_snapshot: l.workoutSnapshot } : {}),
 });
 
 const rowLog = (r: Record<string, unknown>): WorkoutLog => ({
@@ -122,6 +125,7 @@ const rowLog = (r: Record<string, unknown>): WorkoutLog => ({
   completedItemIds: (r.completed_item_ids as string[]) ?? [],
   rpe: (r.rpe as number) ?? undefined,
   entries: (r.entries as WorkoutLog["entries"]) ?? [],
+  workoutSnapshot: (r.workout_snapshot as WorkoutLog["workoutSnapshot"]) ?? undefined,
 });
 
 const exerciseRow = (e: Exercise) => ({
