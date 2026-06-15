@@ -302,18 +302,21 @@ export default function TrainView({
           + Add an extra movement
         </Button>
 
-        <Button className="w-full" onClick={finish}>
-          {totalItems > 0 && done.size >= totalItems ? (
-            "Finish workout ✓"
-          ) : (
-            <span className="flex flex-col leading-tight">
-              <span>Finish workout</span>
-              {totalItems > 0 && (
-                <span className="text-xs font-normal opacity-80">{totalItems - done.size} not checked off</span>
-              )}
-            </span>
-          )}
-        </Button>
+        {/* sticky so Finish is always reachable on a long workout (sits above the nav) */}
+        <div className="sticky bottom-20 z-30 -mx-4 px-4 pt-2 pb-2 bg-gradient-to-t from-bone via-bone/95 to-transparent">
+          <Button className="w-full" onClick={finish}>
+            {totalItems > 0 && done.size >= totalItems ? (
+              "Finish workout ✓"
+            ) : (
+              <span className="flex flex-col leading-tight">
+                <span>Finish workout</span>
+                {totalItems > 0 && (
+                  <span className="text-xs font-normal opacity-80">{totalItems - done.size} not checked off</span>
+                )}
+              </span>
+            )}
+          </Button>
+        </div>
 
         {picking && (
           <ExercisePickerModal

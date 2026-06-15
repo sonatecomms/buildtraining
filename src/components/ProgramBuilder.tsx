@@ -597,7 +597,7 @@ function SortableBlock({
             placeholder="Section title (e.g. Warm-up, Metcon)"
             className="flex-1 min-w-0 bg-transparent font-semibold text-sm outline-none focus:text-forest placeholder:text-slate"
           />
-          <span className="text-[10px] uppercase tracking-wide text-sky font-semibold">Note</span>
+          <span className="text-[10px] uppercase tracking-wide text-sky-dark font-semibold">Note</span>
           <ConfirmX title="Delete note" onConfirm={() => removeBlock(clientId, workoutId, block.id)} />
         </div>
         <textarea
