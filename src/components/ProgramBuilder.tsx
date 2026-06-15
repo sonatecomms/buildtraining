@@ -125,13 +125,23 @@ export default function ProgramBuilder({ clientId }: { clientId: string }) {
   // a week the coach has "copied", ready to paste into another week
   const [copied, setCopied] = useState<{ ws: string; label: string } | null>(null);
   const [pasted, setPasted] = useState(false);
+  // past weeks the coach has explicitly unlocked to edit (e.g. to fix history)
+  const [unlocked, setUnlocked] = useState<Set<string>>(new Set());
 
   const weekStart = weekStartIso(weekOffset);
   const workouts = workoutsForWeek(program, weekStart);
   const marked = new Set(workouts.map((w) => w.dow));
   const dayWorkouts = workouts.filter((w) => w.dow === day);
-  // past weeks are read-only history — you build the current week and forward
-  const readOnly = weekOffset < 0;
+  // past weeks are read-only history unless the coach unlocks the week to edit it
+  const isPast = weekOffset < 0;
+  const readOnly = isPast && !unlocked.has(weekStart);
+  const setWeekUnlocked = (ws: string, on: boolean) =>
+    setUnlocked((prev) => {
+      const next = new Set(prev);
+      if (on) next.add(ws);
+      else next.delete(ws);
+      return next;
+    });
 
   useEffect(() => {
     if (!pasted) return;
@@ -173,7 +183,18 @@ export default function ProgramBuilder({ clientId }: { clientId: string }) {
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 -mt-1">
         {readOnly && (
           <span className="text-xs text-slate">
-            {weekLabel(weekOffset)} is in the past — read-only. Copy it to build a future week.
+            {weekLabel(weekOffset)} is in the past — read-only.{" "}
+            <button onClick={() => setWeekUnlocked(weekStart, true)} className="font-semibold text-forest">
+              Unlock to edit
+            </button>
+          </span>
+        )}
+        {isPast && !readOnly && (
+          <span className="flex items-center gap-2">
+            <Pill tone="brick">Editing past · {weekLabel(weekOffset)}</Pill>
+            <button onClick={() => setWeekUnlocked(weekStart, false)} className="text-xs font-semibold text-slate">
+              Lock
+            </button>
           </span>
         )}
         <span className="flex-1" />
