@@ -18,6 +18,17 @@ const FOCUS_OPTIONS: { value: string; label: string }[] = [
   { value: "core", label: "Core" },
 ];
 
+// Emphasis options when the focus is a CrossFit metcon.
+const METCON_TYPES: { value: string; label: string }[] = [
+  { value: "engine", label: "Engine builder" },
+  { value: "strength", label: "Strength builder" },
+  { value: "cardio", label: "Cardio builder" },
+  { value: "hinge", label: "Hinge patterns" },
+  { value: "power", label: "Explosive / power" },
+  { value: "gymnastics", label: "Gymnastics / skill" },
+  { value: "mixed", label: "Mixed / classic" },
+];
+
 const EQUIPMENT_OPTIONS = [
   "Bodyweight",
   "Dumbbells",
@@ -51,6 +62,7 @@ export default function WorkoutGeneratorModal({
   const byId = useMemo(() => Object.fromEntries(exercises.map((e) => [e.id, e])), [exercises]);
 
   const [focus, setFocus] = useState("metcon");
+  const [metconType, setMetconType] = useState("engine");
   const [equipment, setEquipment] = useState<string[]>(["Bodyweight"]);
   const [timeMin, setTimeMin] = useState(20);
   const [targetDow, setTargetDow] = useState(dow);
@@ -77,6 +89,7 @@ export default function WorkoutGeneratorModal({
         },
         body: JSON.stringify({
           focus,
+          metconType: focus === "metcon" ? METCON_TYPES.find((t) => t.value === metconType)?.label : undefined,
           equipment,
           timeMin,
           goals: client.goals?.join(", "),
@@ -113,6 +126,7 @@ export default function WorkoutGeneratorModal({
 
   return (
     <div
+      data-noswipe
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-ink/40 backdrop-blur-sm sm:p-4"
       onClick={onClose}
     >
@@ -142,6 +156,18 @@ export default function WorkoutGeneratorModal({
                   ))}
                 </div>
               </Field>
+
+              {focus === "metcon" && (
+                <Field label="Type of work">
+                  <div className="flex flex-wrap gap-1.5">
+                    {METCON_TYPES.map((t) => (
+                      <Chip key={t.value} active={metconType === t.value} onClick={() => setMetconType(t.value)}>
+                        {t.label}
+                      </Chip>
+                    ))}
+                  </div>
+                </Field>
+              )}
 
               <Field label="Equipment available">
                 <div className="flex flex-wrap gap-1.5">

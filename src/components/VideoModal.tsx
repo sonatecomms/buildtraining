@@ -15,7 +15,7 @@ export default function VideoModal({
   const embed = youtubeEmbed(url);
   if (!embed) return null;
   return (
-    <div className="fixed inset-0 z-[60] bg-ink/85 backdrop-blur-sm flex flex-col" onClick={onClose}>
+    <div data-noswipe className="fixed inset-0 z-[60] bg-ink/85 backdrop-blur-sm flex flex-col" onClick={onClose}>
       <div
         className="flex items-center justify-between px-4 py-3"
         onClick={(e) => e.stopPropagation()}

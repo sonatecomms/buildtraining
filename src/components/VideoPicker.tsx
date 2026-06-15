@@ -27,6 +27,7 @@ export default function VideoPicker({
 
   return (
     <div
+      data-noswipe
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-ink/40 backdrop-blur-sm sm:p-4"
       onClick={onClose}
     >

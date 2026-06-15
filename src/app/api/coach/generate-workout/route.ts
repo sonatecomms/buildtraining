@@ -110,6 +110,7 @@ export async function POST(req: NextRequest) {
 
   let body: {
     focus?: string;
+    metconType?: string;
     equipment?: string[];
     timeMin?: number;
     goals?: string;
@@ -143,7 +144,7 @@ export async function POST(req: NextRequest) {
   const userPrompt = `Build one session.
 
 Focus: ${focus}
-Time available: ${timeMin} minutes
+${focus === "metcon" && body.metconType ? `Metcon emphasis: ${body.metconType} (shape the metcon around this — bias movement selection, rep schemes, and time domain toward it)\n` : ""}Time available: ${timeMin} minutes
 Equipment available: ${equipment.length ? equipment.join(", ") : "bodyweight only"}
 ${body.goals ? `Athlete goals/notes: ${body.goals}\n` : ""}
 Surrounding days already programmed (balance fatigue against these):

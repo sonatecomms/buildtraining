@@ -52,7 +52,7 @@ export default function AvatarCropper({
   };
 
   return (
-    <div className="fixed inset-0 z-[60] bg-ink/90 flex flex-col">
+    <div data-noswipe className="fixed inset-0 z-[60] bg-ink/90 flex flex-col">
       <div className="flex items-center justify-between px-4 py-3">
         <button onClick={onCancel} className="text-bone text-sm">Cancel</button>
         <span className="text-bone font-semibold">Crop photo</span>
