@@ -624,22 +624,33 @@ function SortableBlock({
           <span className="font-medium">Athletes log a result</span>
         </label>
         {block.logResult && (
-          <div className="flex items-center gap-1.5 flex-wrap mt-2">
-            <span className="text-[11px] text-slate mr-0.5">Score</span>
-            {SCORE_TYPES.map((s) => (
-              <button
-                key={s}
-                onClick={() => setBlockResultConfig(clientId, workoutId, block.id, { scoreType: s })}
-                className={`text-[11px] font-semibold rounded-full px-2 py-0.5 ${
-                  (block.scoreType ?? "time") === s
-                    ? "bg-forest text-bone"
-                    : "bg-surface text-slate border border-line"
-                }`}
-              >
-                {SCORE_TYPE_LABEL[s]}
-              </button>
-            ))}
-          </div>
+          <>
+            <div className="flex items-center gap-1.5 flex-wrap mt-2">
+              <span className="text-[11px] text-slate mr-0.5">Score</span>
+              {SCORE_TYPES.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setBlockResultConfig(clientId, workoutId, block.id, { scoreType: s })}
+                  className={`text-[11px] font-semibold rounded-full px-2 py-0.5 ${
+                    (block.scoreType ?? "time") === s
+                      ? "bg-forest text-bone"
+                      : "bg-surface text-slate border border-line"
+                  }`}
+                >
+                  {SCORE_TYPE_LABEL[s]}
+                </button>
+              ))}
+            </div>
+            <label className="flex items-center gap-2 mt-2 text-sm cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={block.levels ?? false}
+                onChange={(e) => setBlockResultConfig(clientId, workoutId, block.id, { levels: e.target.checked })}
+                className="w-4 h-4 accent-forest"
+              />
+              <span className="font-medium">Offer scaling levels (Rx+ / Rx / Scale)</span>
+            </label>
+          </>
         )}
         <div className="flex items-center justify-between mt-2">
           <span className="text-[11px] text-slate">Saved automatically</span>

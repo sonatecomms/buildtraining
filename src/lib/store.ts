@@ -352,7 +352,7 @@ export function setBlockResultConfig(
   clientId: string,
   workoutId: string,
   blockId: string,
-  patch: { logResult?: boolean; scoreType?: ScoreType },
+  patch: { logResult?: boolean; scoreType?: ScoreType; levels?: boolean },
 ) {
   mutateWorkout(clientId, workoutId, (w) => ({
     ...w,

@@ -50,6 +50,10 @@ const WORKOUT_SCHEMA = {
             enum: ["time", "rounds", "reps", "load", "done"],
             description: "How the metcon is scored (time=For Time, rounds=AMRAP). Use 'done' when not scored.",
           },
+          levels: {
+            type: "boolean",
+            description: "true on the scored metcon note so the athlete can record Rx+/Rx/Scale 1/Scale 2; false otherwise.",
+          },
           items: {
             type: "array",
             description: "Strength blocks only: the prescribed movements. Empty [] for note blocks.",
@@ -66,7 +70,7 @@ const WORKOUT_SCHEMA = {
             },
           },
         },
-        required: ["kind", "title", "text", "logResult", "scoreType", "items"],
+        required: ["kind", "title", "text", "logResult", "scoreType", "levels", "items"],
       },
     },
   },
@@ -88,8 +92,8 @@ Fatigue balancing (important):
 Output rules:
 - Respect the requested time cap and the available equipment ONLY — never prescribe equipment the athlete doesn't have.
 - Prefer movement names from the provided exercise library where they fit (so demos and logging work); other movements are fine as text in the metcon.
-- Structure: a warm-up note, an optional strength block (kind:"strength" with items), the metcon as a note with logResult:true and the right scoreType, then a mobility/recovery note (logResult:false).
-- Strength blocks: text:"" , logResult:false, scoreType:"done". Note blocks: items:[].`;
+- Structure: a warm-up note, an optional strength block (kind:"strength" with items), the metcon as a note with logResult:true, the right scoreType, and levels:true (so the athlete records Rx+/Rx/Scale), then a mobility/recovery note (logResult:false, levels:false).
+- Strength blocks: text:"" , logResult:false, scoreType:"done", levels:false. Note blocks: items:[].`;
 
 export async function POST(req: NextRequest) {
   const key = process.env.ANTHROPIC_API_KEY;

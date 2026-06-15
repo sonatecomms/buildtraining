@@ -12,6 +12,7 @@ import {
 } from "@/lib/store";
 import { flushPush } from "@/lib/sync";
 import type { Client, Exercise, ItemResult, ProgramItem, ScoreType, Workout, WorkoutLog } from "@/lib/types";
+import { METCON_LEVELS } from "@/lib/types";
 import { youtubeId } from "@/lib/youtube";
 import { calsPerMin, runPace, speedMph } from "@/lib/activities";
 import { parseRest, formatClock } from "@/lib/rest";
@@ -114,7 +115,7 @@ export default function TrainView({
     // logging real data implicitly checks the movement off — so an athlete who
     // fills in their sets never has to remember to also tap the circle.
     const meaningful =
-      patch.weight || patch.setsDone || patch.repsDone || patch.duration || patch.distance || patch.calories || patch.intensity || patch.feeling || patch.note || patch.rounds;
+      patch.weight || patch.setsDone || patch.repsDone || patch.duration || patch.distance || patch.calories || patch.intensity || patch.feeling || patch.note || patch.rounds || patch.level;
     if (meaningful) setDone((d) => (d.has(itemId) ? d : new Set(d).add(itemId)));
   };
 
@@ -155,7 +156,7 @@ export default function TrainView({
     extras.forEach((x) => (exOf[x.id] = x.exerciseId));
     // keep only results that actually carry data
     const entries = Object.values(results)
-      .filter((e) => e.weight || e.setsDone || e.repsDone || e.duration || e.distance || e.calories || e.intensity || e.feeling || e.note || e.rounds)
+      .filter((e) => e.weight || e.setsDone || e.repsDone || e.duration || e.distance || e.calories || e.intensity || e.feeling || e.note || e.rounds || e.level)
       .map((e) => ({ ...e, exerciseId: exOf[e.itemId], extra: extraIds.has(e.itemId) || undefined }));
     const allDone = totalItems > 0 && done.size >= totalItems;
     logWorkout({
@@ -206,6 +207,7 @@ export default function TrainView({
                 {block.logResult && (
                   <MetconResult
                     scoreType={block.scoreType ?? "time"}
+                    levels={block.levels}
                     checked={done.has(block.id)}
                     result={results[block.id]}
                     onToggle={() =>
@@ -720,12 +722,14 @@ function RunnerItem({
 // stored as an ItemResult keyed by the block id (like AMRAP/EMOM rounds).
 function MetconResult({
   scoreType,
+  levels,
   checked,
   result,
   onToggle,
   onChange,
 }: {
   scoreType: ScoreType;
+  levels?: boolean;
   checked: boolean;
   result?: ItemResult;
   onToggle: () => void;
@@ -784,6 +788,28 @@ function MetconResult({
       )}
       {scoreType === "load" && (
         <LogField label="Load" value={r.weight} placeholder="lbs" inputMode="decimal" onChange={(v) => onChange({ weight: v })} />
+      )}
+
+      {levels && (
+        <div className="mt-2.5">
+          <span className="text-[10px] uppercase tracking-wide text-slate">Level you did</span>
+          <div className="mt-1 flex gap-1.5">
+            {METCON_LEVELS.map((lvl) => {
+              const on = r.level === lvl;
+              return (
+                <button
+                  key={lvl}
+                  onClick={() => onChange({ level: on ? undefined : lvl })}
+                  className={`flex-1 rounded-full text-xs font-semibold py-1.5 transition-colors ${
+                    on ? "bg-forest text-bone" : "bg-field text-slate border border-line"
+                  }`}
+                >
+                  {lvl}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       )}
 
       <div className="mt-2.5">
@@ -1226,6 +1252,7 @@ function ReviewCard({
         if (block.type === "note") {
           const r = block.logResult ? resultByItem[block.id] : undefined;
           const chips: string[] = [];
+          if (r?.level) chips.push(r.level);
           if (r?.duration) chips.push(r.duration);
           if (r?.rounds != null) chips.push(`${r.rounds} rounds${r.repsDone ? ` + ${r.repsDone}` : ""}`);
           else if (r?.repsDone) chips.push(`${r.repsDone} reps`);
