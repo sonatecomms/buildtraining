@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
-import { useClient, useExercises, logWorkout, uid, updateClient, getClient } from "@/lib/store";
+import { useClient, useExercises, useLogsForClient, computeStreak, logWorkout, uid, updateClient, getClient } from "@/lib/store";
 import dynamic from "next/dynamic";
 import { isIntroDone } from "@/lib/intro";
 import { nextGreeting, notoLottieUrl } from "@/lib/greeting";
@@ -125,15 +125,7 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
           </div>
         ) : view === "train" ? (
           <>
-            <div className="mb-4 flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <h1 className="text-2xl font-bold leading-tight">
-                  Hi, {client.name.split(" ")[0]} <GreetingEmoji />
-                </h1>
-                <p className="text-slate text-sm">Let&apos;s get after it.</p>
-              </div>
-              <TodayBadge />
-            </div>
+            <TrainGreeting client={client} />
             <TrainView client={client} />
           </>
         ) : view === "timer" ? (
@@ -179,21 +171,51 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
   );
 }
 
-// Today's date, right-aligned beside the greeting — fills the dead space and
-// orients the athlete on the day. Mounted-gated so the server (UTC) and client
-// (local) never disagree on the date → no hydration mismatch.
-function TodayBadge() {
-  const [now, setNow] = useState<Date | null>(null);
-  useEffect(() => setNow(new Date()), []);
-  if (!now) return <div className="shrink-0" aria-hidden />;
-  const weekday = now.toLocaleDateString(undefined, { weekday: "short" });
-  const month = now.toLocaleDateString(undefined, { month: "short" });
-  const day = now.getDate();
+// Greeting row: name + rotating emoji on the left, the week's goal ring on the
+// right (fills what used to be dead space and gives the header a real anchor).
+// The ring tracks the CURRENT real week's logged sessions vs the athlete's
+// intended frequency — same data the green strip used to carry.
+function TrainGreeting({ client }: { client: Client }) {
+  const logs = useLogsForClient(client.id);
+  const streak = computeStreak(logs, client.intendedFrequency);
   return (
-    <div className="shrink-0 text-right leading-tight">
-      <p className="text-[10px] uppercase tracking-[0.12em] text-slate/70">{weekday}</p>
-      <p className="font-display text-2xl text-forest leading-none mt-0.5">{day}</p>
-      <p className="text-[11px] text-slate">{month}</p>
+    <div className="mb-4 flex items-center justify-between gap-3">
+      <div className="min-w-0">
+        <h1 className="text-2xl font-bold leading-tight">
+          Hi, {client.name.split(" ")[0]} <GreetingEmoji />
+        </h1>
+        <p className="text-slate text-sm">Let&apos;s get after it.</p>
+      </div>
+      <WeekRing pct={streak.weekProgressPct} done={streak.thisWeek} target={streak.weeklyTarget} />
+    </div>
+  );
+}
+
+// The weekly-goal progress ring, sized for the header.
+function WeekRing({ pct, done, target }: { pct: number; done: number; target: number }) {
+  const r = 28;
+  const c = 2 * Math.PI * r;
+  return (
+    <div className="shrink-0 relative grid place-items-center">
+      <svg width="72" height="72" viewBox="0 0 72 72" className="-rotate-90">
+        <circle cx="36" cy="36" r={r} fill="none" stroke="#cfd6c4" strokeWidth="7" />
+        <circle
+          cx="36"
+          cy="36"
+          r={r}
+          fill="none"
+          stroke="#19350c"
+          strokeWidth="7"
+          strokeLinecap="round"
+          strokeDasharray={c}
+          strokeDashoffset={c - (c * pct) / 100}
+          style={{ transition: "stroke-dashoffset 0.5s ease" }}
+        />
+      </svg>
+      <div className="absolute text-center leading-none">
+        <div className="font-display text-lg text-forest">{done}/{target}</div>
+        <div className="text-[8px] uppercase tracking-wide text-slate mt-0.5">this wk</div>
+      </div>
     </div>
   );
 }

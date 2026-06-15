@@ -11,28 +11,6 @@ function formatVolume(v: number): string {
   return String(Math.round(v));
 }
 
-function Ring({ pct, light = false }: { pct: number; light?: boolean }) {
-  const r = 26;
-  const c = 2 * Math.PI * r;
-  return (
-    <svg width="64" height="64" viewBox="0 0 64 64" className="-rotate-90">
-      <circle cx="32" cy="32" r={r} fill="none" stroke={light ? "rgba(226,230,218,0.3)" : "#cfd6c4"} strokeWidth="7" />
-      <circle
-        cx="32"
-        cy="32"
-        r={r}
-        fill="none"
-        stroke={light ? "#e2e6da" : "#19350c"}
-        strokeWidth="7"
-        strokeLinecap="round"
-        strokeDasharray={c}
-        strokeDashoffset={c - (c * pct) / 100}
-        style={{ transition: "stroke-dashoffset 0.5s ease" }}
-      />
-    </svg>
-  );
-}
-
 export default function StreakHeader({ streak }: { streak: StreakInfo }) {
   return (
     <div className="space-y-3">
@@ -55,14 +33,6 @@ export default function StreakHeader({ streak }: { streak: StreakInfo }) {
             <div className="flex gap-4 mt-3 text-xs text-bone/80">
               <span>🏅 Best: <b className="text-bone">{streak.longest}d</b></span>
               <span>✅ Total: <b className="text-bone">{streak.totalSessions}</b></span>
-            </div>
-          </div>
-
-          <div className="relative grid place-items-center">
-            <Ring pct={streak.weekProgressPct} light />
-            <div className="absolute text-center">
-              <div className="text-sm font-bold leading-none">{streak.thisWeek}/{streak.weeklyTarget}</div>
-              <div className="text-[8px] text-bone/70">this wk</div>
             </div>
           </div>
         </div>
