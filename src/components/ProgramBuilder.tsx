@@ -49,7 +49,8 @@ import type { Block, BlockMode, BlockType, Exercise, ProgramItem, ScoreType, Wor
 import { pushRecent } from "@/lib/recents";
 import { youtubeId, youtubeThumb } from "@/lib/youtube";
 import { DOW_LONG, todayDow, weekLabel, weekStartIso } from "@/lib/week";
-import { Button, Card, EmptyState, Pill } from "./ui";
+import { Plus } from "lucide-react";
+import { Button, Card, EmptyState, Fab, Pill } from "./ui";
 import ExercisePickerModal from "./ExercisePickerModal";
 import VideoPicker from "./VideoPicker";
 import WeekStrip from "./WeekStrip";
@@ -256,7 +257,7 @@ export default function ProgramBuilder({ clientId }: { clientId: string }) {
               + Add {DOW_LONG[day]} workout
             </Button>
             <Button variant="outline" onClick={() => setGenerating(true)}>
-              ✨ Generate workout
+              Build a workout
             </Button>
           </div>
         </Card>
@@ -288,8 +289,16 @@ export default function ProgramBuilder({ clientId }: { clientId: string }) {
 
       {!readOnly && dayWorkouts.length > 0 && (
         <Button variant="outline" className="w-full" onClick={() => setGenerating(true)}>
-          ✨ Generate another workout
+          Build another workout
         </Button>
+      )}
+
+      {!readOnly && client && (
+        <div className="fixed bottom-24 right-4 z-30" style={{ marginBottom: "env(safe-area-inset-bottom)" }}>
+          <Fab label="Build a workout" onClick={() => setGenerating(true)}>
+            <Plus size={26} />
+          </Fab>
+        </div>
       )}
 
       {generating && client && (
@@ -597,7 +606,7 @@ function SortableBlock({
             placeholder="Section title (e.g. Warm-up, Metcon)"
             className="flex-1 min-w-0 bg-transparent font-semibold text-sm outline-none focus:text-forest placeholder:text-slate"
           />
-          <span className="text-[10px] uppercase tracking-wide text-sky font-semibold">Note</span>
+          <span className="text-[10px] uppercase tracking-wide text-sky-dark font-semibold">Note</span>
           <ConfirmX title="Delete note" onConfirm={() => removeBlock(clientId, workoutId, block.id)} />
         </div>
         <textarea
@@ -624,22 +633,33 @@ function SortableBlock({
           <span className="font-medium">Athletes log a result</span>
         </label>
         {block.logResult && (
-          <div className="flex items-center gap-1.5 flex-wrap mt-2">
-            <span className="text-[11px] text-slate mr-0.5">Score</span>
-            {SCORE_TYPES.map((s) => (
-              <button
-                key={s}
-                onClick={() => setBlockResultConfig(clientId, workoutId, block.id, { scoreType: s })}
-                className={`text-[11px] font-semibold rounded-full px-2 py-0.5 ${
-                  (block.scoreType ?? "time") === s
-                    ? "bg-forest text-bone"
-                    : "bg-surface text-slate border border-line"
-                }`}
-              >
-                {SCORE_TYPE_LABEL[s]}
-              </button>
-            ))}
-          </div>
+          <>
+            <div className="flex items-center gap-1.5 flex-wrap mt-2">
+              <span className="text-[11px] text-slate mr-0.5">Score</span>
+              {SCORE_TYPES.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setBlockResultConfig(clientId, workoutId, block.id, { scoreType: s })}
+                  className={`text-[11px] font-semibold rounded-full px-2 py-0.5 ${
+                    (block.scoreType ?? "time") === s
+                      ? "bg-forest text-bone"
+                      : "bg-surface text-slate border border-line"
+                  }`}
+                >
+                  {SCORE_TYPE_LABEL[s]}
+                </button>
+              ))}
+            </div>
+            <label className="flex items-center gap-2 mt-2 text-sm cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={block.levels ?? false}
+                onChange={(e) => setBlockResultConfig(clientId, workoutId, block.id, { levels: e.target.checked })}
+                className="w-4 h-4 accent-forest"
+              />
+              <span className="font-medium">Offer scaling levels (Rx+ / Rx / Scale)</span>
+            </label>
+          </>
         )}
         <div className="flex items-center justify-between mt-2">
           <span className="text-[11px] text-slate">Saved automatically</span>

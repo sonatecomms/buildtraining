@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { addWorkoutObject, useExercises, useProgramForClient } from "@/lib/store";
 import { getSupabase } from "@/lib/supabase";
 import { surroundingLoad } from "@/lib/workoutLoad";
@@ -58,21 +58,6 @@ export default function WorkoutGeneratorModal({
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<{ gen: GeneratedWorkout; workout: Workout } | null>(null);
 
-  // Bind the sheet to the visual viewport so the keyboard doesn't cover it (iOS).
-  const [vpHeight, setVpHeight] = useState<number | null>(null);
-  useEffect(() => {
-    const vv = window.visualViewport;
-    if (!vv) return;
-    const sync = () => setVpHeight(vv.height);
-    sync();
-    vv.addEventListener("resize", sync);
-    vv.addEventListener("scroll", sync);
-    return () => {
-      vv.removeEventListener("resize", sync);
-      vv.removeEventListener("scroll", sync);
-    };
-  }, []);
-
   const toggleEquip = (e: string) =>
     setEquipment((cur) => (cur.includes(e) ? cur.filter((x) => x !== e) : [...cur, e]));
 
@@ -128,16 +113,15 @@ export default function WorkoutGeneratorModal({
 
   return (
     <div
-      className="fixed inset-x-0 top-0 z-50 flex flex-col bg-ink/40 backdrop-blur-sm h-[100dvh]"
-      style={vpHeight ? { height: vpHeight } : undefined}
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-ink/40 backdrop-blur-sm sm:p-4"
+      onClick={onClose}
     >
-      <div className="flex-1 min-h-0" onClick={onClose} />
       <div
-        className="bg-bone border-t border-line rounded-t-3xl max-w-2xl w-full mx-auto flex flex-col min-h-0 animate-pop"
-        style={{ maxHeight: "90%" }}
+        onClick={(e) => e.stopPropagation()}
+        className="bg-bone w-full sm:max-w-md max-h-[88dvh] sm:max-h-[85dvh] rounded-t-3xl sm:rounded-3xl border border-line shadow-hero flex flex-col min-h-0 animate-pop overflow-hidden"
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-line shrink-0">
-          <h2 className="font-bold">✨ Build me a workout</h2>
+          <h2 className="font-bold">Build a workout</h2>
           <button onClick={onClose} className="text-slate text-2xl leading-none px-2" aria-label="Close">
             ×
           </button>
@@ -201,7 +185,7 @@ export default function WorkoutGeneratorModal({
               {error && <p className="text-sm text-brick">{error}</p>}
 
               <Button className="w-full" onClick={generate} disabled={busy || equipment.length === 0}>
-                {busy ? "Generating…" : "Generate workout"}
+                {busy ? "Building…" : "Build workout"}
               </Button>
             </>
           ) : (

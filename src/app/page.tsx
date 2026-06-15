@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Plus } from "lucide-react";
 import { useClients, useLogsForClient, addClient, setClientArchived } from "@/lib/store";
-import { Avatar, Button, Card, EmptyState, PageHeader, Pill, Skeleton } from "@/components/ui";
+import { Avatar, Button, Card, EmptyState, Fab, PageHeader, Pill, Skeleton } from "@/components/ui";
 import { GOALS } from "@/lib/goals";
 import { relativeDate, daysAgo, weekDates, isoDate } from "@/lib/week";
 import type { Client } from "@/lib/types";
@@ -19,7 +20,7 @@ function ClientRow({ client }: { client: Client }) {
   return (
     <Link href={`/clients/${client.id}`}>
       <Card className="p-4 flex items-center gap-3">
-        <Avatar src={client.avatarUrl} name={client.name} size={48} />
+        <Avatar src={client.avatarUrl} name={client.name} size={48} gradient />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             {behind && <span className="w-2 h-2 rounded-full bg-brick shrink-0" title="Behind this week" />}
@@ -129,7 +130,7 @@ export default function CoachHome() {
             <div className="space-y-2 mt-3">
               {archived.map((c) => (
                 <Card key={c.id} className="p-3 flex items-center gap-3">
-                  <Avatar src={c.avatarUrl} name={c.name} size={40} />
+                  <Avatar src={c.avatarUrl} name={c.name} size={40} gradient />
                   <Link href={`/clients/${c.id}`} className="flex-1 min-w-0">
                     <p className="font-semibold truncate">{c.name}</p>
                     <p className="text-xs text-slate">Archived</p>
@@ -143,6 +144,18 @@ export default function CoachHome() {
           )}
         </div>
       )}
+
+      <div className="fixed bottom-24 right-4 z-30" style={{ marginBottom: "env(safe-area-inset-bottom)" }}>
+        <Fab
+          label="Add athlete"
+          onClick={() => {
+            setAdding(true);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+        >
+          <Plus size={26} />
+        </Fab>
+      </div>
     </div>
   );
 }

@@ -73,6 +73,9 @@ export type BlockType = "single" | "superset" | "circuit" | "note";
 //   done   → no score, just mark complete + effort/note
 export type ScoreType = "time" | "rounds" | "reps" | "load" | "done";
 
+// Fixed CrossFit scaling levels the athlete picks from on a reportable metcon.
+export const METCON_LEVELS = ["Rx+", "Rx", "Scale 1", "Scale 2"] as const;
+
 // How a circuit is run: a fixed number of rounds, an AMRAP (as many rounds as
 // possible inside a time cap), or an EMOM (one round every interval).
 export type BlockMode = "rounds" | "amrap" | "emom";
@@ -106,6 +109,8 @@ export interface Block {
   // mechanism AMRAP/EMOM rounds use.
   logResult?: boolean;
   scoreType?: ScoreType;
+  // offer the athlete a Rx+/Rx/Scale level picker on this reportable metcon
+  levels?: boolean;
 }
 
 export interface Workout {
@@ -165,6 +170,7 @@ export interface ItemResult {
   note?: string;
   extra?: boolean; // athlete-added movement, beyond what the coach programmed
   rounds?: number; // AMRAP/EMOM block result: rounds the athlete completed (keyed by block id)
+  level?: string; // metcon scaling level the athlete did (Rx+/Rx/Scale 1/Scale 2)
 }
 
 export interface WorkoutLog {

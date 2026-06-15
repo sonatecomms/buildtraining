@@ -12,6 +12,7 @@ import {
 } from "@/lib/store";
 import { flushPush } from "@/lib/sync";
 import type { Client, Exercise, ItemResult, ProgramItem, ScoreType, Workout, WorkoutLog } from "@/lib/types";
+import { METCON_LEVELS } from "@/lib/types";
 import { youtubeId } from "@/lib/youtube";
 import { calsPerMin, runPace, speedMph } from "@/lib/activities";
 import { parseRest, formatClock } from "@/lib/rest";
@@ -26,7 +27,8 @@ import {
   weekStartIso,
   relativeDate,
 } from "@/lib/week";
-import { Button, Card, Pill, Skeleton } from "./ui";
+import { Plus } from "lucide-react";
+import { Button, Card, Fab, Pill, Skeleton } from "./ui";
 import StreakHeader from "./StreakHeader";
 import WeekStrip from "./WeekStrip";
 import VideoModal from "./VideoModal";
@@ -114,7 +116,7 @@ export default function TrainView({
     // logging real data implicitly checks the movement off — so an athlete who
     // fills in their sets never has to remember to also tap the circle.
     const meaningful =
-      patch.weight || patch.setsDone || patch.repsDone || patch.duration || patch.distance || patch.calories || patch.intensity || patch.feeling || patch.note || patch.rounds;
+      patch.weight || patch.setsDone || patch.repsDone || patch.duration || patch.distance || patch.calories || patch.intensity || patch.feeling || patch.note || patch.rounds || patch.level;
     if (meaningful) setDone((d) => (d.has(itemId) ? d : new Set(d).add(itemId)));
   };
 
@@ -155,7 +157,7 @@ export default function TrainView({
     extras.forEach((x) => (exOf[x.id] = x.exerciseId));
     // keep only results that actually carry data
     const entries = Object.values(results)
-      .filter((e) => e.weight || e.setsDone || e.repsDone || e.duration || e.distance || e.calories || e.intensity || e.feeling || e.note || e.rounds)
+      .filter((e) => e.weight || e.setsDone || e.repsDone || e.duration || e.distance || e.calories || e.intensity || e.feeling || e.note || e.rounds || e.level)
       .map((e) => ({ ...e, exerciseId: exOf[e.itemId], extra: extraIds.has(e.itemId) || undefined }));
     const allDone = totalItems > 0 && done.size >= totalItems;
     logWorkout({
@@ -193,8 +195,8 @@ export default function TrainView({
           <h2 className="text-xl font-bold">{running.name}</h2>
           <button onClick={() => setRunning(null)} className="text-slate text-sm">Exit</button>
         </div>
-        <div className="h-1.5 rounded-full bg-line overflow-hidden">
-          <div className="h-full bg-forest transition-all" style={{ width: `${totalItems ? (done.size / totalItems) * 100 : 0}%` }} />
+        <div className="h-2 rounded-full bg-line overflow-hidden">
+          <div className="h-full bg-gradient-to-r from-forest to-green transition-all" style={{ width: `${totalItems ? (done.size / totalItems) * 100 : 0}%` }} />
         </div>
 
         {running.blocks.map((block) => {
@@ -206,6 +208,7 @@ export default function TrainView({
                 {block.logResult && (
                   <MetconResult
                     scoreType={block.scoreType ?? "time"}
+                    levels={block.levels}
                     checked={done.has(block.id)}
                     result={results[block.id]}
                     onToggle={() =>
@@ -300,18 +303,21 @@ export default function TrainView({
           + Add an extra movement
         </Button>
 
-        <Button className="w-full" onClick={finish}>
-          {totalItems > 0 && done.size >= totalItems ? (
-            "Finish workout ✓"
-          ) : (
-            <span className="flex flex-col leading-tight">
-              <span>Finish workout</span>
-              {totalItems > 0 && (
-                <span className="text-xs font-normal opacity-80">{totalItems - done.size} not checked off</span>
-              )}
-            </span>
-          )}
-        </Button>
+        {/* sticky so Finish is always reachable on a long workout (sits above the nav) */}
+        <div className="sticky bottom-20 z-30 -mx-4 px-4 pt-2 pb-2 bg-gradient-to-t from-bone via-bone/95 to-transparent">
+          <Button className="w-full" onClick={finish}>
+            {totalItems > 0 && done.size >= totalItems ? (
+              "Finish workout ✓"
+            ) : (
+              <span className="flex flex-col leading-tight">
+                <span>Finish workout</span>
+                {totalItems > 0 && (
+                  <span className="text-xs font-normal opacity-80">{totalItems - done.size} not checked off</span>
+                )}
+              </span>
+            )}
+          </Button>
+        </div>
 
         {picking && (
           <ExercisePickerModal
@@ -345,7 +351,7 @@ export default function TrainView({
           className="fixed inset-0 z-50 flex items-center justify-center bg-ink/10"
           aria-label="Dismiss"
         >
-          <div className="animate-pop text-center bg-surface border border-green/40 rounded-2xl px-8 py-6 shadow-[0_12px_40px_-8px_rgba(25,53,12,0.35)]">
+          <div role="status" aria-live="polite" className="animate-pop text-center bg-surface border border-green/40 rounded-2xl px-8 py-6 shadow-[0_12px_40px_-8px_rgba(25,53,12,0.35)]">
             <div className="text-5xl animate-flame">🎉</div>
             <p className="font-bold text-lg mt-2">{celebrate.title}</p>
             <p className="text-slate text-sm">{celebrate.sub}</p>
@@ -464,13 +470,17 @@ export default function TrainView({
             );
           })()}
 
-          {ready && !readOnly && (
-            <Button variant="outline" className="w-full" onClick={() => setGenerating(true)}>
-              ✨ Build me a workout
-            </Button>
-          )}
         </div>
       </div>
+
+      {/* athlete-only floating action: build me a workout */}
+      {!coachView && !readOnly && (
+        <div className="fixed bottom-24 right-4 z-30" style={{ marginBottom: "env(safe-area-inset-bottom)" }}>
+          <Fab label="Build a workout" onClick={() => setGenerating(true)}>
+            <Plus size={26} />
+          </Fab>
+        </div>
+      )}
 
       {generating && (
         <WorkoutGeneratorModal
@@ -598,12 +608,12 @@ function RunnerItem({
   const [playing, setPlaying] = useState(false);
 
   return (
-    <div className={`rounded-xl border p-2.5 ${checked ? "border-forest bg-green/10" : "border-line bg-field"}`}>
+    <div className={`rounded-xl border p-2.5 ${checked ? "border-green/50 bg-green/10" : "border-line bg-field"}`}>
       <div className="flex items-center gap-3">
         <button
           onClick={onToggle}
-          className={`w-6 h-6 rounded-full border-2 grid place-items-center text-xs shrink-0 ${
-            checked ? "bg-forest border-forest text-bone" : "border-slate"
+          className={`w-7 h-7 rounded-full border-2 grid place-items-center text-xs shrink-0 ${
+            checked ? "bg-green border-green text-bone" : "border-slate"
           }`}
         >
           {checked ? "✓" : ""}
@@ -720,12 +730,14 @@ function RunnerItem({
 // stored as an ItemResult keyed by the block id (like AMRAP/EMOM rounds).
 function MetconResult({
   scoreType,
+  levels,
   checked,
   result,
   onToggle,
   onChange,
 }: {
   scoreType: ScoreType;
+  levels?: boolean;
   checked: boolean;
   result?: ItemResult;
   onToggle: () => void;
@@ -784,6 +796,28 @@ function MetconResult({
       )}
       {scoreType === "load" && (
         <LogField label="Load" value={r.weight} placeholder="lbs" inputMode="decimal" onChange={(v) => onChange({ weight: v })} />
+      )}
+
+      {levels && (
+        <div className="mt-2.5">
+          <span className="text-[10px] uppercase tracking-wide text-slate">Level you did</span>
+          <div className="mt-1 flex gap-1.5">
+            {METCON_LEVELS.map((lvl) => {
+              const on = r.level === lvl;
+              return (
+                <button
+                  key={lvl}
+                  onClick={() => onChange({ level: on ? undefined : lvl })}
+                  className={`flex-1 rounded-full text-xs font-semibold py-1.5 transition-colors ${
+                    on ? "bg-forest text-bone" : "bg-field text-slate border border-line"
+                  }`}
+                >
+                  {lvl}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       )}
 
       <div className="mt-2.5">
@@ -1226,6 +1260,7 @@ function ReviewCard({
         if (block.type === "note") {
           const r = block.logResult ? resultByItem[block.id] : undefined;
           const chips: string[] = [];
+          if (r?.level) chips.push(r.level);
           if (r?.duration) chips.push(r.duration);
           if (r?.rounds != null) chips.push(`${r.rounds} rounds${r.repsDone ? ` + ${r.repsDone}` : ""}`);
           else if (r?.repsDone) chips.push(`${r.repsDone} reps`);

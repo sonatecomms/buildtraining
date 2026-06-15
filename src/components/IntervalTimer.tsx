@@ -297,7 +297,7 @@ export default function IntervalTimer({ onLog }: { onLog?: (r: TimerResult) => v
         <div className="h-1.5 rounded-full bg-line overflow-hidden mb-5">
           <div className={`h-full transition-all duration-1000 ease-linear ${accent}`} style={{ width: `${pct}%` }} />
         </div>
-        <p className={`text-center text-sm font-semibold ${seg?.kind === "rest" ? "text-sky" : "text-slate"}`}>
+        <p className={`text-center text-sm font-semibold ${seg?.kind === "rest" ? "text-sky-dark" : "text-slate"}`}>
           {phaseLabel}
         </p>
         <p className="text-center font-display text-7xl tabular-nums leading-none my-3">{formatClock(big)}</p>

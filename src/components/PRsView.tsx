@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useExercises, useLogsForClient } from "@/lib/store";
 import type { Client } from "@/lib/types";
 import { relativeDate, daysAgo } from "@/lib/week";
-import { Card, EmptyState, Pill } from "./ui";
+import { Card, EmptyState, Hero, Pill } from "./ui";
 import PercentageCalculator from "./PercentageCalculator";
 
 // Personal records from the athlete's logged weights: the heaviest load recorded
@@ -37,9 +37,23 @@ export default function PRsView({ client }: { client: Client }) {
     // newest first so a PR set today rises to the top; name as tiebreaker
     .sort((a, b) => b.date.localeCompare(a.date) || exById[a.exId].name.localeCompare(exById[b.exId].name));
 
+  // heaviest logged lift overall → the hero stat
+  const top = [...prs].sort((a, b) => b.weight - a.weight)[0];
+
   return (
     <div>
       <h1 className="text-2xl font-bold mb-3">Maxes &amp; %</h1>
+
+      {top && (
+        <Hero className="p-5 mb-4">
+          <p className="text-bone/75 text-sm font-medium">{exById[top.exId].name} · top lift 🏆</p>
+          <div className="flex items-end gap-2 mt-1">
+            <span className="font-display text-6xl leading-[0.8]">{top.weight}</span>
+            <span className="font-display text-2xl text-bone/70 mb-1">lb</span>
+          </div>
+          <p className="text-bone/70 text-xs mt-2">{relativeDate(top.date)}{top.reps ? ` · ${top.reps} reps` : ""}</p>
+        </Hero>
+      )}
 
       <PercentageCalculator max={max} onMaxChange={setMax} />
 

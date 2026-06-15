@@ -20,6 +20,7 @@ import {
   toLoginId,
 } from "@/lib/login";
 import type { Client } from "@/lib/types";
+import { Dumbbell, Timer, Calculator, BookOpen, User, type LucideIcon } from "lucide-react";
 import { getSupabase } from "@/lib/supabase";
 import { Avatar, Button } from "./ui";
 import TrainView from "./TrainView";
@@ -36,12 +37,13 @@ import { useSession } from "./SessionProvider";
 
 type View = "train" | "timer" | "prs" | "library" | "settings";
 
-const NAV: { id: View; label: string; icon: string }[] = [
-  { id: "train", label: "Train", icon: "🔥" },
-  { id: "timer", label: "Timer", icon: "⏱️" },
-  { id: "prs", label: "Numbers", icon: "🔢" },
-  { id: "library", label: "Library", icon: "📚" },
-  { id: "settings", label: "Settings", icon: "⚙️" },
+// Bottom nav. "You" (Profile + Settings) is also reachable via the header avatar.
+const NAV: { id: View; label: string; icon: LucideIcon }[] = [
+  { id: "train", label: "Train", icon: Dumbbell },
+  { id: "timer", label: "Timer", icon: Timer },
+  { id: "prs", label: "Numbers", icon: Calculator },
+  { id: "library", label: "Library", icon: BookOpen },
+  { id: "settings", label: "You", icon: User },
 ];
 
 export default function AthleteApp({ clientId }: { clientId: string }) {
@@ -101,7 +103,7 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
             className={`flex items-center gap-2 ${view === "settings" ? "text-forest" : ""}`}
             aria-label="Profile & settings"
           >
-            {client && <Avatar src={client.avatarUrl} name={client.name} size={32} />}
+            {client && <Avatar src={client.avatarUrl} name={client.name} size={32} gradient />}
             <span className="text-xs font-medium">{view === "settings" ? "Done" : "Profile"}</span>
           </button>
         </div>

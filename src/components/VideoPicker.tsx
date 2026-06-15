@@ -26,10 +26,15 @@ export default function VideoPicker({
   const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(movementName + " exercise form")}`;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-ink/40 backdrop-blur-sm">
-      <div className="flex-1" onClick={onClose} />
-      <div className="bg-bone border-t border-line rounded-t-3xl max-w-2xl w-full mx-auto max-h-[88vh] flex flex-col animate-pop">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-line">
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-ink/40 backdrop-blur-sm sm:p-4"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-bone w-full sm:max-w-md max-h-[88dvh] sm:max-h-[85dvh] rounded-t-3xl sm:rounded-3xl border border-line shadow-hero flex flex-col min-h-0 animate-pop overflow-hidden"
+      >
+        <div className="flex items-center justify-between px-4 py-3 border-b border-line shrink-0">
           <div className="min-w-0">
             <h2 className="font-bold truncate">Demo video</h2>
             <p className="text-xs text-slate truncate">{movementName}</p>
@@ -37,7 +42,7 @@ export default function VideoPicker({
           <button onClick={onClose} className="text-slate text-2xl leading-none px-2">×</button>
         </div>
 
-        <div className="overflow-y-auto p-4 space-y-3" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+        <div className="overflow-y-auto overscroll-contain p-4 space-y-3 min-h-0 flex-1" style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}>
           <label className="text-xs text-slate font-medium">YouTube link</label>
           <input
             autoFocus

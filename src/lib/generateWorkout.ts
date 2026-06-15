@@ -21,6 +21,7 @@ export interface GenBlock {
   text?: string;
   logResult?: boolean;
   scoreType?: ScoreType;
+  levels?: boolean;
   items?: GenItem[];
 }
 
@@ -48,6 +49,8 @@ export function toWorkout(
         text: gb.text ?? "",
         logResult: gb.logResult || undefined,
         scoreType: gb.logResult ? gb.scoreType ?? "time" : undefined,
+        // reportable generated metcons offer scaling levels by default
+        levels: gb.logResult ? gb.levels ?? true : undefined,
       });
       continue;
     }
