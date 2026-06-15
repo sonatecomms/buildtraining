@@ -33,13 +33,17 @@
   --radius-card: 1.375rem; /* 22px — standard card */
   --radius-hero: 1.625rem; /* 26px — gradient hero cards */
   --shadow-card: 0 1px 2px rgba(25, 53, 12, 0.04), 0 10px 28px -12px rgba(25, 53, 12, 0.16);
-  --shadow-hero: 0 16px 36px -14px rgba(25, 53, 12, 0.55);
+  /* hero = soft drop shadow + a glassy inset rim/top-highlight */
+  --shadow-hero: 0 16px 36px -14px rgba(25, 53, 12, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08);
   --shadow-fab: 0 10px 24px -8px rgba(25, 53, 12, 0.6);
 }
 
-/* forest→green energetic hero fill (streak, PR, metcon score) */
+/* forest→green energetic hero fill with a glassy diagonal sheen on top
+   (streak, PR, gradient avatars). Pair with shadow-hero for the lifted glass look. */
 .build-hero {
-  background-image: linear-gradient(135deg, var(--color-forest), var(--color-green));
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0) 45%),
+    linear-gradient(135deg, var(--color-forest), var(--color-green));
   color: var(--color-bone);
 }
 
