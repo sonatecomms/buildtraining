@@ -12,9 +12,28 @@ import type {
 } from "./types";
 import { buildSeedDB } from "./seed";
 import { cancelPendingPush, schedulePush } from "./sync";
-import { isoDate } from "./week";
+import { isoDate, weekStartIso } from "./week";
 
 const KEY = "fitcoach.db.v2";
+
+// Programming is per-week and independent: every workout is stamped with the
+// Sunday (weekStart) of the week it belongs to. Legacy data predates this — those
+// workouts have no weekStart and used to repeat on every week. Migrate them onto
+// the current week so existing programming lands somewhere concrete (past weeks
+// were never stored separately, so they start empty and are built going forward).
+function migrate(dbIn: DB): DB {
+  const ws = weekStartIso(0);
+  let changed = false;
+  const programs = dbIn.programs.map((p) => {
+    if (p.workouts.every((w) => w.weekStart)) return p;
+    changed = true;
+    return {
+      ...p,
+      workouts: p.workouts.map((w) => (w.weekStart ? w : { ...w, weekStart: ws })),
+    };
+  });
+  return changed ? { ...dbIn, programs } : dbIn;
+}
 
 // ---- persistence -----------------------------------------------------------
 // Local-first store. To move to Supabase, swap load()/persist() for client
@@ -26,13 +45,13 @@ function load(): DB {
   try {
     const raw = window.localStorage.getItem(KEY);
     if (!raw) {
-      const seeded = buildSeedDB();
+      const seeded = migrate(buildSeedDB());
       window.localStorage.setItem(KEY, JSON.stringify(seeded));
       return seeded;
     }
-    return JSON.parse(raw) as DB;
+    return migrate(JSON.parse(raw) as DB);
   } catch {
-    return buildSeedDB();
+    return migrate(buildSeedDB());
   }
 }
 
@@ -56,7 +75,8 @@ function commit(next: DB) {
 // Replace the whole store (used after pulling a coach's data from Supabase on
 // login). Persists locally and notifies, but does not push back.
 export function hydrate(next: DB) {
-  db = next;
+  db = migrate(next);
+  next = db;
   cancelPendingPush(); // cloud is now authoritative — drop any stale debounced push
   if (typeof window !== "undefined") {
     window.localStorage.setItem(KEY, JSON.stringify(next));
@@ -70,7 +90,7 @@ function subscribe(cb: () => void) {
 }
 
 // useSyncExternalStore needs a stable server snapshot to avoid hydration churn.
-const serverSnapshot = buildSeedDB();
+const serverSnapshot = migrate(buildSeedDB());
 
 function useDB(): DB {
   return useSyncExternalStore(subscribe, getDB, () => serverSnapshot);
@@ -197,20 +217,14 @@ export function renameProgram(clientId: string, name: string) {
 }
 
 // ---- per-week programming ---------------------------------------------------
-// Programming is a recurring DEFAULT plan (workouts with no weekStart) that fills
-// every week, plus optional per-week OVERRIDES (workouts stamped with a weekStart).
-// A week that has any stamped workouts is "custom" and shows only those.
+// Programming is per-week and independent: each workout is stamped with the
+// weekStart (the week's Sunday) it belongs to. There is no recurring default —
+// editing one week never affects another. To repeat a week, copy it forward.
 
-// Resolve the workouts shown for a given week: the week's custom override if it
-// has one, otherwise the recurring default plan.
-export function workoutsForWeek(
-  program: Program | undefined,
-  weekStart: string,
-): { workouts: Workout[]; custom: boolean } {
-  if (!program) return { workouts: [], custom: false };
-  const custom = program.workouts.filter((w) => w.weekStart === weekStart);
-  if (custom.length > 0) return { workouts: custom, custom: true };
-  return { workouts: program.workouts.filter((w) => !w.weekStart), custom: false };
+// The workouts programmed for a given week.
+export function workoutsForWeek(program: Program | undefined, weekStart: string): Workout[] {
+  if (!program) return [];
+  return program.workouts.filter((w) => w.weekStart === weekStart);
 }
 
 function cloneWorkout(w: Workout, patch: Partial<Workout>): Workout {
@@ -226,25 +240,8 @@ function cloneWorkout(w: Workout, patch: Partial<Workout>): Workout {
   };
 }
 
-// Turn a week that's following the default plan into its own editable copy, so
-// edits there no longer touch the default. No-op if it's already customized.
-export function customizeWeek(clientId: string, weekStart: string) {
-  const prog = ensureProgram(clientId);
-  if (prog.workouts.some((w) => w.weekStart === weekStart)) return;
-  const clones = prog.workouts
-    .filter((w) => !w.weekStart)
-    .map((w) => cloneWorkout(w, { weekStart }));
-  saveProgram({ ...prog, workouts: [...prog.workouts, ...clones] });
-}
-
-// Drop a week's custom override so it follows the default plan again.
-export function revertWeekToDefault(clientId: string, weekStart: string) {
-  const prog = ensureProgram(clientId);
-  saveProgram({ ...prog, workouts: prog.workouts.filter((w) => w.weekStart !== weekStart) });
-}
-
-// Copy whatever's programmed for `fromWeekStart` (custom or default) into
-// `toWeekStart` as a custom override, replacing anything already there.
+// Copy everything programmed for `fromWeekStart` into `toWeekStart`, replacing
+// whatever was there. Used to repeat a week forward.
 export function copyWeekProgramming(
   clientId: string,
   fromWeekStart: string,
@@ -252,19 +249,18 @@ export function copyWeekProgramming(
 ) {
   if (fromWeekStart === toWeekStart) return;
   const prog = ensureProgram(clientId);
-  const { workouts: src } = workoutsForWeek(prog, fromWeekStart);
+  const src = workoutsForWeek(prog, fromWeekStart);
   const others = prog.workouts.filter((w) => w.weekStart !== toWeekStart);
   const clones = src.map((w) => cloneWorkout(w, { weekStart: toWeekStart }));
   saveProgram({ ...prog, workouts: [...others, ...clones] });
 }
 
-// Add a workout. `weekStart` stamps it onto a custom week; omit it to add to the
-// recurring default plan.
+// Add a workout to a specific week.
 export function addWorkout(
   clientId: string,
   name: string,
   dow: number,
-  weekStart?: string,
+  weekStart: string,
 ): Workout {
   const prog = ensureProgram(clientId);
   const w: Workout = { id: uid("w"), name, dow, blocks: [], weekStart };

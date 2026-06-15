@@ -68,7 +68,7 @@ export default function TrainView({
   useEffect(() => setReady(true), []);
 
   const weekStart = weekStartIso(weekOffset);
-  const { workouts } = workoutsForWeek(program, weekStart);
+  const workouts = workoutsForWeek(program, weekStart);
   const marked = new Set(workouts.map((w) => w.dow));
   const dayWorkouts = workouts.filter((w) => w.dow === day);
   const selectedDate = isoDate(weekDatesForOffset(weekOffset)[day]);

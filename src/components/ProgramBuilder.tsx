@@ -24,7 +24,6 @@ import {
   addNoteBlock,
   addWorkout,
   copyWeekProgramming,
-  customizeWeek,
   deleteWorkout,
   duplicateWorkout,
   moveItemToBlock,
@@ -33,7 +32,6 @@ import {
   renameProgram,
   renameWorkout,
   reorderBlocks,
-  revertWeekToDefault,
   setBlockRounds,
   setBlockConfig,
   setBlockText,
@@ -129,9 +127,11 @@ export default function ProgramBuilder({ clientId }: { clientId: string }) {
   const [pasted, setPasted] = useState(false);
 
   const weekStart = weekStartIso(weekOffset);
-  const { workouts, custom } = workoutsForWeek(program, weekStart);
+  const workouts = workoutsForWeek(program, weekStart);
   const marked = new Set(workouts.map((w) => w.dow));
   const dayWorkouts = workouts.filter((w) => w.dow === day);
+  // past weeks are read-only history — you build the current week and forward
+  const readOnly = weekOffset < 0;
 
   useEffect(() => {
     if (!pasted) return;
@@ -169,31 +169,15 @@ export default function ProgramBuilder({ clientId }: { clientId: string }) {
         maxOffset={12}
       />
 
-      {/* default-vs-custom status + copy/paste between weeks */}
+      {/* read-only notice for past weeks + copy-forward between weeks */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 -mt-1">
-        {custom ? (
-          <>
-            <Pill tone="green">Custom · {weekLabel(weekOffset)}</Pill>
-            <ConfirmX
-              title="Revert to default plan"
-              onConfirm={() => revertWeekToDefault(clientId, weekStart)}
-            />
-          </>
-        ) : (
-          <>
-            <span className="text-xs text-slate">
-              Following the default plan — edits change every non-custom week.
-            </span>
-            <button
-              onClick={() => customizeWeek(clientId, weekStart)}
-              className="text-xs font-semibold text-forest"
-            >
-              Customize this week
-            </button>
-          </>
+        {readOnly && (
+          <span className="text-xs text-slate">
+            {weekLabel(weekOffset)} is in the past — read-only. Copy it to build a future week.
+          </span>
         )}
         <span className="flex-1" />
-        {copied && copied.ws !== weekStart ? (
+        {copied && copied.ws !== weekStart && !readOnly ? (
           <button
             onClick={() => {
               copyWeekProgramming(clientId, copied.ws, weekStart);
@@ -205,24 +189,34 @@ export default function ProgramBuilder({ clientId }: { clientId: string }) {
             Paste {copied.label} here
           </button>
         ) : (
-          <button
-            onClick={() => setCopied({ ws: weekStart, label: weekLabel(weekOffset) })}
-            className={`text-xs font-semibold rounded-full border px-2.5 py-1 ${
-              copied?.ws === weekStart ? "border-forest text-forest" : "border-line text-slate"
-            }`}
-          >
-            {copied?.ws === weekStart ? "Copied ✓" : "Copy week"}
-          </button>
+          workouts.length > 0 && (
+            <button
+              onClick={() => setCopied({ ws: weekStart, label: weekLabel(weekOffset) })}
+              className={`text-xs font-semibold rounded-full border px-2.5 py-1 ${
+                copied?.ws === weekStart ? "border-forest text-forest" : "border-line text-slate"
+              }`}
+            >
+              {copied?.ws === weekStart ? "Copied ✓" : "Copy week"}
+            </button>
+          )
         )}
         {pasted && <span className="text-xs text-forest font-medium w-full">✓ Pasted into this week</span>}
       </div>
 
       <p className="text-sm font-semibold text-slate -mb-1">{DOW_LONG[day]}</p>
 
-      {dayWorkouts.length === 0 ? (
+      {readOnly ? (
+        dayWorkouts.length === 0 ? (
+          <Card className="p-5 text-center">
+            <p className="text-slate text-sm">Rest day — nothing was programmed.</p>
+          </Card>
+        ) : (
+          dayWorkouts.map((w) => <ReadOnlyWorkoutCard key={w.id} workout={w} byId={byId} />)
+        )
+      ) : dayWorkouts.length === 0 ? (
         <Card className="p-5 text-center">
           <p className="text-slate text-sm mb-3">Rest day — nothing scheduled.</p>
-          <Button onClick={() => addWorkout(clientId, DOW_LONG[day], day, custom ? weekStart : undefined)}>
+          <Button onClick={() => addWorkout(clientId, DOW_LONG[day], day, weekStart)}>
             + Add {DOW_LONG[day]} workout
           </Button>
         </Card>
@@ -274,6 +268,58 @@ export default function ProgramBuilder({ clientId }: { clientId: string }) {
         />
       )}
     </div>
+  );
+}
+
+// Read-only render of a past week's workout — what was programmed, no editing.
+function ReadOnlyWorkoutCard({ workout, byId }: { workout: Workout; byId: Record<string, Exercise> }) {
+  return (
+    <Card className="p-4 space-y-3">
+      <p className="font-semibold">{workout.name}</p>
+      {workout.blocks.map((block) => {
+        if (block.type === "note") {
+          return (
+            <div key={block.id} className="rounded-xl border border-sky/40 bg-sky/5 p-2.5">
+              {block.title && <p className="font-semibold text-sm mb-1">{block.title}</p>}
+              {block.text && <p className="text-sm whitespace-pre-wrap text-ink/90">{block.text}</p>}
+            </div>
+          );
+        }
+        const mode = block.type === "circuit" ? block.mode ?? "rounds" : undefined;
+        return (
+          <div key={block.id} className="rounded-xl border border-line bg-field/40 p-2.5 space-y-1.5">
+            {block.type !== "single" && (
+              <Pill tone={block.type === "circuit" ? "brick" : "sky"}>
+                {block.type === "circuit"
+                  ? mode === "amrap"
+                    ? "AMRAP"
+                    : mode === "emom"
+                      ? `EMOM ×${block.rounds ?? 10}`
+                      : `Circuit${block.rounds ? ` ×${block.rounds}` : ""}`
+                  : "Superset"}
+              </Pill>
+            )}
+            {block.items.map((it) => {
+              const ex = byId[it.exerciseId];
+              return (
+                <div key={it.id} className="text-sm">
+                  <span className="font-medium">{ex?.name ?? "Movement"}</span>
+                  {it.variant && <span className="text-forest"> · {it.variant}</span>}
+                  {!ex?.activity && (
+                    <span className="text-slate">
+                      {" "}
+                      — {it.sets} × {it.reps}
+                      {it.rest ? ` · ${it.rest} rest` : ""}
+                    </span>
+                  )}
+                  {it.notes && <p className="text-[11px] text-slate mt-0.5">{it.notes}</p>}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
+    </Card>
   );
 }
 
