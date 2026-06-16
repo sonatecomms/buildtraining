@@ -38,7 +38,7 @@ function ClientRow({ client }: { client: Client }) {
             {behind && <span className="w-2 h-2 rounded-full bg-brick shrink-0" title="Behind this week" />}
             <p className="font-semibold truncate">{client.name}</p>
             {client.grade && (
-              <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-sky/15 text-sky-dark">
+              <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-sky/15 text-ink">
                 {GRADE_SHORT[client.grade]}
               </span>
             )}
