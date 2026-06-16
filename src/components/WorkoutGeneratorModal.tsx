@@ -4,10 +4,11 @@ import { useMemo, useState } from "react";
 import { addWorkoutObject, uid, useExercises, useProgramForClient } from "@/lib/store";
 import { getSupabase } from "@/lib/supabase";
 import { surroundingLoad } from "@/lib/workoutLoad";
-import { toWorkout, type GeneratedWorkout } from "@/lib/generateWorkout";
+import { buildDemoWorkout, toWorkout, type GeneratedWorkout } from "@/lib/generateWorkout";
 import type { Client, Workout } from "@/lib/types";
 import { DOW_LONG } from "@/lib/week";
 import { Button } from "./ui";
+import { useIsDemo } from "./demoContext";
 
 const FOCUS_OPTIONS: { value: string; label: string }[] = [
   { value: "metcon", label: "CrossFit metcon" },
@@ -62,6 +63,7 @@ export default function WorkoutGeneratorModal({
   bulkClients?: Client[];
 }) {
   const bulk = bulkClients && bulkClients.length > 1 ? bulkClients : null;
+  const demo = useIsDemo();
   const program = useProgramForClient(client.id);
   const exercises = useExercises();
   const byId = useMemo(() => Object.fromEntries(exercises.map((e) => [e.id, e])), [exercises]);
@@ -83,6 +85,13 @@ export default function WorkoutGeneratorModal({
     setError(null);
     setPreview(null);
     try {
+      // Demo mode: build locally (the AI endpoint is auth-gated and there's no
+      // session in the demo). Keeps bulk programming instant + reliable on stage.
+      if (demo) {
+        const gen = buildDemoWorkout({ focus, metconType: focus === "metcon" ? METCON_TYPES.find((t) => t.value === metconType)?.label : undefined, timeMin, exercises });
+        setPreview({ gen, workout: toWorkout(gen, exercises, targetDow, weekStart) });
+        return;
+      }
       const sb = getSupabase();
       const token = sb ? (await sb.auth.getSession()).data.session?.access_token : undefined;
       const surroundingDays = surroundingLoad(program, weekStart, targetDow, byId);

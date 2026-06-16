@@ -182,6 +182,11 @@ const DEMO_TEAM: TeamMax[] = [
 
 const SCOREBOARD_IDS = ["ex-clean", "ex-bench", "ex-backsquat", "ex-deadlift", "ex-ohp"] as const;
 
+// Tuned 18% lighter than the raw figures (more realistic HS numbers), rounded
+// to the nearest 5 lb.
+const MAX_SCALE = 0.82;
+const scaleMax = (n: number) => Math.round((n * MAX_SCALE) / 5) * 5;
+
 function maxesLog(clientId: string, lifts: readonly number[]): WorkoutLog {
   return {
     id: `log-max-${clientId}`,
@@ -193,7 +198,7 @@ function maxesLog(clientId: string, lifts: readonly number[]): WorkoutLog {
     entries: SCOREBOARD_IDS.map((exerciseId, i) => ({
       itemId: `m-${i}`,
       exerciseId,
-      weight: String(lifts[i]),
+      weight: String(scaleMax(lifts[i])),
     })),
   };
 }

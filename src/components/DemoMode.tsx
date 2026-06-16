@@ -40,14 +40,22 @@ export function DemoModeProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Reserve the demo bar's height so the app's own sticky headers (library
-  // search, athlete/profile headers) tuck below it instead of under it.
+  // The floating nav hovers (fixed); reserve its footprint via --demo-bar so the
+  // app content + its own sticky headers (library search, athlete/profile) start
+  // below it. We own the top safe-area while active (the nav handles it), so the
+  // doubled body padding is removed to avoid an extra gap.
   useEffect(() => {
     const root = document.documentElement;
-    if (active) root.style.setProperty("--demo-bar", "calc(env(safe-area-inset-top) + 60px)");
-    else root.style.removeProperty("--demo-bar");
+    if (active) {
+      root.style.setProperty("--demo-bar", "calc(env(safe-area-inset-top) + 64px)");
+      document.body.style.paddingTop = "0px";
+    } else {
+      root.style.removeProperty("--demo-bar");
+      document.body.style.removeProperty("padding-top");
+    }
     return () => {
       root.style.removeProperty("--demo-bar");
+      document.body.style.removeProperty("padding-top");
     };
   }, [active]);
 
@@ -122,7 +130,10 @@ function DemoApp({ children }: { children: React.ReactNode }) {
   return (
     <>
       <DemoBar />
-      {role === "athlete" ? <AthleteApp clientId={DEMO_CLIENT_ID} /> : <CoachShell>{children}</CoachShell>}
+      {/* content clears the floating nav */}
+      <div style={{ paddingTop: "var(--demo-bar)" }}>
+        {role === "athlete" ? <AthleteApp clientId={DEMO_CLIENT_ID} /> : <CoachShell>{children}</CoachShell>}
+      </div>
     </>
   );
 }
@@ -133,8 +144,11 @@ function DemoApp({ children }: { children: React.ReactNode }) {
 // Inner app headers offset below it via the --demo-bar CSS var (set by provider).
 function DemoBar() {
   return (
-    <div className="sticky z-50 px-3 pt-2 pb-1" style={{ top: "env(safe-area-inset-top)" }}>
-      <div className="flex items-center justify-between gap-2 pl-3.5 pr-1.5 h-12 rounded-2xl bg-shell/85 backdrop-blur border border-line shadow-card">
+    <div
+      className="fixed left-3 right-3 z-50"
+      style={{ top: "calc(env(safe-area-inset-top) + 8px)" }}
+    >
+      <div className="flex items-center justify-between gap-2 pl-3.5 pr-1.5 h-12 rounded-full bg-shell/80 backdrop-blur-md border border-line shadow-hero">
         <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate/80">Demo</span>
         <div className="flex items-center gap-1.5">
           <DemoSwitch />
