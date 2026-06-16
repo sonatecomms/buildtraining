@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { Users, Calculator, Dumbbell, Settings } from "lucide-react";
 import { NavBar } from "./NavBar";
+import { useIsDemo } from "./demoContext";
 
 // Top-level coach tabs, in swipe order. `match` decides which tab the current
 // route lights up; `/clients/:id` lives under the Clients tab.
@@ -19,5 +20,10 @@ export function coachActiveId(pathname: string) {
 
 export default function BottomNav() {
   const pathname = usePathname();
-  return <NavBar items={COACH_TABS} activeId={coachActiveId(pathname)} />;
+  const demo = useIsDemo();
+  // In the demo (a school team), "Clients" reads as "Athletes".
+  const items = demo
+    ? COACH_TABS.map((t) => (t.id === "clients" ? { ...t, label: "Athletes" } : t))
+    : COACH_TABS;
+  return <NavBar items={items} activeId={coachActiveId(pathname)} />;
 }

@@ -1,0 +1,16 @@
+{
+  "name": "BUILD — Demo",
+  "short_name": "BUILD Demo",
+  "description": "Presenter demo of BUILD: white-label coaching for your program.",
+  "start_url": "/demo",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#E2E6DA",
+  "theme_color": "#19350C",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/icon-192.png?v=11", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png?v=11", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-512.png?v=11", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

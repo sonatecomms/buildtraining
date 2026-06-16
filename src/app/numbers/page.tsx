@@ -2,12 +2,14 @@
 
 import { PageHeader } from "@/components/ui";
 import PercentageCalculator from "@/components/PercentageCalculator";
+import TeamScoreboard from "@/components/TeamScoreboard";
 
-// Coach-side calculator: % of a 1-rep max for programming working sets.
+// Coach-side Numbers: team scoreboard + a 1-rep-max percentage calculator.
 export default function NumbersPage() {
   return (
-    <div>
-      <PageHeader title="Numbers" subtitle="1-rep max percentages for programming" />
+    <div className="space-y-4">
+      <PageHeader title="Numbers" subtitle="Team scoreboard & 1-rep max percentages" />
+      <TeamScoreboard />
       <PercentageCalculator />
     </div>
   );

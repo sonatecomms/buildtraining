@@ -25,12 +25,11 @@ export function SchoolThemePicker() {
 
   return (
     <>
-      {/* trigger — fixed top-right, clears the safe-area / status bar */}
+      {/* trigger — sits in the demo control cluster (DemoRoot positions it) */}
       <button
         onClick={() => setOpen(true)}
         aria-label="Switch school theme (demo)"
-        className="fixed right-3 z-40 flex items-center gap-1.5 rounded-full bg-surface/90 backdrop-blur border border-line text-ink shadow-card px-3 h-9 text-sm font-semibold active:scale-95 transition-transform"
-        style={{ top: "calc(env(safe-area-inset-top) + 10px)" }}
+        className="flex items-center gap-1.5 rounded-full bg-surface/90 backdrop-blur border border-line text-ink shadow-card px-2.5 h-9 text-sm font-semibold active:scale-95 transition-transform"
       >
         <span className="text-base leading-none">{school.emoji}</span>
         <Palette size={15} className="text-forest" />

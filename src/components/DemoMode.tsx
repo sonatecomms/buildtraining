@@ -7,46 +7,22 @@
 // Coach⇄Athlete master switch and the school skinner. Normal users (real login)
 // never see any of this.
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { GraduationCap, UserRound, LogOut } from "lucide-react";
-import { buildSeedDB } from "@/lib/seed";
+import { ClipboardList, UserRound, LogOut } from "lucide-react";
+import { buildDemoDB } from "@/lib/seed";
 import { hydrate } from "@/lib/store";
 import CoachShell from "./CoachShell";
 import AthleteApp from "./AthleteApp";
 import SessionProvider from "./SessionProvider";
 import { SchoolThemePicker } from "./SchoolThemePicker";
 import { BrandMark } from "./BrandMark";
+import { DemoContext, useDemo, type DemoRole } from "./demoContext";
 
 const DEMO_USER = "sonate";
 const DEMO_PASS = "Sonate-Skins-44281";
 const STORAGE_KEY = "build.demoMode";
 const DEMO_CLIENT_ID = "client-jordan"; // the seeded athlete (Jordan Rivera)
-
-type DemoRole = "coach" | "athlete";
-
-type DemoCtx = {
-  active: boolean;
-  role: DemoRole;
-  enter: (user: string, pass: string) => boolean;
-  exit: () => void;
-  setRole: (r: DemoRole) => void;
-};
-
-const Ctx = createContext<DemoCtx | null>(null);
-
-function useDemo(): DemoCtx {
-  const ctx = useContext(Ctx);
-  if (!ctx) throw new Error("useDemo must be used within DemoModeProvider");
-  return ctx;
-}
 
 export function DemoModeProvider({ children }: { children: React.ReactNode }) {
   const [active, setActive] = useState(false);
@@ -54,7 +30,7 @@ export function DemoModeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     try {
-      const saved = sessionStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         setActive(true);
         setRoleState(saved === "athlete" ? "athlete" : "coach");
@@ -66,7 +42,7 @@ export function DemoModeProvider({ children }: { children: React.ReactNode }) {
 
   const persist = useCallback((r: DemoRole) => {
     try {
-      sessionStorage.setItem(STORAGE_KEY, r);
+      localStorage.setItem(STORAGE_KEY, r);
     } catch {
       /* ignore */
     }
@@ -86,7 +62,7 @@ export function DemoModeProvider({ children }: { children: React.ReactNode }) {
   const exit = useCallback(() => {
     setActive(false);
     try {
-      sessionStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(STORAGE_KEY);
     } catch {
       /* ignore */
     }
@@ -101,7 +77,9 @@ export function DemoModeProvider({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <Ctx.Provider value={{ active, role, enter, exit, setRole }}>{children}</Ctx.Provider>
+    <DemoContext.Provider value={{ active, role, enter, exit, setRole }}>
+      {children}
+    </DemoContext.Provider>
   );
 }
 
@@ -115,8 +93,15 @@ export function DemoRoot({ children }: { children: React.ReactNode }) {
     return (
       <>
         <DemoApp>{children}</DemoApp>
-        <DemoSwitch />
-        <SchoolThemePicker />
+        {/* one top-right cluster: role switch sits next to the school skinner so
+            it never covers page content (e.g. the athlete's name on the roster) */}
+        <div
+          className="fixed right-3 z-40 flex items-center gap-1.5"
+          style={{ top: "calc(env(safe-area-inset-top) + 10px)" }}
+        >
+          <DemoSwitch />
+          <SchoolThemePicker />
+        </div>
       </>
     );
   }
@@ -134,7 +119,7 @@ function DemoApp({ children }: { children: React.ReactNode }) {
   const seeded = useRef(false);
   if (!seeded.current) {
     // hydrate synchronously on first render so no empty-state flashes through
-    hydrate(buildSeedDB());
+    hydrate(buildDemoDB());
     seeded.current = true;
   }
   if (role === "athlete") return <AthleteApp clientId={DEMO_CLIENT_ID} />;
@@ -192,22 +177,20 @@ function DemoLogin() {
   );
 }
 
-// Floating master switch: flip the whole app between coach and athlete views,
-// plus exit the demo. Top-left, mirrors the school skinner on the right.
+// Master role switch (coach = clipboard, athlete = person). Compact so it sits
+// in the top-right cluster beside the school skinner. The exit lives in the
+// school sheet to keep this narrow.
 function DemoSwitch() {
   const { role, setRole, exit } = useDemo();
   const router = useRouter();
   return (
-    <div
-      className="fixed left-3 z-40 flex items-center gap-1 rounded-full bg-surface/90 backdrop-blur border border-line shadow-card p-1"
-      style={{ top: "calc(env(safe-area-inset-top) + 10px)" }}
-    >
-      <Seg active={role === "coach"} onClick={() => setRole("coach")} label="Coach">
-        <GraduationCap size={14} />
+    <div className="flex items-center gap-0.5 rounded-full bg-surface/90 backdrop-blur border border-line shadow-card p-1">
+      <Seg active={role === "coach"} onClick={() => setRole("coach")} label="Coach view">
+        <ClipboardList size={13} />
         Coach
       </Seg>
-      <Seg active={role === "athlete"} onClick={() => setRole("athlete")} label="Athlete">
-        <UserRound size={14} />
+      <Seg active={role === "athlete"} onClick={() => setRole("athlete")} label="Athlete view">
+        <UserRound size={13} />
         Athlete
       </Seg>
       <button
@@ -216,9 +199,9 @@ function DemoSwitch() {
           router.replace("/demo");
         }}
         aria-label="Exit demo"
-        className="ml-0.5 grid place-items-center w-7 h-7 rounded-full text-slate hover:text-ink active:scale-95 transition-transform"
+        className="grid place-items-center w-6 h-6 rounded-full text-slate hover:text-ink active:scale-95 transition-transform"
       >
-        <LogOut size={14} />
+        <LogOut size={13} />
       </button>
     </div>
   );
@@ -240,7 +223,7 @@ function Seg({
       onClick={onClick}
       aria-label={label}
       aria-pressed={active}
-      className={`flex items-center gap-1 rounded-full px-2.5 h-7 text-[12px] font-semibold transition-colors ${
+      className={`flex items-center gap-1 rounded-full px-2 h-7 text-[11px] font-semibold transition-colors ${
         active ? "bg-forest text-bone" : "text-slate"
       }`}
     >

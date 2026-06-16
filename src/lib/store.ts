@@ -129,6 +129,11 @@ export function useLogsForClient(clientId: string | undefined): WorkoutLog[] {
     .sort((a, b) => (a.date < b.date ? 1 : -1));
 }
 
+// All logs across the roster (used by the team scoreboard).
+export function useLogs(): WorkoutLog[] {
+  return useDB().logs;
+}
+
 // ---- client CRUD -----------------------------------------------------------
 
 export function addClient(partial: Partial<Client>): Client {

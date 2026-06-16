@@ -1,4 +1,4 @@
-import type { Client, DB, Exercise, Program } from "./types";
+import type { Client, DB, Exercise, Program, WorkoutLog } from "./types";
 import { CROSSFIT_EXERCISES } from "./crossfit";
 import { ACTIVITIES } from "./activities";
 import { isoDate } from "./week";
@@ -151,6 +151,67 @@ export function buildSeedDB(): DB {
       { id: "log-1", clientId: "client-jordan", workoutId: "w-lower", workoutName: "Lower", date: isoDaysAgo(2), durationMin: 58, completedItemIds: [], rpe: 8 },
       { id: "log-2", clientId: "client-jordan", workoutId: "w-push", workoutName: "Push", date: isoDaysAgo(1), durationMin: 47, completedItemIds: [], rpe: 7 },
       { id: "log-3", clientId: "client-jordan", workoutId: "w-pull", workoutName: "Pull", date: isoDaysAgo(0), durationMin: 52, completedItemIds: [], rpe: 8 },
+    ],
+  };
+}
+
+// ── Demo-only roster ─────────────────────────────────────────────────────────
+// A full team so the white-label demo (and the Numbers-tab scoreboard) looks
+// real. Kept OUT of buildSeedDB so brand-new real coaches aren't seeded with
+// fake athletes — only the demo mode uses buildDemoDB().
+type TeamMax = { id: string; name: string; lifts: [number, number, number, number, number] };
+// maxes order: [clean, bench, back squat, deadlift, overhead press]
+const DEMO_TEAM: TeamMax[] = [
+  { id: "client-diego", name: "Diego Santos", lifts: [245, 300, 405, 495, 185] },
+  { id: "client-liam", name: "Liam O'Connor", lifts: [235, 285, 385, 475, 175] },
+  { id: "client-marcus", name: "Marcus Bell", lifts: [225, 275, 365, 455, 165] },
+  { id: "client-nate", name: "Nate Kowalski", lifts: [215, 265, 345, 435, 160] },
+  { id: "client-cole", name: "Cole Whitman", lifts: [205, 255, 335, 425, 155] },
+  { id: "client-andre", name: "Andre Jackson", lifts: [195, 240, 315, 405, 145] },
+  { id: "client-tyler", name: "Tyler Brooks", lifts: [185, 225, 295, 385, 135] },
+  { id: "client-ben", name: "Ben Foster", lifts: [170, 205, 275, 365, 125] },
+];
+
+const SCOREBOARD_IDS = ["ex-clean", "ex-bench", "ex-backsquat", "ex-deadlift", "ex-ohp"] as const;
+
+function maxesLog(clientId: string, lifts: readonly number[]): WorkoutLog {
+  return {
+    id: `log-max-${clientId}`,
+    clientId,
+    workoutId: `maxes-${clientId}`,
+    workoutName: "Tested maxes",
+    date: isoDaysAgo(7),
+    completedItemIds: [],
+    entries: SCOREBOARD_IDS.map((exerciseId, i) => ({
+      itemId: `m-${i}`,
+      exerciseId,
+      weight: String(lifts[i]),
+    })),
+  };
+}
+
+function teamClient(t: TeamMax, i: number): Client {
+  return {
+    id: t.id,
+    name: t.name,
+    stats: { heightFt: 5, heightIn: 8 + (i % 5), weightLb: 165 + i * 6, age: 16 + (i % 3) },
+    goals: ["strength", "muscle_gain"],
+    intendedFrequency: 4,
+    createdAt: isoDaysAgo(60 - i),
+  };
+}
+
+/** The demo store: the seed plus a full team, each with tested maxes for the
+ *  five scoreboard lifts (clean, bench, squat, deadlift, overhead press). */
+export function buildDemoDB(): DB {
+  const base = buildSeedDB();
+  return {
+    ...base,
+    clients: [...base.clients, ...DEMO_TEAM.map(teamClient)],
+    logs: [
+      ...base.logs,
+      maxesLog("client-jordan", [205, 245, 315, 405, 150]),
+      ...DEMO_TEAM.map((t) => maxesLog(t.id, t.lifts)),
     ],
   };
 }
