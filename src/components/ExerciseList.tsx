@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Play, Plus, Search, X } from "lucide-react";
+import { Play, Plus, Search, X, Trophy, Minus, type LucideIcon } from "lucide-react";
 import type { Exercise, ExerciseCategory } from "@/lib/types";
 import { youtubeThumb } from "@/lib/youtube";
 import { useRecents } from "@/lib/recents";
@@ -26,10 +26,12 @@ const CATEGORIES: (ExerciseCategory | "All")[] = [
 ];
 
 // A color + glyph per category so the list reads at a glance instead of as one
-// undifferentiated wall of rows. Colors map onto the brand palette tints.
-const CAT_META: Record<string, { dot: string; glyph: string }> = {
-  Olympic: { dot: "#a12323", glyph: "🏋️" },
-  Gymnastics: { dot: "#7438a6", glyph: "🤸" },
+// undifferentiated wall of rows. Colors map onto the brand palette tints. A few
+// use a crisp lucide icon instead of an emoji (Olympic = podium/trophy,
+// Gymnastics = a single bar).
+const CAT_META: Record<string, { dot: string; glyph?: string; Icon?: LucideIcon }> = {
+  Olympic: { dot: "#a12323", Icon: Trophy },
+  Gymnastics: { dot: "#7438a6", Icon: Minus },
   Conditioning: { dot: "#c2410c", glyph: "🔥" },
   "Lower Body": { dot: "#357836", glyph: "🦵" },
   Push: { dot: "#2f5563", glyph: "💪" },
@@ -112,6 +114,8 @@ export default function ExerciseList({
           {thumb ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={thumb} alt="" className="w-full h-full object-cover" loading="lazy" />
+          ) : meta.Icon ? (
+            <meta.Icon size={22} className="text-slate opacity-70" strokeWidth={2.25} />
           ) : (
             <span className="text-xl opacity-70">{meta.glyph}</span>
           )}
@@ -153,7 +157,10 @@ export default function ExerciseList({
     <div>
       {/* Pinned so the search field + filters stay put while results scroll
           (and never slip behind the on-screen keyboard). */}
-      <div className="sticky top-0 z-10 bg-shell pt-3 pb-2 -mx-1 px-1">
+      <div
+        className="sticky z-10 bg-shell pt-3 pb-2 -mx-1 px-1"
+        style={{ top: "var(--demo-bar, 0px)" }}
+      >
         <div className="relative">
           <Search
             size={16}

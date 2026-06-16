@@ -40,6 +40,17 @@ export function DemoModeProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // Reserve the demo bar's height so the app's own sticky headers (library
+  // search, athlete/profile headers) tuck below it instead of under it.
+  useEffect(() => {
+    const root = document.documentElement;
+    if (active) root.style.setProperty("--demo-bar", "calc(env(safe-area-inset-top) + 48px)");
+    else root.style.removeProperty("--demo-bar");
+    return () => {
+      root.style.removeProperty("--demo-bar");
+    };
+  }, [active]);
+
   const persist = useCallback((r: DemoRole) => {
     try {
       localStorage.setItem(STORAGE_KEY, r);
@@ -89,22 +100,7 @@ export function DemoRoot({ children }: { children: React.ReactNode }) {
   const { active } = useDemo();
   const pathname = usePathname();
 
-  if (active) {
-    return (
-      <>
-        <DemoApp>{children}</DemoApp>
-        {/* one top-right cluster: role switch sits next to the school skinner so
-            it never covers page content (e.g. the athlete's name on the roster) */}
-        <div
-          className="fixed right-3 z-40 flex items-center gap-1.5"
-          style={{ top: "calc(env(safe-area-inset-top) + 10px)" }}
-        >
-          <DemoSwitch />
-          <SchoolThemePicker />
-        </div>
-      </>
-    );
-  }
+  if (active) return <DemoApp>{children}</DemoApp>;
   if (pathname === "/demo") return <DemoLogin />;
   return (
     <SessionProvider>
@@ -113,7 +109,8 @@ export function DemoRoot({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Seeds the local store once, then renders coach or athlete view per the switch.
+// Seeds the local store once, then renders a sticky demo bar (housing the
+// controls so they never cover page content) above the coach or athlete view.
 function DemoApp({ children }: { children: React.ReactNode }) {
   const { role } = useDemo();
   const seeded = useRef(false);
@@ -122,8 +119,30 @@ function DemoApp({ children }: { children: React.ReactNode }) {
     hydrate(buildDemoDB());
     seeded.current = true;
   }
-  if (role === "athlete") return <AthleteApp clientId={DEMO_CLIENT_ID} />;
-  return <CoachShell>{children}</CoachShell>;
+  return (
+    <>
+      <DemoBar />
+      {role === "athlete" ? <AthleteApp clientId={DEMO_CLIENT_ID} /> : <CoachShell>{children}</CoachShell>}
+    </>
+  );
+}
+
+// Sticky top bar that houses the demo controls in their own space (so they don't
+// overlap the app's top row) and stays put while the page scrolls. Inner sticky
+// headers offset below it via the --demo-bar CSS variable (set by the provider).
+function DemoBar() {
+  return (
+    <div
+      className="sticky z-50 flex items-center justify-between gap-2 px-3 bg-shell/95 backdrop-blur border-b border-line"
+      style={{ top: "env(safe-area-inset-top)", height: 48 }}
+    >
+      <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate/80">Demo</span>
+      <div className="flex items-center gap-1.5">
+        <DemoSwitch />
+        <SchoolThemePicker />
+      </div>
+    </div>
+  );
 }
 
 // The master login. Self-contained so it renders even behind the real auth gate.
