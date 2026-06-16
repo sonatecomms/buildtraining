@@ -1,10 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Play, Plus, Search, X, Trophy, Minus, type LucideIcon } from "lucide-react";
+import { useMemo, useState, type ComponentType } from "react";
+import { Play, Plus, Search, X, Trophy } from "lucide-react";
+import { CairnIcon, HighBarIcon } from "./icons";
 import type { Exercise, ExerciseCategory } from "@/lib/types";
 import { youtubeThumb } from "@/lib/youtube";
 import { useRecents } from "@/lib/recents";
+
+type IconCmp = ComponentType<{ size?: number; className?: string; strokeWidth?: number }>;
 import { useSchoolTheme } from "./SchoolThemeProvider";
 import { BUILD_DEFAULT, categoryDotColors } from "@/lib/schoolThemes";
 import { Card, Pill } from "./ui";
@@ -33,9 +36,9 @@ const CATEGORY_KEYS = CATEGORIES.filter((c) => c !== "All") as ExerciseCategory[
 // undifferentiated wall of rows. Colors map onto the brand palette tints. A few
 // use a crisp lucide icon instead of an emoji (Olympic = podium/trophy,
 // Gymnastics = a single bar).
-const CAT_META: Record<string, { dot: string; glyph?: string; Icon?: LucideIcon }> = {
+const CAT_META: Record<string, { dot: string; glyph?: string; Icon?: IconCmp }> = {
   Olympic: { dot: "#a12323", Icon: Trophy },
-  Gymnastics: { dot: "#7438a6", Icon: Minus },
+  Gymnastics: { dot: "#7438a6", Icon: HighBarIcon },
   Conditioning: { dot: "#c2410c", glyph: "🔥" },
   "Lower Body": { dot: "#357836", glyph: "🦵" },
   Push: { dot: "#2f5563", glyph: "💪" },
@@ -43,7 +46,7 @@ const CAT_META: Record<string, { dot: string; glyph?: string; Icon?: LucideIcon 
   Core: { dot: "#b45309", glyph: "🎯" },
   "Full Body": { dot: "#19350c", glyph: "🧍" },
   Cardio: { dot: "#be123c", glyph: "❤️" },
-  Mobility: { dot: "#0d9488", glyph: "🧘" },
+  Mobility: { dot: "#0d9488", Icon: CairnIcon },
   Activity: { dot: "#6fa9bb", glyph: "🚶" },
 };
 const catMeta = (c: string) => CAT_META[c] ?? { dot: "#5c6f76", glyph: "🎬" };

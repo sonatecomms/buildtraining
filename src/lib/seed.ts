@@ -191,20 +191,35 @@ const SCOREBOARD_IDS = ["ex-clean", "ex-bench", "ex-backsquat", "ex-deadlift", "
 const MAX_SCALE = 0.82;
 const scaleMax = (n: number) => Math.round((n * MAX_SCALE) / 5) * 5;
 
-function maxesLog(clientId: string, lifts: readonly number[]): WorkoutLog {
-  return {
-    id: `log-max-${clientId}`,
-    clientId,
-    workoutId: `maxes-${clientId}`,
-    workoutName: "Tested maxes",
-    date: isoDaysAgo(7),
-    completedItemIds: [],
-    entries: SCOREBOARD_IDS.map((exerciseId, i) => ({
-      itemId: `m-${i}`,
-      exerciseId,
-      weight: String(scaleMax(lifts[i])),
-    })),
-  };
+// Two test sessions per athlete so each lift carries a real test date: a
+// lower/Olympic day (clean, squat, deadlift) and an upper day (bench, OHP), a
+// few days apart. `base` varies per athlete so dates differ across the roster.
+function maxesLogs(clientId: string, lifts: readonly number[], base: number): WorkoutLog[] {
+  const entry = (i: number) => ({
+    itemId: `m-${i}`,
+    exerciseId: SCOREBOARD_IDS[i],
+    weight: String(scaleMax(lifts[i])),
+  });
+  return [
+    {
+      id: `log-max-${clientId}-a`,
+      clientId,
+      workoutId: `maxes-${clientId}-a`,
+      workoutName: "Max test — lower",
+      date: isoDaysAgo(base),
+      completedItemIds: [],
+      entries: [entry(0), entry(2), entry(3)],
+    },
+    {
+      id: `log-max-${clientId}-b`,
+      clientId,
+      workoutId: `maxes-${clientId}-b`,
+      workoutName: "Max test — upper",
+      date: isoDaysAgo(Math.max(1, base - 4)),
+      completedItemIds: [],
+      entries: [entry(1), entry(4)],
+    },
+  ];
 }
 
 function teamClient(t: TeamMax, i: number): Client {
@@ -229,8 +244,8 @@ export function buildDemoDB(): DB {
     clients: [...base.clients, ...DEMO_TEAM.map(teamClient)],
     logs: [
       ...base.logs,
-      maxesLog("client-jordan", [255, 245, 355, 435, 165]),
-      ...DEMO_TEAM.map((t) => maxesLog(t.id, t.lifts)),
+      ...maxesLogs("client-jordan", [255, 245, 355, 435, 165], 6),
+      ...DEMO_TEAM.flatMap((t, i) => maxesLogs(t.id, t.lifts, 5 + (i % 6) * 2)),
     ],
   };
 }

@@ -87,6 +87,13 @@ export default function CoachHome() {
   // demo-only: narrow the roster by position/grade for bulk programming
   const filtering = demo && isFilterActive(filter);
   const visible = filtering ? active.filter((c) => matchesFilter(c, filter)) : active;
+  // Describe the bulk-program target: a named unit when only units are picked,
+  // the whole squad when unfiltered, else a count.
+  const squadLabel = !filtering
+    ? "the whole squad"
+    : filter.units.length > 0 && filter.positions.length === 0 && filter.grades.length === 0
+      ? "the " + filter.units.map((u) => u.toLowerCase()).join(" & ")
+      : `the ${visible.length} ${visible.length === 1 ? "athlete" : "athletes"}`;
 
   const create = () => {
     const trimmed = name.trim();
@@ -110,17 +117,28 @@ export default function CoachHome() {
 
       {adding && (
         <Card className="p-4 mb-4">
-          <label className="text-xs text-slate font-medium">Athlete name</label>
-          <div className="flex gap-2 mt-1.5">
-            <input
-              autoFocus
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && create()}
-              placeholder="e.g. Sam Carter"
-              className="flex-1 rounded-xl bg-field border border-line px-3 py-2.5 text-sm outline-none focus:border-forest"
-            />
-            <Button onClick={create}>Create</Button>
+          <input
+            autoFocus
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && create()}
+            placeholder="Athlete name (e.g. Sam Carter)"
+            className="w-full rounded-xl bg-field border border-line px-3 py-2.5 text-sm outline-none focus:border-forest"
+          />
+          <div className="flex gap-2 mt-2 justify-end">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setAdding(false);
+                setName("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button size="sm" onClick={create}>
+              Create
+            </Button>
           </div>
         </Card>
       )}
@@ -142,8 +160,7 @@ export default function CoachHome() {
               <span className="text-left">
                 <span className="block font-display text-base leading-tight">Program</span>
                 <span className="block text-[12px] opacity-90">
-                  Build one workout for {filtering ? "the" : "all"} {visible.length}{" "}
-                  {visible.length === 1 ? "athlete" : "athletes"}
+                  Build one workout for {squadLabel}
                 </span>
               </span>
             </span>

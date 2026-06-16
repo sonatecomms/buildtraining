@@ -13,18 +13,27 @@ export const SCOREBOARD_LIFTS: { id: LiftKey; label: string; short: string }[] =
 
 export type ScoreboardMetric = "total" | LiftKey;
 
-/** Best numeric weight a client has logged for one exercise (free-text parsed). */
-export function bestFor(logs: WorkoutLog[], clientId: string, exId: string): number {
-  let best = 0;
+/** Best numeric lift a client has logged for an exercise, with the date it was
+ *  posted (free-text weight parsed). */
+export function bestEntry(
+  logs: WorkoutLog[],
+  clientId: string,
+  exId: string,
+): { weight: number; date: string } | null {
+  let best: { weight: number; date: string } | null = null;
   for (const l of logs) {
     if (l.clientId !== clientId || !l.entries) continue;
     for (const e of l.entries) {
       if (e.exerciseId !== exId || !e.weight) continue;
       const w = parseFloat(e.weight);
-      if (!Number.isNaN(w) && w > best) best = w;
+      if (!Number.isNaN(w) && (!best || w > best.weight)) best = { weight: w, date: l.date };
     }
   }
   return best;
+}
+
+export function bestFor(logs: WorkoutLog[], clientId: string, exId: string): number {
+  return bestEntry(logs, clientId, exId)?.weight ?? 0;
 }
 
 export type Ranked = {
@@ -32,6 +41,7 @@ export type Ranked = {
   lifts: Record<string, number>; // exId -> best (0 if none logged)
   total: number; // sum of the five lifts
   value: number; // the metric being ranked on
+  valueDate?: string; // for a single lift: the date that best was posted
 };
 
 /** Athletes ranked by the chosen metric (a single lift or the five-lift total). */
@@ -50,7 +60,8 @@ export function teamRankings(
         lifts[lf.id] = b;
         total += b;
       }
-      return { client: c, lifts, total, value: metric === "total" ? total : lifts[metric] };
+      const valueDate = metric === "total" ? undefined : bestEntry(logs, c.id, metric)?.date;
+      return { client: c, lifts, total, value: metric === "total" ? total : lifts[metric], valueDate };
     })
     .filter((r) => r.total > 0) // only athletes with at least one lift on record
     .sort((a, b) => b.value - a.value || b.total - a.total);

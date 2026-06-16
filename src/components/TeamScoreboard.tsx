@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { useClients, useLogs } from "@/lib/store";
 import { SCOREBOARD_LIFTS, teamRankings, type ScoreboardMetric } from "@/lib/scoreboard";
+import { relativeDate } from "@/lib/week";
 import { EMPTY_FILTER, matchesFilter, isFilterActive, type TeamFilter } from "@/lib/team";
 import { useIsDemo } from "./demoContext";
 import TeamFilterBar from "./TeamFilterBar";
@@ -77,32 +79,36 @@ export default function TeamScoreboard() {
       ) : (
         <ol className="mt-3 space-y-1.5">
           {visibleRows.map((r, i) => (
-            <li
-              key={r.client.id}
-              className={`flex items-center gap-3 rounded-xl px-2 py-2 ${
-                i < 3 ? "bg-field/60" : ""
-              }`}
-            >
-              <span className="w-6 shrink-0 text-center text-sm font-bold text-slate">
-                {i < 3 ? MEDALS[i] : i + 1}
-              </span>
-              <Avatar name={r.client.name} src={r.client.avatarUrl} size={36} />
-              <div className="min-w-0 flex-1">
-                <p className="font-semibold text-sm truncate">{r.client.name}</p>
-                {metric === "total" ? (
-                  <p className="text-[11px] text-slate truncate">
-                    {SCOREBOARD_LIFTS.map((l) => `${l.short} ${r.lifts[l.id] || "—"}`).join(" · ")}
-                  </p>
-                ) : (
-                  <p className="text-[11px] text-slate">5-lift total {num(r.total)} lbs</p>
-                )}
-              </div>
-              <div className="shrink-0 text-right">
-                <span className="font-display text-lg text-forest leading-none">
-                  {r.value ? num(r.value) : "—"}
+            <li key={r.client.id}>
+              <Link
+                href={`/clients/${r.client.id}`}
+                className={`flex items-center gap-3 rounded-xl px-2 py-2 active:scale-[0.99] transition-transform ${
+                  i < 3 ? "bg-field/60" : "hover:bg-field/40"
+                }`}
+              >
+                <span className="w-6 shrink-0 text-center text-sm font-bold text-slate">
+                  {i < 3 ? MEDALS[i] : i + 1}
                 </span>
-                {r.value ? <span className="text-[10px] text-slate ml-0.5">lbs</span> : null}
-              </div>
+                <Avatar name={r.client.name} src={r.client.avatarUrl} size={36} />
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-sm truncate">{r.client.name}</p>
+                  {metric === "total" ? (
+                    <p className="text-[11px] text-slate truncate">
+                      {SCOREBOARD_LIFTS.map((l) => `${l.short} ${r.lifts[l.id] || "—"}`).join(" · ")}
+                    </p>
+                  ) : (
+                    <p className="text-[11px] text-slate">
+                      {r.valueDate ? `Tested ${relativeDate(r.valueDate)} · ` : ""}5-lift {num(r.total)}
+                    </p>
+                  )}
+                </div>
+                <div className="shrink-0 text-right">
+                  <span className="font-display text-lg text-forest leading-none">
+                    {r.value ? num(r.value) : "—"}
+                  </span>
+                  {r.value ? <span className="text-[10px] text-slate ml-0.5">lbs</span> : null}
+                </div>
+              </Link>
             </li>
           ))}
         </ol>

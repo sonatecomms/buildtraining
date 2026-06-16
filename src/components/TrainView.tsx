@@ -29,6 +29,7 @@ import {
   relativeDate,
 } from "@/lib/week";
 import { Plus } from "lucide-react";
+import { CairnIcon } from "./icons";
 import { Button, Card, Fab, Pill, Skeleton } from "./ui";
 import StreakHeader from "./StreakHeader";
 import WeekStrip from "./WeekStrip";
@@ -445,7 +446,7 @@ export default function TrainView({
               : undefined;
             return (
               <Card className="p-6 text-center">
-                <div className="text-3xl mb-1">🧘</div>
+                <div className="mb-1 flex justify-center"><CairnIcon size={30} className="text-slate" /></div>
                 <p className="font-semibold">Rest day</p>
                 <p className="text-slate text-sm">Recover, or log your own work below.</p>
                 {nextDow != null && (
@@ -523,7 +524,7 @@ export default function TrainView({
           Off by default — only athletes the coach has granted access see it. */}
       {!coachView && !readOnly && client.generatorEnabled && (
         <div className="fixed bottom-24 right-4 z-30" style={{ marginBottom: "env(safe-area-inset-bottom)" }}>
-          <Fab label="Build a workout" onClick={() => setGenerating(true)}>
+          <Fab label="Generate a workout" onClick={() => setGenerating(true)}>
             <Plus size={26} />
           </Fab>
         </div>
@@ -1289,7 +1290,7 @@ function ReviewRegion({
   if (dayWorkouts.length === 0 && !extraLog && orphanLogs.length === 0) {
     return (
       <Card className="p-6 text-center">
-        <div className="text-3xl mb-1">🧘</div>
+        <div className="mb-1 flex justify-center"><CairnIcon size={30} className="text-slate" /></div>
         <p className="font-semibold">Rest day</p>
         <p className="text-slate text-sm">Nothing was programmed for this day.</p>
       </Card>

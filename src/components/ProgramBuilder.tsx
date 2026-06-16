@@ -256,7 +256,7 @@ export default function ProgramBuilder({ clientId }: { clientId: string }) {
               + Add {DOW_LONG[day]} workout
             </Button>
             <Button variant="outline" onClick={() => setGenerating(true)}>
-              Build a workout
+              Generate a workout
             </Button>
           </div>
         </Card>
@@ -294,7 +294,7 @@ export default function ProgramBuilder({ clientId }: { clientId: string }) {
 
       {!readOnly && client && (
         <div className="fixed bottom-24 right-4 z-30" style={{ marginBottom: "env(safe-area-inset-bottom)" }}>
-          <Fab label="Build a workout" onClick={() => setGenerating(true)}>
+          <Fab label="Generate a workout" onClick={() => setGenerating(true)}>
             <Plus size={26} />
           </Fab>
         </div>

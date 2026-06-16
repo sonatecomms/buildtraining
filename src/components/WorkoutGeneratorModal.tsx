@@ -154,7 +154,7 @@ export default function WorkoutGeneratorModal({
         className="bg-shell w-full sm:max-w-md max-h-[88dvh] sm:max-h-[85dvh] rounded-t-3xl sm:rounded-3xl border border-line shadow-hero flex flex-col min-h-0 animate-pop overflow-hidden"
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-line shrink-0">
-          <h2 className="font-bold">{bulk ? `Build for ${bulk.length} athletes` : "Build a workout"}</h2>
+          <h2 className="font-bold">{bulk ? `Generate for ${bulk.length} athletes` : "Generate a workout"}</h2>
           <button onClick={onClose} className="text-slate text-2xl leading-none px-2" aria-label="Close">
             ×
           </button>
@@ -230,7 +230,7 @@ export default function WorkoutGeneratorModal({
               {error && <p className="text-sm text-brick">{error}</p>}
 
               <Button className="w-full" onClick={generate} disabled={busy || equipment.length === 0}>
-                {busy ? "Building…" : "Build workout"}
+                {busy ? "Generating…" : "Generate workout"}
               </Button>
             </>
           ) : (

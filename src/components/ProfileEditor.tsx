@@ -318,7 +318,7 @@ export default function ProfileEditor({
       <Card className="p-4">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <h3 className="font-semibold">Build a workout (AI)</h3>
+            <h3 className="font-semibold">Generate a workout (AI)</h3>
             <p className="text-[11px] text-slate mt-0.5">
               {client.generatorEnabled
                 ? "On — this athlete can generate their own workouts."
@@ -328,7 +328,7 @@ export default function ProfileEditor({
           <button
             role="switch"
             aria-checked={!!client.generatorEnabled}
-            aria-label="Build a workout access"
+            aria-label="Generate a workout access"
             onClick={() => updateClient(client.id, { generatorEnabled: !client.generatorEnabled })}
             className={`shrink-0 inline-flex items-center h-7 w-12 rounded-full p-1 transition-colors ${
               client.generatorEnabled ? "bg-forest" : "bg-line"
