@@ -380,14 +380,16 @@ export function surfaceVars(school: School, mode: SurfaceMode): CSSProperties {
     } as CSSProperties;
   }
 
-  // dark
+  // dark — only a whisper of the school color so it renders as a clean near-
+  // black (the brand buttons/text carry the hue, not the background), mirroring
+  // the barely-tinted off-white shell.
   return {
-    "--background": mix("#0e0e11", sat, 0.1),
-    "--color-shell": mix("#17171b", sat, 0.1),
-    "--color-surface": mix("#1d1d22", sat, 0.1),
-    "--color-surface-2": mix("#26262c", sat, 0.1),
-    "--color-field": mix("#2a2a31", sat, 0.1),
-    "--color-line": mix("#3a3a44", sat, 0.12),
+    "--background": mix("#0c0c0f", sat, 0.05),
+    "--color-shell": mix("#161619", sat, 0.05),
+    "--color-surface": mix("#1c1c21", sat, 0.05),
+    "--color-surface-2": mix("#26262c", sat, 0.06),
+    "--color-field": mix("#2a2a31", sat, 0.07),
+    "--color-line": mix("#3a3a44", sat, 0.09),
     "--color-ink": mix("#f3f4f6", sat, 0.03),
     "--color-slate": mix("#aab2bc", sat, 0.06),
     "--color-bone": mix("#f1f3f5", sat, 0.02), // text-on-brand + hero text stay light

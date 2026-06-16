@@ -13,6 +13,20 @@ export const UNITS: { name: string; positions: string[] }[] = [
   { name: "Special Teams", positions: ["K/P"] },
 ];
 
+// Full names [singular, plural] for readable copy.
+export const POSITION_NAMES: Record<string, [string, string]> = {
+  QB: ["quarterback", "quarterbacks"],
+  RB: ["running back", "running backs"],
+  WR: ["wide receiver", "wide receivers"],
+  TE: ["tight end", "tight ends"],
+  OL: ["offensive lineman", "offensive linemen"],
+  DL: ["defensive lineman", "defensive linemen"],
+  LB: ["linebacker", "linebackers"],
+  DB: ["defensive back", "defensive backs"],
+  ATH: ["athlete", "athletes"], // versatile / two-way player
+  "K/P": ["specialist", "specialists"],
+};
+
 export const GRADES: Grade[] = ["Freshman", "Sophomore", "Junior", "Senior"];
 // compact chip label
 export const GRADE_SHORT: Record<Grade, string> = {
@@ -20,6 +34,12 @@ export const GRADE_SHORT: Record<Grade, string> = {
   Sophomore: "So",
   Junior: "Jr",
   Senior: "Sr",
+};
+const GRADE_PLURAL: Record<Grade, string> = {
+  Freshman: "freshmen",
+  Sophomore: "sophomores",
+  Junior: "juniors",
+  Senior: "seniors",
 };
 
 export type TeamFilter = { positions: string[]; units: string[]; grades: Grade[] };
@@ -43,4 +63,30 @@ export function matchesFilter(c: Client, f: TeamFilter): boolean {
 
 export function isFilterActive(f: TeamFilter): boolean {
   return f.positions.length > 0 || f.units.length > 0 || f.grades.length > 0;
+}
+
+/** A natural-language name for the filtered group (for the bulk-program block). */
+export function describeFilterTarget(f: TeamFilter, count: number): string {
+  const { units, positions, grades } = f;
+  if (units.length === 0 && positions.length === 0 && grades.length === 0) return "the whole squad";
+  // selecting every unit = everyone
+  if (units.length === UNITS.length) return "the whole squad";
+  const plural = count !== 1;
+
+  // pure units
+  if (positions.length === 0 && grades.length === 0 && units.length > 0) {
+    return "the " + units.map((u) => u.toLowerCase()).join(" & ");
+  }
+  // pure positions
+  if (units.length === 0 && grades.length === 0 && positions.length > 0) {
+    const set = new Set(positions);
+    if (set.size === 2 && set.has("OL") && set.has("DL")) return "the line";
+    return "the " + positions.map((p) => POSITION_NAMES[p]?.[plural ? 1 : 0] ?? p).join(" & ");
+  }
+  // pure grades
+  if (units.length === 0 && positions.length === 0 && grades.length > 0) {
+    return "the " + grades.map((g) => GRADE_PLURAL[g]).join(" & ");
+  }
+  // mixed selection → a plain count
+  return `the ${count} ${count === 1 ? "athlete" : "athletes"}`;
 }

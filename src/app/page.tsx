@@ -7,7 +7,14 @@ import { useClients, useLogsForClient, addClient, setClientArchived } from "@/li
 import { Avatar, Button, Card, EmptyState, Fab, PageHeader, Pill, Skeleton } from "@/components/ui";
 import { GOALS } from "@/lib/goals";
 import { relativeDate, daysAgo, weekDates, isoDate, weekStartIso } from "@/lib/week";
-import { EMPTY_FILTER, GRADE_SHORT, matchesFilter, isFilterActive, type TeamFilter } from "@/lib/team";
+import {
+  EMPTY_FILTER,
+  GRADE_SHORT,
+  matchesFilter,
+  isFilterActive,
+  describeFilterTarget,
+  type TeamFilter,
+} from "@/lib/team";
 import { useIsDemo } from "@/components/demoContext";
 import TeamFilterBar from "@/components/TeamFilterBar";
 import WorkoutGeneratorModal from "@/components/WorkoutGeneratorModal";
@@ -87,13 +94,9 @@ export default function CoachHome() {
   // demo-only: narrow the roster by position/grade for bulk programming
   const filtering = demo && isFilterActive(filter);
   const visible = filtering ? active.filter((c) => matchesFilter(c, filter)) : active;
-  // Describe the bulk-program target: a named unit when only units are picked,
-  // the whole squad when unfiltered, else a count.
-  const squadLabel = !filtering
-    ? "the whole squad"
-    : filter.units.length > 0 && filter.positions.length === 0 && filter.grades.length === 0
-      ? "the " + filter.units.map((u) => u.toLowerCase()).join(" & ")
-      : `the ${visible.length} ${visible.length === 1 ? "athlete" : "athletes"}`;
+  // Natural-language name for the bulk-program target (the whole squad, a unit,
+  // "the line" for OL+DL, named positions, grades, or a count).
+  const squadLabel = describeFilterTarget(filter, visible.length);
 
   const create = () => {
     const trimmed = name.trim();
