@@ -148,11 +148,12 @@ function ThemeRow({
         active ? "border-forest bg-surface" : "border-line/60 bg-surface/60 hover:bg-surface"
       }`}
     >
-      {/* dual-color school swatch with the mascot emoji centered */}
+      {/* solid primary circle, ringed in the secondary color (no gradient) */}
       <span
-        className="relative shrink-0 grid place-items-center w-11 h-11 rounded-full ring-1 ring-line"
+        className="relative shrink-0 grid place-items-center w-11 h-11 rounded-full ring-1 ring-black/10"
         style={{
-          background: `linear-gradient(135deg, ${school.swatch[0]} 0 50%, ${school.swatch[1]} 50% 100%)`,
+          background: school.swatch[0],
+          boxShadow: `inset 0 0 0 3px ${school.swatch[1]}`,
         }}
       >
         {isDefault ? (

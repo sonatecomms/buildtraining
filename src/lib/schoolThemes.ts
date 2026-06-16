@@ -85,7 +85,7 @@ export const SCHOOLS: School[] = [
     id: "barberton",
     name: "Barberton Magics",
     mascot: "Magics",
-    emoji: "🪄",
+    emoji: "🎩",
     kind: "public",
     city: "Barberton",
     swatch: ["#5b2a86", "#ffffff"], // purple & white
@@ -101,7 +101,7 @@ export const SCHOOLS: School[] = [
     kind: "public",
     city: "Richfield",
     swatch: ["#b31b34", "#16265f"], // scarlet & navy
-    forest: "#16265f",
+    forest: "#7e1322", // mono-scarlet brand (navy is the secondary accent)
     green: "#b31b34",
     soft: "#ce3147",
   },
@@ -408,12 +408,14 @@ export function surfaceVars(school: School, mode: SurfaceMode): CSSProperties {
     // Brighten the brand (lightness up, saturation kept) for legible emphasis
     // text / marks on off-black — stays a vivid version of the primary (red
     // stays red, not pink). The hero keeps a dark gradient via --hero-from/-to.
-    "--color-forest": brighten(school.green, 0.56),
-    "--color-green": brighten(school.green, 0.64),
-    "--color-green-soft": brighten(school.green, 0.72),
-    // "& gold" schools show their gold for emphasis text/marks here (a brightened
-    // green/maroon/navy reads neon on black); others fall back to the brand.
-    "--color-accent": school.accent ? brighten(school.accent, 0.6) : brighten(school.green, 0.56),
+    // "& gold" schools drive the ENTIRE dark brand (fills + accent) from their
+    // gold — a brightened green/maroon/navy reads neon/lime, so use the secondary
+    // instead. Others brighten the primary (red stays red, etc.). The hero keeps
+    // the deep school green/navy via --hero-from/-to.
+    "--color-forest": brighten(school.accent ?? school.green, 0.46), // fills (white text reads)
+    "--color-green": brighten(school.accent ?? school.green, 0.54),
+    "--color-green-soft": brighten(school.accent ?? school.green, 0.62),
+    "--color-accent": brighten(school.accent ?? school.green, 0.58), // emphasis text (bright on black)
     "--hero-from": school.forest,
     "--hero-to": school.green,
     "--shadow-card": "0 1px 2px rgba(0,0,0,0.45), 0 10px 28px -14px rgba(0,0,0,0.7)",
