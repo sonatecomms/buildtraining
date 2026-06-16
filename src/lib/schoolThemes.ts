@@ -184,7 +184,7 @@ export const SCHOOLS: School[] = [
     id: "norton",
     name: "Norton Panthers",
     mascot: "Panthers",
-    emoji: "🐈‍⬛",
+    emoji: "🐾",
     kind: "public",
     city: "Norton",
     swatch: ["#c01825", "#ffffff"], // red & white
