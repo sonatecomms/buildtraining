@@ -180,7 +180,7 @@ export default function ProfileEditor({
   return (
     <div className="space-y-4">
       {/* explicit save */}
-      <div className="sticky top-0 z-20 -mx-4 px-4 py-2 bg-bone/95 backdrop-blur flex items-center justify-end gap-3">
+      <div className="sticky top-0 z-20 -mx-4 px-4 py-2 bg-shell/95 backdrop-blur flex items-center justify-end gap-3">
         <span className="text-[10px] text-slate mr-auto">build {APP_VERSION}</span>
         {saveMsg && (
           <span className={`text-xs ${saveMsg.startsWith("Saved") ? "text-forest" : "text-brick"}`}>{saveMsg}</span>

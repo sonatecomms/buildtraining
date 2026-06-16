@@ -24,6 +24,7 @@
   --color-surface-2: #f4f6f0;
   --color-field: #eef1ea; /* inputs & nested wells */
   --color-line: #cfd6c4; /* hairline borders */
+  --color-shell: #e2e6da; /* themable app backdrop: sheets, sticky headers, full-screen bg */
 
   --font-sans: var(--font-poppins), system-ui, sans-serif;
   --font-display: var(--font-league), var(--font-poppins), system-ui, sans-serif;

@@ -156,7 +156,7 @@ function DemoLogin() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-bone px-6">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-shell px-6">
       <form onSubmit={submit} className="w-full max-w-xs flex flex-col items-center gap-5">
         <BrandMark size={48} />
         <div className="text-center">

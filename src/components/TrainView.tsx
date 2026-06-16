@@ -392,7 +392,7 @@ export default function TrainView({
       {celebrate && (
         <button
           onClick={() => setCelebrate(null)}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/10"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/10"
           aria-label="Dismiss"
         >
           <div role="status" aria-live="polite" className="animate-pop text-center bg-surface border border-green/40 rounded-2xl px-8 py-6 shadow-[0_12px_40px_-8px_rgba(25,53,12,0.35)]">

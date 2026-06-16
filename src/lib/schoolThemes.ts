@@ -252,12 +252,22 @@ export function schoolById(id: string | null | undefined): School {
   return ALL_THEMES.find((s) => s.id === id) ?? BUILD_DEFAULT;
 }
 
-function rgba(hex: string, alpha: number): string {
+function toRgb(hex: string): [number, number, number] {
   const s = hex.replace(/^#/, "");
-  const r = parseInt(s.slice(0, 2), 16);
-  const g = parseInt(s.slice(2, 4), 16);
-  const b = parseInt(s.slice(4, 6), 16);
+  return [parseInt(s.slice(0, 2), 16), parseInt(s.slice(2, 4), 16), parseInt(s.slice(4, 6), 16)];
+}
+function rgba(hex: string, alpha: number): string {
+  const [r, g, b] = toRgb(hex);
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+function hex2(n: number): string {
+  return Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, "0");
+}
+/** Blend `t` of `b` into `a` (t in 0..1). Used to tint near-black / near-white. */
+function mix(a: string, b: string, t: number): string {
+  const [ar, ag, ab] = toRgb(a);
+  const [br, bg, bb] = toRgb(b);
+  return `#${hex2(ar + (br - ar) * t)}${hex2(ag + (bg - ag) * t)}${hex2(ab + (bb - ab) * t)}`;
 }
 
 /**
@@ -279,7 +289,65 @@ export function schoolThemeVars(school: School): CSSProperties {
   } as CSSProperties;
 }
 
-// The brand-token keys we set on <html>, so the provider can cleanly remove them.
+// The app's default cream shell can feel soft for some programs (e.g. boys'
+// teams). The shell can be retinted: "light" = an off-white in the hue of the
+// school's lighter color; "dark" = an off-black in the hue of its saturated one.
+export type SurfaceMode = "cream" | "light" | "dark";
+
+/**
+ * Retint the *shell* (backdrop, cards, inputs, text) for a surface mode, in the
+ * chosen school's hue. Composed on top of schoolThemeVars. "cream" leaves the
+ * default. In "dark" we also shift the brand one step lighter so emphasis text
+ * (`text-forest`) stays legible while the hero/buttons keep enough depth.
+ */
+export function surfaceVars(school: School, mode: SurfaceMode): CSSProperties {
+  if (mode === "cream") return {};
+  // Hue source: saturated brand for dark, the school's lighter accent for light.
+  const sat = school.id === BUILD_DEFAULT.id ? "#357836" : school.green;
+  const lightAccent = sat;
+
+  if (mode === "light") {
+    return {
+      "--background": mix("#ffffff", lightAccent, 0.05),
+      "--color-shell": mix("#ffffff", lightAccent, 0.05),
+      "--color-bone": mix("#ffffff", lightAccent, 0.05),
+      "--color-surface": "#ffffff",
+      "--color-surface-2": mix("#ffffff", lightAccent, 0.09),
+      "--color-field": mix("#ffffff", lightAccent, 0.12),
+      "--color-line": mix("#e6e7e4", lightAccent, 0.12),
+    } as CSSProperties;
+  }
+
+  // dark
+  return {
+    "--background": mix("#0e0e11", sat, 0.1),
+    "--color-shell": mix("#17171b", sat, 0.1),
+    "--color-surface": mix("#1d1d22", sat, 0.1),
+    "--color-surface-2": mix("#26262c", sat, 0.1),
+    "--color-field": mix("#2a2a31", sat, 0.1),
+    "--color-line": mix("#3a3a44", sat, 0.12),
+    "--color-ink": mix("#f3f4f6", sat, 0.03),
+    "--color-slate": mix("#aab2bc", sat, 0.06),
+    "--color-bone": mix("#f1f3f5", sat, 0.02), // text-on-brand + hero text stay light
+    "--color-brick": "#e8607a",
+    "--foreground": mix("#f3f4f6", sat, 0.03),
+    // shift the brand one notch lighter so it reads on dark surfaces
+    "--color-forest": school.green,
+    "--color-green": school.soft,
+    "--color-green-soft": mix(school.soft, "#ffffff", 0.16),
+    "--shadow-card": "0 1px 2px rgba(0,0,0,0.45), 0 10px 28px -14px rgba(0,0,0,0.7)",
+    "--shadow-hero": "0 16px 36px -14px rgba(0,0,0,0.75), inset 0 1px 0 rgba(255,255,255,0.14)",
+    "--shadow-fab": "0 10px 24px -8px rgba(0,0,0,0.7)",
+  } as CSSProperties;
+}
+
+/** Combined brand + surface overrides for a school in a given surface mode. */
+export function themeVars(school: School, mode: SurfaceMode): CSSProperties {
+  return { ...schoolThemeVars(school), ...surfaceVars(school, mode) } as CSSProperties;
+}
+
+// Every key we may set on <html>, so the provider can cleanly remove the ones
+// not in the current theme when switching schools or modes.
 export const THEME_VAR_KEYS = [
   "--color-forest",
   "--color-green",
@@ -287,4 +355,15 @@ export const THEME_VAR_KEYS = [
   "--shadow-fab",
   "--shadow-hero",
   "--shadow-card",
+  "--background",
+  "--foreground",
+  "--color-shell",
+  "--color-bone",
+  "--color-surface",
+  "--color-surface-2",
+  "--color-field",
+  "--color-line",
+  "--color-ink",
+  "--color-slate",
+  "--color-brick",
 ] as const;

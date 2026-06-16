@@ -898,7 +898,7 @@ function ItemRow({
           ) : (
             <span className="text-base">🎬</span>
           )}
-          <span className="absolute bottom-0 inset-x-0 bg-ink/70 text-[8px] text-center text-bone py-0.5">
+          <span className="absolute bottom-0 inset-x-0 bg-black/70 text-[8px] text-center text-bone py-0.5">
             {item.youtubeUrl ? "custom" : thumb ? "edit" : "add"}
           </span>
         </button>

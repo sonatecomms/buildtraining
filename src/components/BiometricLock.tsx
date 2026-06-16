@@ -29,7 +29,7 @@ export default function BiometricLock({ children }: { children: React.ReactNode 
   if (!locked) return <>{children}</>;
 
   return (
-    <div className="min-h-screen grid place-items-center bg-bone px-6 text-center">
+    <div className="min-h-screen grid place-items-center bg-shell px-6 text-center">
       <div className="w-full max-w-xs">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/logo-icon.png?v=10" alt="BUILD" className="w-20 h-20 mx-auto mb-3" />

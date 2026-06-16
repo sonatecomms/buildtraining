@@ -3,12 +3,24 @@
 import { useState } from "react";
 import { X, Check, Palette } from "lucide-react";
 import { useSchoolTheme } from "./SchoolThemeProvider";
-import { ALL_THEMES, BUILD_DEFAULT, type School } from "@/lib/schoolThemes";
+import {
+  ALL_THEMES,
+  BUILD_DEFAULT,
+  surfaceVars,
+  type School,
+  type SurfaceMode,
+} from "@/lib/schoolThemes";
+
+const MODES: { id: SurfaceMode; label: string }[] = [
+  { id: "cream", label: "Cream" },
+  { id: "light", label: "Off-white" },
+  { id: "dark", label: "Off-black" },
+];
 
 // Demo affordance: a floating chip that opens a sheet of schools. Selecting one
 // re-skins the whole app live, proving BUILD is white-labelable per program.
 export function SchoolThemePicker() {
-  const { school, setSchool } = useSchoolTheme();
+  const { school, setSchool, mode, setMode } = useSchoolTheme();
   const [open, setOpen] = useState(false);
 
   return (
@@ -26,7 +38,7 @@ export function SchoolThemePicker() {
 
       {open && (
         <div
-          className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink/40 backdrop-blur-sm sm:p-4"
+          className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm sm:p-4"
           onClick={() => setOpen(false)}
           role="dialog"
           aria-modal="true"
@@ -34,7 +46,7 @@ export function SchoolThemePicker() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-bone w-full sm:max-w-md max-h-[88dvh] sm:max-h-[85dvh] rounded-t-3xl sm:rounded-3xl border border-line shadow-hero flex flex-col min-h-0 animate-pop overflow-hidden"
+            className="bg-shell w-full sm:max-w-md max-h-[88dvh] sm:max-h-[85dvh] rounded-t-3xl sm:rounded-3xl border border-line shadow-hero flex flex-col min-h-0 animate-pop overflow-hidden"
           >
             {/* header */}
             <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3 border-b border-line/70">
@@ -51,6 +63,39 @@ export function SchoolThemePicker() {
               >
                 <X size={18} />
               </button>
+            </div>
+
+            {/* backdrop tint — cream / off-white / off-black, in the school's hue */}
+            <div className="px-5 pt-3 pb-1">
+              <div className="flex items-center gap-1 rounded-full bg-surface border border-line p-1">
+                {MODES.map((m) => {
+                  const active = mode === m.id;
+                  const preview =
+                    m.id === "cream"
+                      ? "#e2e6da"
+                      : (surfaceVars(school, m.id) as Record<string, string>)["--background"];
+                  return (
+                    <button
+                      key={m.id}
+                      onClick={() => setMode(m.id)}
+                      aria-pressed={active}
+                      className={`flex-1 flex items-center justify-center gap-1.5 rounded-full h-8 text-[12px] font-semibold transition-colors ${
+                        active ? "bg-forest text-bone" : "text-slate"
+                      }`}
+                    >
+                      <span
+                        className="w-3 h-3 rounded-full border border-black/15"
+                        style={{ background: preview }}
+                        aria-hidden
+                      />
+                      {m.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-[11px] text-slate/70 mt-1.5 px-1">
+                Backdrop tint for this program.
+              </p>
             </div>
 
             {/* list */}

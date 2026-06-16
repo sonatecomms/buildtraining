@@ -88,7 +88,7 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
   return (
     <div ref={swipeRef} className="min-h-screen flex flex-col">
       <PullIndicator pull={pull} refreshing={refreshing} />
-      <header className="sticky top-0 z-30 bg-bone/90 backdrop-blur border-b border-line">
+      <header className="sticky top-0 z-30 bg-shell/90 backdrop-blur border-b border-line">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
           <button
             onClick={() => setView("train")}

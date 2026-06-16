@@ -18,12 +18,12 @@ export default function ExercisePickerModal({
   return (
     <div
       data-noswipe
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-ink/40 backdrop-blur-sm sm:p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm sm:p-4"
       onClick={onClose}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-bone w-full sm:max-w-lg max-h-[88dvh] sm:max-h-[85dvh] rounded-t-3xl sm:rounded-3xl border border-line shadow-hero flex flex-col min-h-0 animate-pop overflow-hidden"
+        className="bg-shell w-full sm:max-w-lg max-h-[88dvh] sm:max-h-[85dvh] rounded-t-3xl sm:rounded-3xl border border-line shadow-hero flex flex-col min-h-0 animate-pop overflow-hidden"
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-line shrink-0">
           <h2 className="font-bold">{title}</h2>

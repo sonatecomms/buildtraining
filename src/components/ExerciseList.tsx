@@ -118,7 +118,7 @@ export default function ExerciseList({
           {/* play affordance only in browse mode where the row opens a video */}
           {!onPick && ex.youtubeUrl && (
             <span className="absolute inset-0 flex items-center justify-center">
-              <span className="grid place-items-center w-7 h-7 rounded-full bg-ink/55 text-white">
+              <span className="grid place-items-center w-7 h-7 rounded-full bg-black/55 text-white">
                 <Play size={13} className="ml-0.5 fill-current" />
               </span>
             </span>
@@ -153,7 +153,7 @@ export default function ExerciseList({
     <div>
       {/* Pinned so the search field + filters stay put while results scroll
           (and never slip behind the on-screen keyboard). */}
-      <div className="sticky top-0 z-10 bg-bone pt-3 pb-2 -mx-1 px-1">
+      <div className="sticky top-0 z-10 bg-shell pt-3 pb-2 -mx-1 px-1">
         <div className="relative">
           <Search
             size={16}
