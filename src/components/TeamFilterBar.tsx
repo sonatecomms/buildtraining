@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { ChevronDown, SlidersHorizontal } from "lucide-react";
 import {
   POSITIONS,
   UNITS,
@@ -27,50 +29,64 @@ export default function TeamFilterBar({
         : [...(filter[key] as string[]), val],
     });
 
+  const [open, setOpen] = useState(false);
+  const count = filter.positions.length + filter.units.length + filter.grades.length;
+
   return (
-    <div className="rounded-card border border-line bg-surface p-3 space-y-3">
+    <div className="rounded-card border border-line bg-surface p-3">
       <div className="flex items-center justify-between">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate/70">
-          Filter
-        </span>
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="flex items-center gap-1.5 text-slate"
+          aria-expanded={open}
+        >
+          <SlidersHorizontal size={14} />
+          <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">Filter</span>
+          {count > 0 && (
+            <span className="grid place-items-center min-w-[20px] h-5 px-1.5 rounded-full bg-forest text-bone text-[10px] font-bold">
+              {count}
+            </span>
+          )}
+          <ChevronDown size={15} className={`transition-transform ${open ? "rotate-180" : ""}`} />
+        </button>
         {isFilterActive(filter) && (
-          <button
-            onClick={() => onChange(EMPTY_FILTER)}
-            className="text-[11px] font-semibold text-forest"
-          >
+          <button onClick={() => onChange(EMPTY_FILTER)} className="text-[11px] font-semibold text-forest">
             Clear
           </button>
         )}
       </div>
 
-      <Group label="Unit">
-        {UNITS.map((u) => (
-          <Chip key={u.name} on={filter.units.includes(u.name)} onClick={() => toggle("units", u.name)}>
-            {u.name}
-          </Chip>
-        ))}
-      </Group>
-
-      <Group label="Position">
-        {POSITIONS.map((p) => (
-          <Chip key={p} on={filter.positions.includes(p)} onClick={() => toggle("positions", p)}>
-            {p}
-          </Chip>
-        ))}
-      </Group>
-
-      <Group label="Grade">
-        {GRADES.map((g) => (
-          <Chip
-            key={g}
-            on={filter.grades.includes(g)}
-            tone="grade"
-            onClick={() => toggle("grades", g as Grade)}
-          >
-            {GRADE_SHORT[g]}
-          </Chip>
-        ))}
-      </Group>
+      {open && (
+        <div className="space-y-3 mt-3">
+          <Group label="Unit">
+            {UNITS.map((u) => (
+              <Chip key={u.name} on={filter.units.includes(u.name)} onClick={() => toggle("units", u.name)}>
+                {u.name}
+              </Chip>
+            ))}
+          </Group>
+          <Group label="Position">
+            {POSITIONS.map((p) => (
+              <Chip key={p} on={filter.positions.includes(p)} onClick={() => toggle("positions", p)}>
+                {p}
+              </Chip>
+            ))}
+          </Group>
+          <Group label="Grade">
+            {GRADES.map((g) => (
+              <Chip
+                key={g}
+                on={filter.grades.includes(g)}
+                tone="grade"
+                onClick={() => toggle("grades", g as Grade)}
+              >
+                {GRADE_SHORT[g]}
+              </Chip>
+            ))}
+          </Group>
+        </div>
+      )}
     </div>
   );
 }

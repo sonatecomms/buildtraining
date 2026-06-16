@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, Wand2 } from "lucide-react";
+import { Plus, Wand2, ChevronRight } from "lucide-react";
 import { useClients, useLogsForClient, addClient, setClientArchived } from "@/lib/store";
 import { Avatar, Button, Card, EmptyState, Fab, PageHeader, Pill, Skeleton } from "@/components/ui";
 import { GOALS } from "@/lib/goals";
@@ -11,6 +11,7 @@ import { EMPTY_FILTER, GRADE_SHORT, matchesFilter, isFilterActive, type TeamFilt
 import { useIsDemo } from "@/components/demoContext";
 import TeamFilterBar from "@/components/TeamFilterBar";
 import WorkoutGeneratorModal from "@/components/WorkoutGeneratorModal";
+import BulkProgramModal from "@/components/BulkProgramModal";
 import type { Client } from "@/lib/types";
 
 function ClientRow({ client }: { client: Client }) {
@@ -79,6 +80,7 @@ export default function CoachHome() {
   const demo = useIsDemo();
   const [filter, setFilter] = useState<TeamFilter>(EMPTY_FILTER);
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkMode, setBulkMode] = useState<"manual" | "ai">("manual");
 
   const active = clients.filter((c) => !c.archived);
   const archived = clients.filter((c) => c.archived);
@@ -125,17 +127,29 @@ export default function CoachHome() {
 
       {demo && ready && active.length > 0 && (
         <div className="mb-4 space-y-2">
-          <TeamFilterBar filter={filter} onChange={setFilter} />
-          {filtering && (
-            <div className="flex items-center justify-between gap-2 px-1">
-              <span className="text-xs text-slate">
-                {visible.length} {visible.length === 1 ? "athlete" : "athletes"} selected
+          <button
+            onClick={() => {
+              setBulkMode("manual");
+              setBulkOpen(true);
+            }}
+            disabled={visible.length === 0}
+            className="w-full flex items-center justify-between gap-3 rounded-card build-hero shadow-hero px-4 py-3.5 active:scale-[0.99] transition-transform disabled:opacity-50"
+          >
+            <span className="flex items-center gap-2.5">
+              <span className="grid place-items-center w-9 h-9 rounded-full bg-white/15">
+                <Wand2 size={18} />
               </span>
-              <Button size="sm" onClick={() => setBulkOpen(true)} disabled={visible.length === 0}>
-                <Wand2 size={15} /> Bulk program
-              </Button>
-            </div>
-          )}
+              <span className="text-left">
+                <span className="block font-display text-base leading-tight">Program</span>
+                <span className="block text-[12px] opacity-90">
+                  Build one workout for {filtering ? "the" : "all"} {visible.length}{" "}
+                  {visible.length === 1 ? "athlete" : "athletes"}
+                </span>
+              </span>
+            </span>
+            <ChevronRight size={20} />
+          </button>
+          <TeamFilterBar filter={filter} onChange={setFilter} />
         </div>
       )}
 
@@ -203,7 +217,14 @@ export default function CoachHome() {
         </Fab>
       </div>
 
-      {bulkOpen && visible.length > 0 && (
+      {bulkOpen && visible.length > 0 && bulkMode === "manual" && (
+        <BulkProgramModal
+          clients={visible}
+          onClose={() => setBulkOpen(false)}
+          onUseAI={() => setBulkMode("ai")}
+        />
+      )}
+      {bulkOpen && visible.length > 0 && bulkMode === "ai" && (
         <WorkoutGeneratorModal
           bulkClients={visible}
           client={visible[0]}
