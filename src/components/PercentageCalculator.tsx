@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { Card } from "./ui";
 
 // Training % calculator: enter a 1-rep max, see working weights in 5% steps from
@@ -19,16 +20,20 @@ const roundTo = (n: number, step: number) => Math.round(n / step) * step;
 export default function PercentageCalculator({
   max: maxProp,
   onMaxChange,
+  collapsible = false,
 }: {
   // controlled by the parent (athlete PRs, for tap-to-load) or standalone (coach)
   max?: string;
   onMaxChange?: (v: string) => void;
+  // start collapsed with an expand toggle (coach Numbers page)
+  collapsible?: boolean;
 } = {}) {
   const [internalMax, setInternalMax] = useState("");
   const max = maxProp ?? internalMax;
   const setMax = onMaxChange ?? setInternalMax;
   const [round, setRound] = useState(5);
   const [customPct, setCustomPct] = useState("");
+  const [open, setOpen] = useState(!collapsible);
 
   const m = parseFloat(max) || 0;
   const has = m > 0;
@@ -40,8 +45,23 @@ export default function PercentageCalculator({
 
   return (
     <Card className="p-4">
-      <h3 className="font-semibold mb-2">% of 1-rep max</h3>
+      <button
+        type="button"
+        onClick={() => collapsible && setOpen((v) => !v)}
+        className={`flex items-center justify-between w-full ${open ? "mb-2" : ""}`}
+        aria-expanded={open}
+      >
+        <h3 className="font-semibold">Calculator</h3>
+        {collapsible && (
+          <ChevronDown
+            size={18}
+            className={`text-slate transition-transform ${open ? "rotate-180" : ""}`}
+          />
+        )}
+      </button>
 
+      {open && (
+      <>
       <label htmlFor="orm" className="text-[11px] text-slate font-medium">1-rep max (lb)</label>
       <input
         id="orm"
@@ -109,6 +129,8 @@ export default function PercentageCalculator({
       </div>
 
       {!has && <p className="text-[11px] text-slate mt-2">Enter a 1-rep max to see your working weights.</p>}
+      </>
+      )}
     </Card>
   );
 }

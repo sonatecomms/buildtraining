@@ -44,7 +44,7 @@ export function DemoModeProvider({ children }: { children: React.ReactNode }) {
   // search, athlete/profile headers) tuck below it instead of under it.
   useEffect(() => {
     const root = document.documentElement;
-    if (active) root.style.setProperty("--demo-bar", "calc(env(safe-area-inset-top) + 48px)");
+    if (active) root.style.setProperty("--demo-bar", "calc(env(safe-area-inset-top) + 60px)");
     else root.style.removeProperty("--demo-bar");
     return () => {
       root.style.removeProperty("--demo-bar");
@@ -127,19 +127,19 @@ function DemoApp({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Sticky top bar that houses the demo controls in their own space (so they don't
-// overlap the app's top row) and stays put while the page scrolls. Inner sticky
-// headers offset below it via the --demo-bar CSS variable (set by the provider).
+// Floating sticky nav that houses the demo controls in their own space (so they
+// don't overlap the app's top row) and stays put while the page scrolls. The
+// wrapper is in flow (reserving height); the inner pill floats (rounded, lifted).
+// Inner app headers offset below it via the --demo-bar CSS var (set by provider).
 function DemoBar() {
   return (
-    <div
-      className="sticky z-50 flex items-center justify-between gap-2 px-3 bg-shell/95 backdrop-blur border-b border-line"
-      style={{ top: "env(safe-area-inset-top)", height: 48 }}
-    >
-      <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate/80">Demo</span>
-      <div className="flex items-center gap-1.5">
-        <DemoSwitch />
-        <SchoolThemePicker />
+    <div className="sticky z-50 px-3 pt-2 pb-1" style={{ top: "env(safe-area-inset-top)" }}>
+      <div className="flex items-center justify-between gap-2 pl-3.5 pr-1.5 h-12 rounded-2xl bg-shell/85 backdrop-blur border border-line shadow-card">
+        <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate/80">Demo</span>
+        <div className="flex items-center gap-1.5">
+          <DemoSwitch />
+          <SchoolThemePicker />
+        </div>
       </div>
     </div>
   );

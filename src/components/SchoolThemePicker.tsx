@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { X, Check, Palette } from "lucide-react";
 import { useSchoolTheme } from "./SchoolThemeProvider";
 import { BrandMark } from "./BrandMark";
@@ -40,7 +41,7 @@ export function SchoolThemePicker() {
         <Palette size={15} className="text-forest" />
       </button>
 
-      {open && (
+      {open && createPortal(
         <div
           className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm sm:p-4"
           onClick={() => setOpen(false)}
@@ -123,7 +124,8 @@ export function SchoolThemePicker() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );
