@@ -5,6 +5,8 @@ import { Play, Plus, Search, X, Trophy, Minus, type LucideIcon } from "lucide-re
 import type { Exercise, ExerciseCategory } from "@/lib/types";
 import { youtubeThumb } from "@/lib/youtube";
 import { useRecents } from "@/lib/recents";
+import { useSchoolTheme } from "./SchoolThemeProvider";
+import { BUILD_DEFAULT, categoryDotColors } from "@/lib/schoolThemes";
 import { Card, Pill } from "./ui";
 import VideoModal from "./VideoModal";
 
@@ -24,6 +26,8 @@ const CATEGORIES: (ExerciseCategory | "All")[] = [
   "Mobility",
   "Activity",
 ];
+// real categories (no "All"), the order the school-derived dot palette maps onto
+const CATEGORY_KEYS = CATEGORIES.filter((c) => c !== "All") as ExerciseCategory[];
 
 // A color + glyph per category so the list reads at a glance instead of as one
 // undifferentiated wall of rows. Colors map onto the brand palette tints. A few
@@ -54,6 +58,18 @@ export default function ExerciseList({
   onPick?: (ex: Exercise) => void;
 }) {
   const recents = useRecents();
+  // Category dots take their hue from the selected school's two colors; the
+  // native BUILD theme keeps the distinct default palette.
+  const { school } = useSchoolTheme();
+  const schoolDots = useMemo(
+    () =>
+      school.id === BUILD_DEFAULT.id
+        ? null
+        : categoryDotColors(school.swatch[0], school.swatch[1], CATEGORY_KEYS.length),
+    [school],
+  );
+  const dotFor = (c: string) =>
+    schoolDots ? schoolDots[CATEGORY_KEYS.indexOf(c as ExerciseCategory)] ?? "#5c6f76" : catMeta(c).dot;
   // "Recent" is only useful when picking (program builder / logging an extra)
   const showRecent = !!onPick && recents.length > 0;
   const [q, setQ] = useState("");
@@ -135,7 +151,7 @@ export default function ExerciseList({
             <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate">
               <span
                 className="w-2 h-2 rounded-full shrink-0"
-                style={{ background: meta.dot }}
+                style={{ background: dotFor(ex.category) }}
                 aria-hidden
               />
               {ex.category}
@@ -218,7 +234,7 @@ export default function ExerciseList({
               <div className="flex items-center gap-2 px-0.5 pb-1.5">
                 <span
                   className="w-2 h-2 rounded-full"
-                  style={{ background: catMeta(s.cat).dot }}
+                  style={{ background: dotFor(s.cat) }}
                   aria-hidden
                 />
                 <h3 className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate">

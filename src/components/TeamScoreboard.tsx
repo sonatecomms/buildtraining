@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { useClients, useLogs } from "@/lib/store";
 import { SCOREBOARD_LIFTS, teamRankings, type ScoreboardMetric } from "@/lib/scoreboard";
+import { EMPTY_FILTER, matchesFilter, isFilterActive, type TeamFilter } from "@/lib/team";
+import { useIsDemo } from "./demoContext";
+import TeamFilterBar from "./TeamFilterBar";
 import { Avatar, Card } from "./ui";
 
 const MEDALS = ["🥇", "🥈", "🥉"];
@@ -12,8 +15,11 @@ const MEDALS = ["🥇", "🥈", "🥉"];
 export default function TeamScoreboard() {
   const clients = useClients();
   const logs = useLogs();
+  const demo = useIsDemo();
   const [metric, setMetric] = useState<ScoreboardMetric>("total");
-  const rows = teamRankings(clients, logs, metric);
+  const [filter, setFilter] = useState<TeamFilter>(EMPTY_FILTER);
+  const pool = demo && isFilterActive(filter) ? clients.filter((c) => matchesFilter(c, filter)) : clients;
+  const rows = teamRankings(pool, logs, metric);
 
   const tabs: { id: ScoreboardMetric; label: string }[] = [
     { id: "total", label: "Total" },
@@ -28,6 +34,12 @@ export default function TeamScoreboard() {
         <span className="text-[11px] text-slate">{rows.length} ranked</span>
       </div>
       <p className="text-[12px] text-slate mt-0.5">Top tested lift across the roster.</p>
+
+      {demo && (
+        <div className="mt-3">
+          <TeamFilterBar filter={filter} onChange={setFilter} />
+        </div>
+      )}
 
       {/* metric selector */}
       <div className="flex gap-1.5 mt-3 overflow-x-auto no-scrollbar -mx-1 px-1">

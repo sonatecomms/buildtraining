@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { addWorkoutObject, useExercises, useProgramForClient } from "@/lib/store";
+import { addWorkoutObject, uid, useExercises, useProgramForClient } from "@/lib/store";
 import { getSupabase } from "@/lib/supabase";
 import { surroundingLoad } from "@/lib/workoutLoad";
 import { toWorkout, type GeneratedWorkout } from "@/lib/generateWorkout";
@@ -50,13 +50,18 @@ export default function WorkoutGeneratorModal({
   weekStart,
   onClose,
   onAdded,
+  bulkClients,
 }: {
   client: Client;
   dow: number;
   weekStart: string;
   onClose: () => void;
   onAdded?: () => void;
+  // When set, the built workout is assigned to every athlete in this list (the
+  // `client` prop is the representative used for context/preview).
+  bulkClients?: Client[];
 }) {
+  const bulk = bulkClients && bulkClients.length > 1 ? bulkClients : null;
   const program = useProgramForClient(client.id);
   const exercises = useExercises();
   const byId = useMemo(() => Object.fromEntries(exercises.map((e) => [e.id, e])), [exercises]);
@@ -119,7 +124,12 @@ export default function WorkoutGeneratorModal({
 
   const add = () => {
     if (!preview) return;
-    addWorkoutObject(client.id, preview.workout);
+    const targets = bulk ?? [client];
+    for (const t of targets) {
+      // clone so each athlete's program holds its own workout (fresh ids)
+      const w: Workout = { ...JSON.parse(JSON.stringify(preview.workout)), id: uid("w") };
+      addWorkoutObject(t.id, w);
+    }
     onAdded?.();
     onClose();
   };
@@ -135,7 +145,7 @@ export default function WorkoutGeneratorModal({
         className="bg-shell w-full sm:max-w-md max-h-[88dvh] sm:max-h-[85dvh] rounded-t-3xl sm:rounded-3xl border border-line shadow-hero flex flex-col min-h-0 animate-pop overflow-hidden"
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-line shrink-0">
-          <h2 className="font-bold">Build a workout</h2>
+          <h2 className="font-bold">{bulk ? `Build for ${bulk.length} athletes` : "Build a workout"}</h2>
           <button onClick={onClose} className="text-slate text-2xl leading-none px-2" aria-label="Close">
             ×
           </button>
@@ -231,7 +241,7 @@ export default function WorkoutGeneratorModal({
                   ← Back
                 </Button>
                 <Button className="flex-1" onClick={add}>
-                  Add to program
+                  {bulk ? `Assign to ${bulk.length}` : "Add to program"}
                 </Button>
               </div>
               <Button variant="outline" className="w-full" onClick={generate} disabled={busy}>

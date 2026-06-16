@@ -270,6 +270,58 @@ function mix(a: string, b: string, t: number): string {
   return `#${hex2(ar + (br - ar) * t)}${hex2(ag + (bg - ag) * t)}${hex2(ab + (bb - ab) * t)}`;
 }
 
+function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
+  r /= 255;
+  g /= 255;
+  b /= 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  let h = 0;
+  let s = 0;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
+    else if (max === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h *= 60;
+  }
+  return [h, s, l];
+}
+function hslToHex(h: number, s: number, l: number): string {
+  h = ((h % 360) + 360) % 360;
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = l - c / 2;
+  const [r1, g1, b1] =
+    h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
+  return `#${hex2((r1 + m) * 255)}${hex2((g1 + m) * 255)}${hex2((b1 + m) * 255)}`;
+}
+
+/**
+ * A category-dot palette derived from a school's two colors: dots alternate
+ * between the two color families, each rotated/lightened a touch so categories
+ * stay distinguishable while reading as "the school's colors." Grayscale inputs
+ * (black/white) become readable neutrals.
+ */
+export function categoryDotColors(c1: string, c2: string, n: number): string[] {
+  const bases = [rgbToHsl(...toRgb(c1)), rgbToHsl(...toRgb(c2))];
+  const out: string[] = [];
+  for (let i = 0; i < n; i++) {
+    const [h, s] = bases[i % 2];
+    const step = Math.floor(i / 2);
+    if (s < 0.14) {
+      // black / white / gray → a readable neutral, stepping darker for variety
+      out.push(hslToHex(h, 0.05, 0.3 + (step % 3) * 0.07));
+    } else {
+      const sat = Math.min(0.7, Math.max(0.46, s));
+      out.push(hslToHex(h + step * 16, sat, 0.4 + (step % 3) * 0.05));
+    }
+  }
+  return out;
+}
+
 /**
  * The CSS-variable overrides for a school. Driving the three brand tokens
  * recolors every `bg-forest` / `text-green` / `.build-hero` / FAB / nav / brand

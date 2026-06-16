@@ -2,11 +2,15 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, Wand2 } from "lucide-react";
 import { useClients, useLogsForClient, addClient, setClientArchived } from "@/lib/store";
 import { Avatar, Button, Card, EmptyState, Fab, PageHeader, Pill, Skeleton } from "@/components/ui";
 import { GOALS } from "@/lib/goals";
-import { relativeDate, daysAgo, weekDates, isoDate } from "@/lib/week";
+import { relativeDate, daysAgo, weekDates, isoDate, weekStartIso } from "@/lib/week";
+import { EMPTY_FILTER, GRADE_SHORT, matchesFilter, isFilterActive, type TeamFilter } from "@/lib/team";
+import { useIsDemo } from "@/components/demoContext";
+import TeamFilterBar from "@/components/TeamFilterBar";
+import WorkoutGeneratorModal from "@/components/WorkoutGeneratorModal";
 import type { Client } from "@/lib/types";
 
 function ClientRow({ client }: { client: Client }) {
@@ -25,7 +29,24 @@ function ClientRow({ client }: { client: Client }) {
           <div className="flex items-center gap-2">
             {behind && <span className="w-2 h-2 rounded-full bg-brick shrink-0" title="Behind this week" />}
             <p className="font-semibold truncate">{client.name}</p>
+            {client.grade && (
+              <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-sky/15 text-sky-dark">
+                {GRADE_SHORT[client.grade]}
+              </span>
+            )}
           </div>
+          {client.positions && client.positions.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {client.positions.map((p) => (
+                <span
+                  key={p}
+                  className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-field text-slate border border-line"
+                >
+                  {p}
+                </span>
+              ))}
+            </div>
+          )}
           <div className="flex flex-wrap gap-1.5 mt-1.5">
             {client.goals.slice(0, 3).map((g) => (
               <Pill key={g} tone="green">
@@ -55,8 +76,15 @@ export default function CoachHome() {
   const [ready, setReady] = useState(false);
   useEffect(() => setReady(true), []);
 
+  const demo = useIsDemo();
+  const [filter, setFilter] = useState<TeamFilter>(EMPTY_FILTER);
+  const [bulkOpen, setBulkOpen] = useState(false);
+
   const active = clients.filter((c) => !c.archived);
   const archived = clients.filter((c) => c.archived);
+  // demo-only: narrow the roster by position/grade for bulk programming
+  const filtering = demo && isFilterActive(filter);
+  const visible = filtering ? active.filter((c) => matchesFilter(c, filter)) : active;
 
   const create = () => {
     const trimmed = name.trim();
@@ -95,6 +123,22 @@ export default function CoachHome() {
         </Card>
       )}
 
+      {demo && ready && active.length > 0 && (
+        <div className="mb-4 space-y-2">
+          <TeamFilterBar filter={filter} onChange={setFilter} />
+          {filtering && (
+            <div className="flex items-center justify-between gap-2 px-1">
+              <span className="text-xs text-slate">
+                {visible.length} {visible.length === 1 ? "athlete" : "athletes"} selected
+              </span>
+              <Button size="sm" onClick={() => setBulkOpen(true)} disabled={visible.length === 0}>
+                <Wand2 size={15} /> Bulk program
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+
       {!ready ? (
         <div className="space-y-3">
           {[0, 1, 2].map((i) => (
@@ -109,9 +153,11 @@ export default function CoachHome() {
         </div>
       ) : active.length === 0 ? (
         <EmptyState icon="🏋️" title="No active athletes" hint="Add an athlete, or recover one from the archive below." />
+      ) : visible.length === 0 ? (
+        <EmptyState icon="🔍" title="No athletes match" hint="Adjust the position or grade filter above." />
       ) : (
         <div className="space-y-3">
-          {active.map((c) => (
+          {visible.map((c) => (
             <ClientRow key={c.id} client={c} />
           ))}
         </div>
@@ -156,6 +202,16 @@ export default function CoachHome() {
           <Plus size={26} />
         </Fab>
       </div>
+
+      {bulkOpen && visible.length > 0 && (
+        <WorkoutGeneratorModal
+          bulkClients={visible}
+          client={visible[0]}
+          dow={new Date().getDay()}
+          weekStart={weekStartIso(0)}
+          onClose={() => setBulkOpen(false)}
+        />
+      )}
     </div>
   );
 }

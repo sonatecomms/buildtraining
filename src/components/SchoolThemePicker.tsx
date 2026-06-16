@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X, Check, Palette } from "lucide-react";
 import { useSchoolTheme } from "./SchoolThemeProvider";
+import { BrandMark } from "./BrandMark";
 import {
   ALL_THEMES,
   BUILD_DEFAULT,
@@ -12,7 +13,7 @@ import {
 } from "@/lib/schoolThemes";
 
 const MODES: { id: SurfaceMode; label: string }[] = [
-  { id: "cream", label: "Cream" },
+  { id: "cream", label: "Default" },
   { id: "light", label: "Off-white" },
   { id: "dark", label: "Off-black" },
 ];
@@ -31,7 +32,11 @@ export function SchoolThemePicker() {
         aria-label="Switch school theme (demo)"
         className="flex items-center gap-1.5 rounded-full bg-surface/90 backdrop-blur border border-line text-ink shadow-card px-2.5 h-9 text-sm font-semibold active:scale-95 transition-transform"
       >
-        <span className="text-base leading-none">{school.emoji}</span>
+        {school.id === BUILD_DEFAULT.id ? (
+          <BrandMark size={16} />
+        ) : (
+          <span className="text-base leading-none">{school.emoji}</span>
+        )}
         <Palette size={15} className="text-forest" />
       </button>
 
@@ -148,7 +153,11 @@ function ThemeRow({
           background: `linear-gradient(135deg, ${school.swatch[0]} 0 50%, ${school.swatch[1]} 50% 100%)`,
         }}
       >
-        <span className="text-lg drop-shadow-[0_1px_1px_rgba(0,0,0,0.45)]">{school.emoji}</span>
+        {isDefault ? (
+          <BrandMark size={22} color="var(--color-bone)" />
+        ) : (
+          <span className="text-lg drop-shadow-[0_1px_1px_rgba(0,0,0,0.45)]">{school.emoji}</span>
+        )}
       </span>
 
       <span className="flex-1 min-w-0">

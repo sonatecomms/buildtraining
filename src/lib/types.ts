@@ -9,6 +9,9 @@ export type GoalType =
   | "mobility"
   | "weight_loss";
 
+// Year in school (team rosters).
+export type Grade = "Freshman" | "Sophomore" | "Junior" | "Senior";
+
 export type ExerciseCategory =
   | "Lower Body"
   | "Upper Body"
@@ -156,6 +159,9 @@ export interface Client {
   // Off by default for everyone — athletes without it never see the feature.
   // The coach flips this per individual from the athlete's profile.
   generatorEnabled?: boolean;
+  // Team roster (demo): coach-assigned positions (up to 3) and year in school.
+  positions?: string[];
+  grade?: Grade;
   createdAt: string;
 }
 

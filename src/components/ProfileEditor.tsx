@@ -18,9 +18,11 @@ import {
   usernameHandle,
 } from "@/lib/login";
 import { APP_VERSION } from "@/lib/version";
+import { POSITIONS, GRADES, MAX_POSITIONS } from "@/lib/team";
 import { Avatar, Button, Card } from "./ui";
 import AvatarCropper from "./AvatarCropper";
 import BiometricLockCard from "./BiometricLockCard";
+import { useIsDemo } from "./demoContext";
 
 // A readable but non-guessable temp password (no ambiguous chars). ~58 bits —
 // far stronger than the old predictable `build####` (9k-guess) pattern.
@@ -39,9 +41,16 @@ export default function ProfileEditor({
   coachView?: boolean;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const isDemo = useIsDemo();
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  const togglePosition = (p: string) => {
+    const cur = client.positions ?? [];
+    if (cur.includes(p)) updateClient(client.id, { positions: cur.filter((x) => x !== p) });
+    else if (cur.length < MAX_POSITIONS) updateClient(client.id, { positions: [...cur, p] });
+  };
   const [saveMsg, setSaveMsg] = useState("");
   const [loginMode, setLoginMode] = useState<LoginKind>(loginKind(client.athleteEmail));
   const [loginErr, setLoginErr] = useState<string | null>(null);
@@ -333,6 +342,50 @@ export default function ProfileEditor({
           </button>
         </div>
       </Card>
+
+      {/* team: positions (up to 3) + year in school */}
+      {isDemo && (
+        <Card className="p-4">
+          <h3 className="font-semibold">Positions & year</h3>
+          <p className="text-[11px] text-slate mt-0.5 mb-2">
+            Up to {MAX_POSITIONS} positions. Used by the roster filter & scoreboard.
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {POSITIONS.map((p) => {
+              const on = (client.positions ?? []).includes(p);
+              const full = !on && (client.positions ?? []).length >= MAX_POSITIONS;
+              return (
+                <button
+                  key={p}
+                  onClick={() => togglePosition(p)}
+                  disabled={full}
+                  className={`rounded-full px-2.5 h-8 text-xs font-semibold transition-colors ${
+                    on ? "bg-forest text-bone" : full ? "bg-field text-slate/40" : "bg-field text-slate"
+                  }`}
+                >
+                  {p}
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex flex-wrap gap-1.5 mt-2.5">
+            {GRADES.map((g) => {
+              const on = client.grade === g;
+              return (
+                <button
+                  key={g}
+                  onClick={() => updateClient(client.id, { grade: on ? undefined : g })}
+                  className={`rounded-full px-3 h-8 text-xs font-semibold transition-colors ${
+                    on ? "bg-sky-dark text-bone" : "bg-field text-slate"
+                  }`}
+                >
+                  {g}
+                </button>
+              );
+            })}
+          </div>
+        </Card>
+      )}
 
       {/* notes */}
       <Card className="p-4">

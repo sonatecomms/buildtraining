@@ -1,4 +1,4 @@
-import type { Client, DB, Exercise, Program, WorkoutLog } from "./types";
+import type { Client, DB, Exercise, Grade, Program, WorkoutLog } from "./types";
 import { CROSSFIT_EXERCISES } from "./crossfit";
 import { ACTIVITIES } from "./activities";
 import { isoDate } from "./week";
@@ -65,6 +65,8 @@ const demoClient: Client = {
   goals: ["strength", "muscle_gain", "mobility"],
   intendedFrequency: 4,
   notes: "Right shoulder tweaks on heavy overhead — keep volume moderate.",
+  positions: ["RB", "DB"],
+  grade: "Senior",
   createdAt: isoDaysAgo(40),
 };
 
@@ -159,17 +161,23 @@ export function buildSeedDB(): DB {
 // A full team so the white-label demo (and the Numbers-tab scoreboard) looks
 // real. Kept OUT of buildSeedDB so brand-new real coaches aren't seeded with
 // fake athletes — only the demo mode uses buildDemoDB().
-type TeamMax = { id: string; name: string; lifts: [number, number, number, number, number] };
+type TeamMax = {
+  id: string;
+  name: string;
+  lifts: [number, number, number, number, number];
+  pos: string[];
+  grade: Grade;
+};
 // maxes order: [clean, bench, back squat, deadlift, overhead press]
 const DEMO_TEAM: TeamMax[] = [
-  { id: "client-diego", name: "Diego Santos", lifts: [245, 300, 405, 495, 185] },
-  { id: "client-liam", name: "Liam O'Connor", lifts: [235, 285, 385, 475, 175] },
-  { id: "client-marcus", name: "Marcus Bell", lifts: [225, 275, 365, 455, 165] },
-  { id: "client-nate", name: "Nate Kowalski", lifts: [215, 265, 345, 435, 160] },
-  { id: "client-cole", name: "Cole Whitman", lifts: [205, 255, 335, 425, 155] },
-  { id: "client-andre", name: "Andre Jackson", lifts: [195, 240, 315, 405, 145] },
-  { id: "client-tyler", name: "Tyler Brooks", lifts: [185, 225, 295, 385, 135] },
-  { id: "client-ben", name: "Ben Foster", lifts: [170, 205, 275, 365, 125] },
+  { id: "client-diego", name: "Diego Santos", lifts: [245, 300, 405, 495, 185], pos: ["OL", "DL"], grade: "Senior" },
+  { id: "client-liam", name: "Liam O'Connor", lifts: [235, 285, 385, 475, 175], pos: ["DL", "TE"], grade: "Junior" },
+  { id: "client-marcus", name: "Marcus Bell", lifts: [225, 275, 365, 455, 165], pos: ["LB", "RB"], grade: "Senior" },
+  { id: "client-nate", name: "Nate Kowalski", lifts: [215, 265, 345, 435, 160], pos: ["OL"], grade: "Junior" },
+  { id: "client-cole", name: "Cole Whitman", lifts: [205, 255, 335, 425, 155], pos: ["WR", "DB"], grade: "Sophomore" },
+  { id: "client-andre", name: "Andre Jackson", lifts: [195, 240, 315, 405, 145], pos: ["WR", "RB", "DB"], grade: "Junior" },
+  { id: "client-tyler", name: "Tyler Brooks", lifts: [185, 225, 295, 385, 135], pos: ["QB", "ATH"], grade: "Sophomore" },
+  { id: "client-ben", name: "Ben Foster", lifts: [170, 205, 275, 365, 125], pos: ["K/P", "WR"], grade: "Freshman" },
 ];
 
 const SCOREBOARD_IDS = ["ex-clean", "ex-bench", "ex-backsquat", "ex-deadlift", "ex-ohp"] as const;
@@ -197,6 +205,8 @@ function teamClient(t: TeamMax, i: number): Client {
     stats: { heightFt: 5, heightIn: 8 + (i % 5), weightLb: 165 + i * 6, age: 16 + (i % 3) },
     goals: ["strength", "muscle_gain"],
     intendedFrequency: 4,
+    positions: t.pos,
+    grade: t.grade,
     createdAt: isoDaysAgo(60 - i),
   };
 }
