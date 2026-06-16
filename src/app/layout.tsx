@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { League_Spartan, Poppins } from "next/font/google";
 import "./globals.css";
-import CoachShell from "@/components/CoachShell";
 import ServiceWorker from "@/components/ServiceWorker";
-import SessionProvider from "@/components/SessionProvider";
 import { IntroSplash } from "@/components/IntroSplash";
+import { SchoolThemeProvider } from "@/components/SchoolThemeProvider";
+import { DemoModeProvider, DemoRoot } from "@/components/DemoMode";
 
 const league = League_Spartan({
   variable: "--font-league",
@@ -47,9 +47,11 @@ export default function RootLayout({
             component itself decides when to dismiss (and skips under reduced
             motion / after the first launch this session). */}
         <IntroSplash />
-        <SessionProvider>
-          <CoachShell>{children}</CoachShell>
-        </SessionProvider>
+        <SchoolThemeProvider>
+          <DemoModeProvider>
+            <DemoRoot>{children}</DemoRoot>
+          </DemoModeProvider>
+        </SchoolThemeProvider>
         <ServiceWorker />
       </body>
     </html>
