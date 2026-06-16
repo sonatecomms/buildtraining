@@ -48,6 +48,14 @@
   color: var(--color-bone);
 }
 
+/* Dark shell: the brand tokens are brightened for legible text on off-black, so
+   the hero would go light too — pin it to a dark brand gradient (--hero-from/-to)
+   so its light text stays readable. */
+[data-surface="dark"] .build-hero {
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0) 45%),
+    linear-gradient(135deg, var(--hero-from), var(--hero-to));
+}
+
 :root {
   --background: #e2e6da;
   --foreground: #191918;

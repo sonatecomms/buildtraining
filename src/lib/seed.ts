@@ -168,16 +168,20 @@ type TeamMax = {
   pos: string[];
   grade: Grade;
 };
-// maxes order: [clean, bench, back squat, deadlift, overhead press]
+// maxes order: [clean, bench, back squat, deadlift, overhead press]. Profiles
+// vary so the leaderboard reshuffles per lift — Diego is the genetic freak (tops
+// nearly everything); linemen (OL/DL) post big bench/squat/deadlift but lower
+// cleans; skill players (RB/WR/DB) are explosive (high cleans) with lighter
+// absolute pressing.
 const DEMO_TEAM: TeamMax[] = [
-  { id: "client-diego", name: "Diego Santos", lifts: [245, 300, 405, 495, 185], pos: ["OL", "DL"], grade: "Senior" },
-  { id: "client-liam", name: "Liam O'Connor", lifts: [235, 285, 385, 475, 175], pos: ["DL", "TE"], grade: "Junior" },
-  { id: "client-marcus", name: "Marcus Bell", lifts: [225, 275, 365, 455, 165], pos: ["LB", "RB"], grade: "Senior" },
-  { id: "client-nate", name: "Nate Kowalski", lifts: [215, 265, 345, 435, 160], pos: ["OL"], grade: "Junior" },
-  { id: "client-cole", name: "Cole Whitman", lifts: [205, 255, 335, 425, 155], pos: ["WR", "DB"], grade: "Sophomore" },
-  { id: "client-andre", name: "Andre Jackson", lifts: [195, 240, 315, 405, 145], pos: ["WR", "RB", "DB"], grade: "Junior" },
-  { id: "client-tyler", name: "Tyler Brooks", lifts: [185, 225, 295, 385, 135], pos: ["QB", "ATH"], grade: "Sophomore" },
-  { id: "client-ben", name: "Ben Foster", lifts: [170, 205, 275, 365, 125], pos: ["K/P", "WR"], grade: "Freshman" },
+  { id: "client-diego", name: "Diego Santos", lifts: [275, 320, 440, 525, 210], pos: ["OL", "DL"], grade: "Senior" },
+  { id: "client-liam", name: "Liam O'Connor", lifts: [245, 285, 390, 470, 185], pos: ["DL", "TE"], grade: "Junior" },
+  { id: "client-marcus", name: "Marcus Bell", lifts: [265, 255, 360, 440, 170], pos: ["LB", "RB"], grade: "Senior" },
+  { id: "client-nate", name: "Nate Kowalski", lifts: [195, 290, 430, 500, 195], pos: ["OL"], grade: "Junior" },
+  { id: "client-cole", name: "Cole Whitman", lifts: [225, 215, 305, 385, 150], pos: ["WR", "DB"], grade: "Sophomore" },
+  { id: "client-andre", name: "Andre Jackson", lifts: [250, 225, 315, 405, 155], pos: ["WR", "RB", "DB"], grade: "Junior" },
+  { id: "client-tyler", name: "Tyler Brooks", lifts: [235, 250, 335, 415, 185], pos: ["QB", "ATH"], grade: "Sophomore" },
+  { id: "client-ben", name: "Ben Foster", lifts: [215, 205, 285, 365, 145], pos: ["K/P", "WR"], grade: "Freshman" },
 ];
 
 const SCOREBOARD_IDS = ["ex-clean", "ex-bench", "ex-backsquat", "ex-deadlift", "ex-ohp"] as const;
@@ -225,7 +229,7 @@ export function buildDemoDB(): DB {
     clients: [...base.clients, ...DEMO_TEAM.map(teamClient)],
     logs: [
       ...base.logs,
-      maxesLog("client-jordan", [205, 245, 315, 405, 150]),
+      maxesLog("client-jordan", [255, 245, 355, 435, 165]),
       ...DEMO_TEAM.map((t) => maxesLog(t.id, t.lifts)),
     ],
   };

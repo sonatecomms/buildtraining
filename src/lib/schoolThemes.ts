@@ -383,10 +383,14 @@ export function surfaceVars(school: School, mode: SurfaceMode): CSSProperties {
     "--color-bone": mix("#f1f3f5", sat, 0.02), // text-on-brand + hero text stay light
     "--color-brick": "#e8607a",
     "--foreground": mix("#f3f4f6", sat, 0.03),
-    // shift the brand one notch lighter so it reads on dark surfaces
-    "--color-forest": school.green,
-    "--color-green": school.soft,
-    "--color-green-soft": mix(school.soft, "#ffffff", 0.16),
+    // Brighten the brand for legible emphasis text / marks on off-black. The
+    // hero keeps a dark gradient via --hero-from/-to (see globals) so its light
+    // text stays readable even though bg-forest is now a bright accent.
+    "--color-forest": mix(school.green, "#ffffff", 0.42),
+    "--color-green": mix(school.green, "#ffffff", 0.55),
+    "--color-green-soft": mix(school.green, "#ffffff", 0.66),
+    "--hero-from": school.forest,
+    "--hero-to": school.green,
     "--shadow-card": "0 1px 2px rgba(0,0,0,0.45), 0 10px 28px -14px rgba(0,0,0,0.7)",
     "--shadow-hero": "0 16px 36px -14px rgba(0,0,0,0.75), inset 0 1px 0 rgba(255,255,255,0.14)",
     "--shadow-fab": "0 10px 24px -8px rgba(0,0,0,0.7)",
@@ -407,6 +411,8 @@ export const THEME_VAR_KEYS = [
   "--shadow-fab",
   "--shadow-hero",
   "--shadow-card",
+  "--hero-from",
+  "--hero-to",
   "--background",
   "--foreground",
   "--color-shell",

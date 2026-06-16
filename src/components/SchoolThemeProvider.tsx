@@ -57,6 +57,9 @@ export function SchoolThemeProvider({ children }: { children: React.ReactNode })
       else root.style.removeProperty(k);
     });
     root.style.colorScheme = mode === "dark" ? "dark" : "light";
+    // drives the dark-only hero override in globals.css
+    if (mode === "dark") root.setAttribute("data-surface", "dark");
+    else root.removeAttribute("data-surface");
   }, [id, mode]);
 
   const setSchool = useCallback((next: string) => {
