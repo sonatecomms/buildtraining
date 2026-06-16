@@ -713,7 +713,7 @@ function RunnerItem({
         <button onClick={() => setOpen((o) => !o)} className="flex-1 min-w-0 text-left">
           <span className={`block font-medium text-sm truncate ${checked ? "line-through text-slate" : ""}`}>
             {ex?.name}
-            {item.variant && <span className="text-forest"> · {item.variant}</span>}
+            {item.variant && <span className="text-accent"> · {item.variant}</span>}
           </span>
           <span className="text-xs text-slate">
             {activity ? (
@@ -760,12 +760,12 @@ function RunnerItem({
               </div>
               {speed && (
                 <p className="text-xs text-slate text-right">
-                  {speedLabel} <span className="font-semibold text-forest">{speed}</span>
+                  {speedLabel} <span className="font-semibold text-accent">{speed}</span>
                 </p>
               )}
               {output && (
                 <p className="text-xs text-slate text-right">
-                  Output <span className="font-semibold text-forest">{output}</span>
+                  Output <span className="font-semibold text-accent">{output}</span>
                 </p>
               )}
             </div>
@@ -781,7 +781,7 @@ function RunnerItem({
           {restSeconds != null && onRest && (
             <button
               onClick={() => onRest(restSeconds, ex?.name ?? "Rest")}
-              className="w-full rounded-lg border border-line bg-surface py-1.5 text-sm font-medium text-forest flex items-center justify-center gap-1.5 active:scale-[0.99] transition-transform"
+              className="w-full rounded-lg border border-line bg-surface py-1.5 text-sm font-medium text-accent flex items-center justify-center gap-1.5 active:scale-[0.99] transition-transform"
             >
               ⏱ Start {item.rest} rest
             </button>
@@ -1350,7 +1350,7 @@ function ReviewCard({
     <Card className="p-4 space-y-3">
       <div className="flex items-center justify-between gap-2">
         <p className="font-semibold truncate">{workout.name}</p>
-        <span className={`text-xs shrink-0 ${log ? "text-forest font-medium" : "text-slate"}`}>
+        <span className={`text-xs shrink-0 ${log ? "text-accent font-medium" : "text-slate"}`}>
           {log ? "✓ logged" : "— not logged"}
         </span>
       </div>
@@ -1378,7 +1378,7 @@ function ReviewCard({
                   {logged ? (
                     <div className="mt-1 flex flex-wrap items-center gap-1.5">
                       {chips.map((c, i) => (
-                        <span key={i} className="text-xs rounded-full bg-green/10 text-forest px-2 py-0.5 font-medium">
+                        <span key={i} className="text-xs rounded-full bg-green/10 text-accent px-2 py-0.5 font-medium">
                           {c}
                         </span>
                       ))}
@@ -1411,7 +1411,7 @@ function ReviewCard({
             ))}
             {timed && rounds != null && (
               <p className="text-xs text-slate">
-                Rounds completed: <span className="font-semibold text-forest">{rounds}</span>
+                Rounds completed: <span className="font-semibold text-accent">{rounds}</span>
               </p>
             )}
           </div>
@@ -1470,7 +1470,7 @@ function ReviewItem({
       <div className="flex items-baseline justify-between gap-2">
         <p className="font-medium text-sm truncate">
           {ex?.name ?? "Movement"}
-          {item.variant && <span className="text-forest"> · {item.variant}</span>}
+          {item.variant && <span className="text-accent"> · {item.variant}</span>}
         </p>
         {r?.feeling != null && <span className="text-base shrink-0">{FEELINGS[r.feeling - 1]}</span>}
       </div>
@@ -1483,7 +1483,7 @@ function ReviewItem({
       {logged ? (
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
           {chips.map((c, i) => (
-            <span key={i} className="text-xs rounded-full bg-green/10 text-forest px-2 py-0.5 font-medium">
+            <span key={i} className="text-xs rounded-full bg-green/10 text-accent px-2 py-0.5 font-medium">
               {c}
             </span>
           ))}

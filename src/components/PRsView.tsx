@@ -93,7 +93,7 @@ export default function PRsView({ client }: { client: Client }) {
                     <p className="text-xs text-slate">{relativeDate(p.date)}{p.reps ? ` · ${p.reps} reps` : ""}</p>
                   </div>
                   <div className="text-right shrink-0">
-                    <span className="text-lg font-bold text-forest">{p.weight}</span>
+                    <span className="text-lg font-bold text-accent">{p.weight}</span>
                     <span className="text-xs text-slate"> lbs</span>
                   </div>
                 </Card>

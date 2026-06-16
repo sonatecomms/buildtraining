@@ -18,6 +18,9 @@
   --color-brick: #a12323;
   --color-bone: #e2e6da;
   --color-ink: #191918;
+  /* emphasis text / marks — defaults to the brand, but a school can override it
+     (e.g. gold on off-black for green/maroon/navy "& gold" schools) */
+  --color-accent: var(--color-forest);
 
   /* light shell (token names kept from the original dark build, remapped to light) */
   --color-surface: #ffffff; /* raised cards */

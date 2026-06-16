@@ -195,7 +195,7 @@ export default function ProfileEditor({
       >
         <span className="text-[10px] text-slate mr-auto">build {APP_VERSION}</span>
         {saveMsg && (
-          <span className={`text-xs ${saveMsg.startsWith("Saved") ? "text-forest" : "text-brick"}`}>{saveMsg}</span>
+          <span className={`text-xs ${saveMsg.startsWith("Saved") ? "text-accent" : "text-brick"}`}>{saveMsg}</span>
         )}
         <Button size="sm" onClick={saveProfile} disabled={saving}>
           {saving ? "Saving…" : "Save profile"}
@@ -235,7 +235,7 @@ export default function ProfileEditor({
           <input
             defaultValue={client.name}
             onBlur={(e) => updateClient(client.id, { name: e.target.value.trim() || client.name })}
-            className="text-lg font-bold bg-transparent outline-none w-full focus:text-forest"
+            className="text-lg font-bold bg-transparent outline-none w-full focus:text-accent"
           />
           <p className="text-xs text-slate">Tap photo to upload</p>
         </div>
@@ -271,7 +271,7 @@ export default function ProfileEditor({
       <Card className="p-4">
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-semibold">Intended frequency</h3>
-          <span className="text-forest font-bold">{client.intendedFrequency}× / week</span>
+          <span className="text-accent font-bold">{client.intendedFrequency}× / week</span>
         </div>
         <input
           type="range"
@@ -301,7 +301,7 @@ export default function ProfileEditor({
                 }`}
               >
                 <div className="text-xl">{GOALS[g].icon}</div>
-                <div className={`font-semibold text-sm mt-1 ${active ? "text-forest" : ""}`}>{GOALS[g].label}</div>
+                <div className={`font-semibold text-sm mt-1 ${active ? "text-accent" : ""}`}>{GOALS[g].label}</div>
                 <div className="text-[11px] text-slate">{GOALS[g].blurb}</div>
               </button>
             );

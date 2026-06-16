@@ -142,7 +142,7 @@ export default function BulkProgramModal({
 
               <button
                 onClick={() => setPickerOpen(true)}
-                className="w-full flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-line text-forest font-semibold py-2.5 text-sm active:scale-[0.99] transition-transform"
+                className="w-full flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-line text-accent font-semibold py-2.5 text-sm active:scale-[0.99] transition-transform"
               >
                 <Plus size={16} /> Add movement
               </button>

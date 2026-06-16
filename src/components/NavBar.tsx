@@ -123,7 +123,7 @@ export function NavBar({
               <span className="build-nav-label">{t.label}</span>
             </span>
           );
-          const cls = `build-nav-tab relative z-[1] ${active ? "text-forest" : "text-slate"}`;
+          const cls = `build-nav-tab relative z-[1] ${active ? "text-accent" : "text-slate"}`;
           return t.href ? (
             <Link
               key={t.id}

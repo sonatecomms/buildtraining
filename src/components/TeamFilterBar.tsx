@@ -51,7 +51,7 @@ export default function TeamFilterBar({
           <ChevronDown size={15} className={`transition-transform ${open ? "rotate-180" : ""}`} />
         </button>
         {isFilterActive(filter) && (
-          <button onClick={() => onChange(EMPTY_FILTER)} className="text-[11px] font-semibold text-forest">
+          <button onClick={() => onChange(EMPTY_FILTER)} className="text-[11px] font-semibold text-accent">
             Clear
           </button>
         )}

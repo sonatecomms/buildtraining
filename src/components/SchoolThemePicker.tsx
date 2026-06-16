@@ -38,7 +38,7 @@ export function SchoolThemePicker() {
         ) : (
           <span className="text-base leading-none">{school.emoji}</span>
         )}
-        <Palette size={15} className="text-forest" />
+        <Palette size={15} className="text-accent" />
       </button>
 
       {open && createPortal(
@@ -56,7 +56,7 @@ export function SchoolThemePicker() {
             {/* header */}
             <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3 border-b border-line/70">
               <div>
-                <h2 className="font-display text-xl text-forest leading-tight">Brand this app</h2>
+                <h2 className="font-display text-xl text-accent leading-tight">Brand this app</h2>
                 <p className="text-[13px] text-slate mt-0.5">
                   One tap re-skins BUILD for your program. Schools near 44281.
                 </p>

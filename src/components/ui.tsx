@@ -38,7 +38,7 @@ export function StatTile({
 }) {
   return (
     <div className={`rounded-card bg-surface border border-line/70 shadow-card p-3 text-center ${className}`}>
-      <p className="font-display text-2xl text-forest leading-none">{value}</p>
+      <p className="font-display text-2xl text-accent leading-none">{value}</p>
       <p className="text-[11px] text-slate mt-1">{label}</p>
     </div>
   );
@@ -121,7 +121,7 @@ export function Pill({
   className?: string;
 }) {
   const tones = {
-    green: "bg-green/15 text-forest",
+    green: "bg-green/15 text-accent",
     sky: "bg-sky/20 text-sky-dark", // accessible sky text
     brick: "bg-brick/15 text-brick",
     slate: "bg-slate/15 text-slate",

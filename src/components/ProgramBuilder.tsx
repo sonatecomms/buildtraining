@@ -199,7 +199,7 @@ export default function ProgramBuilder({ clientId }: { clientId: string }) {
         {readOnly && (
           <span className="text-xs text-slate">
             {weekLabel(weekOffset)} is in the past — read-only.{" "}
-            <button onClick={() => setWeekUnlocked(weekStart, true)} className="font-semibold text-forest">
+            <button onClick={() => setWeekUnlocked(weekStart, true)} className="font-semibold text-accent">
               Unlock to edit
             </button>
           </span>
@@ -229,14 +229,14 @@ export default function ProgramBuilder({ clientId }: { clientId: string }) {
             <button
               onClick={() => setCopied({ ws: weekStart, label: weekLabel(weekOffset) })}
               className={`text-xs font-semibold rounded-full border px-2.5 py-1 ${
-                copied?.ws === weekStart ? "border-forest text-forest" : "border-line text-slate"
+                copied?.ws === weekStart ? "border-forest text-accent" : "border-line text-slate"
               }`}
             >
               {copied?.ws === weekStart ? "Copied ✓" : "Copy week"}
             </button>
           )
         )}
-        {pasted && <span className="text-xs text-forest font-medium w-full">✓ Pasted into this week</span>}
+        {pasted && <span className="text-xs text-accent font-medium w-full">✓ Pasted into this week</span>}
       </div>
 
 
@@ -367,7 +367,7 @@ function ReadOnlyWorkoutCard({ workout, byId }: { workout: Workout; byId: Record
               return (
                 <div key={it.id} className="text-sm">
                   <span className="font-medium">{ex?.name ?? "Movement"}</span>
-                  {it.variant && <span className="text-forest"> · {it.variant}</span>}
+                  {it.variant && <span className="text-accent"> · {it.variant}</span>}
                   {!ex?.activity && (
                     <span className="text-slate">
                       {" "}
@@ -466,7 +466,7 @@ function WorkoutCard({
           defaultValue={workout.name}
           onBlur={(e) => renameWorkout(clientId, workout.id, e.target.value.trim() || "Workout")}
           aria-label="Workout name"
-          className="font-semibold bg-transparent outline-none flex-1 min-w-0 border-b border-transparent hover:border-line focus:border-forest focus:text-forest transition-colors"
+          className="font-semibold bg-transparent outline-none flex-1 min-w-0 border-b border-transparent hover:border-line focus:border-forest focus:text-accent transition-colors"
         />
         <select
           value={workout.dow}
@@ -491,7 +491,7 @@ function WorkoutCard({
             duplicateWorkout(clientId, workout.id, d);
             setCopiedTo(d);
           }}
-          className="text-xs bg-surface border border-line rounded-lg px-2 py-1 outline-none text-forest font-medium"
+          className="text-xs bg-surface border border-line rounded-lg px-2 py-1 outline-none text-accent font-medium"
         >
           <option value="">choose a day…</option>
           {DOW_LONG.map((d, i) =>
@@ -503,7 +503,7 @@ function WorkoutCard({
           )}
         </select>
         {copiedTo != null && (
-          <span className="text-[11px] text-forest font-medium">✓ Copied to {DOW_LONG[copiedTo]}</span>
+          <span className="text-[11px] text-accent font-medium">✓ Copied to {DOW_LONG[copiedTo]}</span>
         )}
       </div>
 
@@ -603,7 +603,7 @@ function SortableBlock({
             defaultValue={block.title ?? ""}
             onChange={(e) => setBlockText(clientId, workoutId, block.id, { title: e.target.value })}
             placeholder="Section title (e.g. Warm-up, Metcon)"
-            className="flex-1 min-w-0 bg-transparent font-semibold text-sm outline-none focus:text-forest placeholder:text-slate"
+            className="flex-1 min-w-0 bg-transparent font-semibold text-sm outline-none focus:text-accent placeholder:text-slate"
           />
           <span className="text-[10px] uppercase tracking-wide text-sky-dark font-semibold">Note</span>
           <ConfirmX title="Delete note" onConfirm={() => removeBlock(clientId, workoutId, block.id)} />
@@ -798,7 +798,7 @@ function SortableBlock({
       </SortableContext>
 
       {grouped && (
-        <button onClick={onAddToBlock} className="text-xs text-forest font-semibold mt-2 pl-1">
+        <button onClick={onAddToBlock} className="text-xs text-accent font-semibold mt-2 pl-1">
           + add movement to {BLOCK_LABEL[block.type].toLowerCase()}
         </button>
       )}
@@ -914,7 +914,7 @@ function ItemRow({
         <select
           value={item.variant ?? ex.variants[0]}
           onChange={(e) => updateItem(clientId, workoutId, blockId, item.id, { variant: e.target.value })}
-          className="w-full mt-2 rounded-lg bg-field border border-line px-2 py-1.5 text-xs outline-none focus:border-forest text-forest font-medium"
+          className="w-full mt-2 rounded-lg bg-field border border-line px-2 py-1.5 text-xs outline-none focus:border-forest text-accent font-medium"
           title="Implement / side"
         >
           {ex.variants.map((v) => (
@@ -939,7 +939,7 @@ function ItemRow({
       ) : (
         <button
           onClick={() => setShowNote(true)}
-          className="text-xs text-slate hover:text-forest font-medium mt-2 pl-0.5"
+          className="text-xs text-slate hover:text-accent font-medium mt-2 pl-0.5"
         >
           ＋ cue / note
         </button>

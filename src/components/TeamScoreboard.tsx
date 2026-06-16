@@ -42,7 +42,7 @@ export default function TeamScoreboard() {
         aria-expanded={open}
       >
         <span className="flex items-baseline gap-2">
-          <span className="font-display text-lg text-forest">Team scoreboard</span>
+          <span className="font-display text-lg text-accent">Team scoreboard</span>
           <span className="text-[11px] text-slate">{rows.length} ranked</span>
         </span>
         <ChevronDown size={18} className={`text-slate transition-transform ${open ? "rotate-180" : ""}`} />
@@ -103,7 +103,7 @@ export default function TeamScoreboard() {
                   )}
                 </div>
                 <div className="shrink-0 text-right">
-                  <span className="font-display text-lg text-forest leading-none">
+                  <span className="font-display text-lg text-accent leading-none">
                     {r.value ? num(r.value) : "—"}
                   </span>
                   {r.value ? <span className="text-[10px] text-slate ml-0.5">lbs</span> : null}
@@ -118,7 +118,7 @@ export default function TeamScoreboard() {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="mt-2.5 w-full text-center text-xs font-semibold text-forest"
+          className="mt-2.5 w-full text-center text-xs font-semibold text-accent"
         >
           See all {rows.length} · filter
         </button>

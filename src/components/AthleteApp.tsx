@@ -5,6 +5,8 @@ import { useClient, useExercises, useLogsForClient, computeStreak, logWorkout, u
 import dynamic from "next/dynamic";
 import { isIntroDone } from "@/lib/intro";
 import { nextGreeting, notoLottieUrl } from "@/lib/greeting";
+import { useSchoolTheme } from "./SchoolThemeProvider";
+import { BUILD_DEFAULT } from "@/lib/schoolThemes";
 
 // lottie-react is only needed for the greeting flourish — code-split it out of
 // the main bundle and keep it client-only.
@@ -103,7 +105,7 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
           <div className="flex-1" />
           <button
             onClick={() => setView(view === "settings" ? "train" : "settings")}
-            className={`flex items-center gap-2 ${view === "settings" ? "text-forest" : ""}`}
+            className={`flex items-center gap-2 ${view === "settings" ? "text-accent" : ""}`}
             aria-label="Profile & settings"
           >
             {client && <Avatar src={client.avatarUrl} name={client.name} size={32} gradient />}
@@ -196,19 +198,19 @@ function TrainGreeting({ client }: { client: Client }) {
 
 // The weekly-goal progress ring, sized for the header.
 function WeekRing({ pct, done, target }: { pct: number; done: number; target: number }) {
-  const r = 28;
+  const r = 31;
   const c = 2 * Math.PI * r;
   return (
     <div className="shrink-0 relative grid place-items-center">
-      <svg width="72" height="72" viewBox="0 0 72 72" className="-rotate-90">
-        <circle cx="36" cy="36" r={r} fill="none" stroke="#cfd6c4" strokeWidth="7" />
+      <svg width="80" height="80" viewBox="0 0 80 80" className="-rotate-90">
+        <circle cx="40" cy="40" r={r} fill="none" stroke="var(--color-line)" strokeWidth="6" />
         <circle
-          cx="36"
-          cy="36"
+          cx="40"
+          cy="40"
           r={r}
           fill="none"
-          stroke="#19350c"
-          strokeWidth="7"
+          stroke="var(--color-accent)"
+          strokeWidth="6"
           strokeLinecap="round"
           strokeDasharray={c}
           strokeDashoffset={c - (c * pct) / 100}
@@ -216,8 +218,8 @@ function WeekRing({ pct, done, target }: { pct: number; done: number; target: nu
         />
       </svg>
       <div className="absolute text-center leading-none">
-        <div className="font-display text-lg text-forest">{done}/{target}</div>
-        <div className="text-[8px] uppercase tracking-wide text-slate mt-0.5">this wk</div>
+        <div className="font-display text-base text-accent">{done}/{target}</div>
+        <div className="text-[8px] uppercase tracking-wide text-slate mt-1">this wk</div>
       </div>
     </div>
   );
@@ -229,11 +231,16 @@ function WeekRing({ pct, done, target }: { pct: number; done: number; target: nu
 // plays once 1 second after the launch splash clears. The glyph + CSS motion
 // is only a fallback if the Lottie can't load (e.g. offline).
 function GreetingEmoji() {
+  // When a school is selected, greet with that school's mascot (static, reliable)
+  // instead of the rotating animated Noto emoji.
+  const { school } = useSchoolTheme();
+  const isSchool = school.id !== BUILD_DEFAULT.id;
   const [g] = useState(nextGreeting);
   const [data, setData] = useState<object | null>(null);
   const [failed, setFailed] = useState(false);
   const [play, setPlay] = useState(false);
   useEffect(() => {
+    if (isSchool) return; // mascot is a static glyph — no Lottie to load
     let cancelled = false;
     // fetch the Lottie up front so it's resting and ready to play at the 2s mark
     fetch(notoLottieUrl(g.cp))
@@ -265,10 +272,11 @@ function GreetingEmoji() {
       clearTimeout(animTimer);
       clearTimeout(fallback);
     };
-  }, [g]);
+  }, [g, isSchool]);
 
   const box = { display: "inline-block", width: "1.15em", height: "1.15em", verticalAlign: "-0.22em" } as const;
 
+  if (isSchool) return <span aria-hidden className="animate-pop inline-block">{school.emoji}</span>;
   if (data) {
     // keyed on `play` so flipping to play remounts and runs once from frame 0;
     // before that it sits at frame 0 (the resting emoji), not a native glyph
@@ -400,7 +408,7 @@ function YourLoginCard({ client }: { client: Client }) {
       />
       <p className="text-[11px] mt-1 mb-4 min-h-[14px]" aria-live="polite">
         {recMsg && (
-          <span className={recMsg.includes("✓") || recMsg === "Cleared" ? "text-forest" : "text-brick"}>{recMsg}</span>
+          <span className={recMsg.includes("✓") || recMsg === "Cleared" ? "text-accent" : "text-brick"}>{recMsg}</span>
         )}
       </p>
 
@@ -438,7 +446,7 @@ function YourLoginCard({ client }: { client: Client }) {
       {kind === "email" && (
         <p className="text-[11px] text-slate mt-1">We&apos;ll email a confirm link before the change takes effect.</p>
       )}
-      {msg && <p className="text-xs text-forest mt-2">{msg}</p>}
+      {msg && <p className="text-xs text-accent mt-2">{msg}</p>}
       {err && <p className="text-xs text-brick mt-2">{err}</p>}
       <Button className="w-full mt-3" onClick={submit} disabled={busy || !valid}>
         {busy ? "Saving…" : "Change login"}
@@ -493,7 +501,7 @@ function ChangePasswordCard() {
         <p className="text-brick text-[11px] mt-1">Passwords don&apos;t match.</p>
       )}
       {msg && (
-        <p className={`text-xs mt-2 ${msg.startsWith("error:") ? "text-brick" : "text-forest"}`} aria-live="polite">
+        <p className={`text-xs mt-2 ${msg.startsWith("error:") ? "text-brick" : "text-accent"}`} aria-live="polite">
           {msg.replace(/^(error|ok):/, "")}
         </p>
       )}

@@ -105,7 +105,7 @@ export default function PercentageCalculator({
             className="w-16 rounded-lg bg-surface border border-line px-2 py-1.5 text-sm outline-none focus:border-forest"
           />
           <span className="text-slate text-sm">% =</span>
-          <span className="text-lg font-bold text-forest tabular-nums">
+          <span className="text-lg font-bold text-accent tabular-nums">
             {customRounded != null ? fmt(customRounded) : "—"}
           </span>
           <span className="text-xs text-slate">lb</span>

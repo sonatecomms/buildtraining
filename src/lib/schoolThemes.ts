@@ -22,6 +22,10 @@ export type School = {
   forest: string;
   green: string;
   soft: string;
+  /** Optional emphasis color used on the off-black shell instead of brightening
+   *  the primary — for "& gold" schools, where a brightened green/maroon/navy
+   *  reads worse than the school's gold. */
+  accent?: string;
 };
 
 // The native BUILD identity — selecting it clears all overrides.
@@ -63,6 +67,7 @@ export const SCHOOLS: School[] = [
     forest: "#115c2d",
     green: "#1c7a3f",
     soft: "#2e9a55",
+    accent: "#f4c300",
   },
   {
     id: "brunswick",
@@ -80,7 +85,7 @@ export const SCHOOLS: School[] = [
     id: "barberton",
     name: "Barberton Magics",
     mascot: "Magics",
-    emoji: "🎩",
+    emoji: "🪄",
     kind: "public",
     city: "Barberton",
     swatch: ["#5b2a86", "#ffffff"], // purple & white
@@ -111,6 +116,7 @@ export const SCHOOLS: School[] = [
     forest: "#0e2247",
     green: "#214e91",
     soft: "#2e63b0",
+    accent: "#c5a572",
   },
   {
     id: "stvm",
@@ -123,6 +129,7 @@ export const SCHOOLS: School[] = [
     forest: "#073b2a",
     green: "#0f5c3f",
     soft: "#1b7a55",
+    accent: "#c5a572",
   },
   {
     id: "walsh",
@@ -135,6 +142,7 @@ export const SCHOOLS: School[] = [
     forest: "#4e0e1a",
     green: "#6e1423",
     soft: "#8c2030",
+    accent: "#c9a227",
   },
   {
     id: "cloverleaf",
@@ -176,7 +184,7 @@ export const SCHOOLS: School[] = [
     id: "norton",
     name: "Norton Panthers",
     mascot: "Panthers",
-    emoji: "🐾",
+    emoji: "🐈‍⬛",
     kind: "public",
     city: "Norton",
     swatch: ["#c01825", "#ffffff"], // red & white
@@ -195,6 +203,7 @@ export const SCHOOLS: School[] = [
     forest: "#143a99",
     green: "#1d4fd0",
     soft: "#2f63e0",
+    accent: "#f4c300",
   },
   {
     id: "cfalls",
@@ -231,6 +240,7 @@ export const SCHOOLS: School[] = [
     forest: "#123b80",
     green: "#1b54b0",
     soft: "#2a6ad0",
+    accent: "#f4c300",
   },
   {
     id: "chippewa",
@@ -401,6 +411,9 @@ export function surfaceVars(school: School, mode: SurfaceMode): CSSProperties {
     "--color-forest": brighten(school.green, 0.56),
     "--color-green": brighten(school.green, 0.64),
     "--color-green-soft": brighten(school.green, 0.72),
+    // "& gold" schools show their gold for emphasis text/marks here (a brightened
+    // green/maroon/navy reads neon on black); others fall back to the brand.
+    "--color-accent": school.accent ? brighten(school.accent, 0.6) : brighten(school.green, 0.56),
     "--hero-from": school.forest,
     "--hero-to": school.green,
     "--shadow-card": "0 1px 2px rgba(0,0,0,0.45), 0 10px 28px -14px rgba(0,0,0,0.7)",
@@ -425,6 +438,7 @@ export const THEME_VAR_KEYS = [
   "--shadow-card",
   "--hero-from",
   "--hero-to",
+  "--color-accent",
   "--background",
   "--foreground",
   "--color-shell",

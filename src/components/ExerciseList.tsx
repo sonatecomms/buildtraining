@@ -164,7 +164,7 @@ export default function ExerciseList({
           </div>
         </div>
         {onPick ? (
-          <span className="grid place-items-center w-8 h-8 rounded-full bg-forest/10 text-forest shrink-0">
+          <span className="grid place-items-center w-8 h-8 rounded-full bg-forest/10 text-accent shrink-0">
             <Plus size={18} />
           </span>
         ) : null}
@@ -258,7 +258,7 @@ export default function ExerciseList({
               {q && (
                 <button
                   onClick={() => setQ("")}
-                  className="mt-2 text-sm font-semibold text-forest underline underline-offset-2"
+                  className="mt-2 text-sm font-semibold text-accent underline underline-offset-2"
                 >
                   Clear search
                 </button>

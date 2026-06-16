@@ -333,7 +333,7 @@ export default function IntervalTimer({ onLog }: { onLog?: (r: TimerResult) => v
         <div className="space-y-2">
           {onLog &&
             (logged ? (
-              <div className="text-center text-sm text-forest font-semibold py-2">Logged to your activity ✓</div>
+              <div className="text-center text-sm text-accent font-semibold py-2">Logged to your activity ✓</div>
             ) : (
               <Button className="w-full" onClick={log}>
                 Log this to my activity

@@ -307,7 +307,7 @@ function PreviewBlock({
         {block.title && <p className="font-semibold text-sm mb-1">{block.title}</p>}
         {block.text && <p className="text-sm whitespace-pre-wrap text-ink/90">{block.text}</p>}
         {block.logResult && (
-          <p className="text-[11px] text-forest font-medium mt-1">Scored — athletes log a result</p>
+          <p className="text-[11px] text-accent font-medium mt-1">Scored — athletes log a result</p>
         )}
       </div>
     );

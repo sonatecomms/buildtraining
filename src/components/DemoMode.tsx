@@ -178,7 +178,7 @@ function DemoLogin() {
       <form onSubmit={submit} className="w-full max-w-xs flex flex-col items-center gap-5">
         <BrandMark size={48} />
         <div className="text-center">
-          <h1 className="font-display text-2xl text-forest">Demo mode</h1>
+          <h1 className="font-display text-2xl text-accent">Demo mode</h1>
           <p className="text-[13px] text-slate mt-1">Presenter access for live walkthroughs.</p>
         </div>
         <div className="w-full flex flex-col gap-2.5">

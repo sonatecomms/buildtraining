@@ -41,7 +41,7 @@ export default function WeekStrip({
           </button>
           <button
             onClick={() => weekOffset !== 0 && onWeekOffset(0)}
-            className={`text-sm font-semibold ${weekOffset === 0 ? "text-forest" : "text-slate"}`}
+            className={`text-sm font-semibold ${weekOffset === 0 ? "text-accent" : "text-slate"}`}
             title={weekOffset === 0 ? undefined : "Back to this week"}
           >
             {weekLabel(weekOffset)}
@@ -68,7 +68,7 @@ export default function WeekStrip({
               onClick={() => onSelect(dow)}
               className="flex flex-col items-center gap-1 flex-1 min-w-0"
             >
-              <span className={`text-[11px] font-medium ${isSel ? "text-forest" : "text-slate"}`}>
+              <span className={`text-[11px] font-medium ${isSel ? "text-accent" : "text-slate"}`}>
                 {DOW_LETTER[dow]}
               </span>
               <span

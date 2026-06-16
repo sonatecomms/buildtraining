@@ -55,7 +55,7 @@ export default function AthleteOnboard({
         {password.length > 0 && password.length < 6 && (
           <p className="text-slate text-xs mt-1 mb-2">{6 - password.length} more character{6 - password.length === 1 ? "" : "s"}</p>
         )}
-        {password.length >= 6 && <p className="text-forest text-xs mt-1 mb-2">Looks good ✓</p>}
+        {password.length >= 6 && <p className="text-accent text-xs mt-1 mb-2">Looks good ✓</p>}
         <label className="text-xs text-slate font-medium mt-1 block">Confirm password</label>
         <input
           type="password"
