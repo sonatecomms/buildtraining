@@ -26,7 +26,7 @@ import { SchoolThemePicker } from "./SchoolThemePicker";
 import { BrandMark } from "./BrandMark";
 
 const DEMO_USER = "sonate";
-const DEMO_PASS = "devops123";
+const DEMO_PASS = "Sonate-Skins-44281";
 const STORAGE_KEY = "build.demoMode";
 const DEMO_CLIENT_ID = "client-jordan"; // the seeded athlete (Jordan Rivera)
 
