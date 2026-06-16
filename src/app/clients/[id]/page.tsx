@@ -21,18 +21,23 @@ export default function ClientPage() {
   const params = useParams<{ id: string }>();
   const client = useClient(params.id);
   const [tab, setTab] = useState<Tab>("program");
+  // Where the back arrow returns to — defaults to the roster, but ?from=numbers
+  // (a scoreboard tap) sends them back to the scoreboard.
+  const [back, setBack] = useState({ href: "/", label: "Athletes" });
 
   // Allow deep-linking a tab via ?tab=train|profile|program (set after mount to
   // avoid a hydration mismatch with the server-rendered default).
   useEffect(() => {
-    const t = new URLSearchParams(window.location.search).get("tab");
+    const sp = new URLSearchParams(window.location.search);
+    const t = sp.get("tab");
     if (t === "train" || t === "profile" || t === "program") setTab(t);
+    if (sp.get("from") === "numbers") setBack({ href: "/numbers", label: "Scoreboard" });
   }, []);
 
   if (!client) {
     return (
       <div>
-        <Link href="/" className="inline-flex items-center gap-1 text-slate text-sm"><ChevronLeft size={16} /> Athletes</Link>
+        <Link href={back.href} className="inline-flex items-center gap-1 text-slate text-sm"><ChevronLeft size={16} /> {back.label}</Link>
         <EmptyState icon="🤔" title="Athlete not found" hint="They may have been deleted." />
       </div>
     );
@@ -41,7 +46,7 @@ export default function ClientPage() {
   return (
     <div>
       <div className="flex items-center gap-3 mb-4">
-        <Link href="/" className="text-slate" aria-label="Back to athletes"><ChevronLeft size={22} /></Link>
+        <Link href={back.href} className="text-slate" aria-label={`Back to ${back.label.toLowerCase()}`}><ChevronLeft size={22} /></Link>
         <Avatar src={client.avatarUrl} name={client.name} size={40} gradient />
         <div className="min-w-0">
           <h1 className="font-bold truncate leading-tight">{client.name}</h1>

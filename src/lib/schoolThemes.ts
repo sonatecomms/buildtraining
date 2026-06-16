@@ -299,6 +299,14 @@ function hslToHex(h: number, s: number, l: number): string {
   return `#${hex2((r1 + m) * 255)}${hex2((g1 + m) * 255)}${hex2((b1 + m) * 255)}`;
 }
 
+// Lift a color's lightness while KEEPING its saturation/hue, so a dark-mode
+// brand stays a vivid version of the primary (red→bright red) instead of washing
+// to a pastel (red→pink, which mixing with white would do).
+function brighten(hex: string, lightness: number): string {
+  const [h, s] = rgbToHsl(...toRgb(hex));
+  return hslToHex(h, s, lightness);
+}
+
 /**
  * A category-dot palette derived from a school's two colors: dots alternate
  * between the two color families, each rotated/lightened a touch so categories
@@ -359,14 +367,16 @@ export function surfaceVars(school: School, mode: SurfaceMode): CSSProperties {
   const lightAccent = sat;
 
   if (mode === "light") {
+    // Keep the tint a whisper so the shell reads as a clean off-white, not a
+    // pastel of the school color — the brand (buttons/text) carries the hue.
     return {
-      "--background": mix("#ffffff", lightAccent, 0.05),
-      "--color-shell": mix("#ffffff", lightAccent, 0.05),
-      "--color-bone": mix("#ffffff", lightAccent, 0.05),
+      "--background": mix("#ffffff", lightAccent, 0.03),
+      "--color-shell": mix("#ffffff", lightAccent, 0.03),
+      "--color-bone": mix("#ffffff", lightAccent, 0.03),
       "--color-surface": "#ffffff",
-      "--color-surface-2": mix("#ffffff", lightAccent, 0.09),
-      "--color-field": mix("#ffffff", lightAccent, 0.12),
-      "--color-line": mix("#e6e7e4", lightAccent, 0.12),
+      "--color-surface-2": mix("#ffffff", lightAccent, 0.055),
+      "--color-field": mix("#ffffff", lightAccent, 0.08),
+      "--color-line": mix("#e6e7e4", lightAccent, 0.1),
     } as CSSProperties;
   }
 
@@ -383,12 +393,12 @@ export function surfaceVars(school: School, mode: SurfaceMode): CSSProperties {
     "--color-bone": mix("#f1f3f5", sat, 0.02), // text-on-brand + hero text stay light
     "--color-brick": "#e8607a",
     "--foreground": mix("#f3f4f6", sat, 0.03),
-    // Brighten the brand for legible emphasis text / marks on off-black. The
-    // hero keeps a dark gradient via --hero-from/-to (see globals) so its light
-    // text stays readable even though bg-forest is now a bright accent.
-    "--color-forest": mix(school.green, "#ffffff", 0.42),
-    "--color-green": mix(school.green, "#ffffff", 0.55),
-    "--color-green-soft": mix(school.green, "#ffffff", 0.66),
+    // Brighten the brand (lightness up, saturation kept) for legible emphasis
+    // text / marks on off-black — stays a vivid version of the primary (red
+    // stays red, not pink). The hero keeps a dark gradient via --hero-from/-to.
+    "--color-forest": brighten(school.green, 0.56),
+    "--color-green": brighten(school.green, 0.64),
+    "--color-green-soft": brighten(school.green, 0.72),
     "--hero-from": school.forest,
     "--hero-to": school.green,
     "--shadow-card": "0 1px 2px rgba(0,0,0,0.45), 0 10px 28px -14px rgba(0,0,0,0.7)",

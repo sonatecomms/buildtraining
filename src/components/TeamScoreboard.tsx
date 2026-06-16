@@ -81,7 +81,7 @@ export default function TeamScoreboard() {
           {visibleRows.map((r, i) => (
             <li key={r.client.id}>
               <Link
-                href={`/clients/${r.client.id}`}
+                href={`/clients/${r.client.id}?from=numbers`}
                 className={`flex items-center gap-3 rounded-xl px-2 py-2 active:scale-[0.99] transition-transform ${
                   i < 3 ? "bg-field/60" : "hover:bg-field/40"
                 }`}
