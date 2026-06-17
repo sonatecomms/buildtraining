@@ -47,6 +47,23 @@ export function daysAgo(iso: string): number {
   return Math.round((today.getTime() - date.getTime()) / 86400000);
 }
 
+// The actual calendar date (yyyy-mm-dd) a weekday-scheduled workout falls on:
+// its week's Sunday (weekStart) plus `dow` days.
+export function workoutDateIso(weekStart: string, dow: number): string {
+  const [y, m, d] = weekStart.split("-").map(Number);
+  const date = new Date(y, (m || 1) - 1, d || 1);
+  date.setDate(date.getDate() + dow);
+  return isoDate(date);
+}
+
+// True if a workout is dated today or in the future (so it's "upcoming" and safe
+// to remove); false for past sessions, which are read-only history. An unstamped
+// workout is treated as current/removable.
+export function isUpcomingWorkout(w: { weekStart?: string; dow: number }): boolean {
+  if (!w.weekStart) return true;
+  return daysAgo(workoutDateIso(w.weekStart, w.dow)) <= 0; // 0 = today, <0 = future
+}
+
 // The seven dates of the week containing `ref` (Sunday first).
 export function weekDates(ref = new Date()): Date[] {
   const start = new Date(ref);

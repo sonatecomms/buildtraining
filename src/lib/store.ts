@@ -14,7 +14,7 @@ import type {
 } from "./types";
 import { buildSeedDB } from "./seed";
 import { cancelPendingPush, schedulePush } from "./sync";
-import { isoDate, weekStartIso } from "./week";
+import { isoDate, isUpcomingWorkout, weekStartIso } from "./week";
 
 const KEY = "fitcoach.db.v2";
 
@@ -539,6 +539,50 @@ export function countExerciseInProgram(clientId: string, exerciseId: string): nu
     (n, w) => n + w.blocks.reduce((m, b) => m + b.items.filter((it) => it.exerciseId === exerciseId).length, 0),
     0,
   );
+}
+
+// The set of workout ids the athlete has actually engaged with (any non-empty
+// log — started or finished). Logged work is preserved on removal as history.
+export function engagedWorkoutIds(logs: WorkoutLog[]): Set<string> {
+  return new Set(logs.filter((l) => !isEmptyLog(l)).map((l) => l.workoutId));
+}
+
+// A workout is removable only when it's upcoming (dated today or later) AND the
+// athlete hasn't engaged with it. So removals never touch past sessions or any
+// workout the athlete has already started/finished — those stay as history.
+export function removableWorkout(engaged: Set<string>) {
+  return (w: Workout) => isUpcomingWorkout(w) && !engaged.has(w.id);
+}
+
+function programEngaged(clientId: string): Set<string> {
+  return engagedWorkoutIds(getDB().logs.filter((l) => l.clientId === clientId));
+}
+
+// Clear all removable programming — every upcoming, unengaged workout. Keeps the
+// program record (name) so the coach can immediately reprogram.
+export function clearProgram(clientId: string) {
+  const prog = ensureProgram(clientId);
+  const removable = removableWorkout(programEngaged(clientId));
+  saveProgram({ ...prog, workouts: prog.workouts.filter((w) => !removable(w)) });
+}
+
+// Remove one applied plan's removable workouts (matched by planKey), leaving
+// other plans, ad-hoc workouts, past sessions, and engaged work untouched.
+export function removePlan(clientId: string, planKey: string) {
+  const prog = ensureProgram(clientId);
+  const removable = removableWorkout(programEngaged(clientId));
+  saveProgram({
+    ...prog,
+    workouts: prog.workouts.filter((w) => !(w.planKey === planKey && removable(w))),
+  });
+}
+
+// Remove the removable "other" workouts — single sessions, AI-generated,
+// hand-built — i.e. everything not stamped with a plan.
+export function removeUntaggedWorkouts(clientId: string) {
+  const prog = ensureProgram(clientId);
+  const removable = removableWorkout(programEngaged(clientId));
+  saveProgram({ ...prog, workouts: prog.workouts.filter((w) => !(!w.planKey && removable(w))) });
 }
 
 export function removeItem(clientId: string, workoutId: string, blockId: string, itemId: string) {

@@ -173,11 +173,12 @@ export function buildPlanWorkouts(
   t: ProgramTemplate,
   exercises: Exercise[],
   weekIso: (w: number) => string,
+  tag?: { planKey: string; planName: string },
 ): Workout[] {
   const out: Workout[] = [];
   for (let w = 0; w < t.weeks; w++) {
     const ws = weekIso(w);
-    for (const { dow, gen } of t.week(w)) out.push(toWorkout(gen, exercises, dow, ws));
+    for (const { dow, gen } of t.week(w)) out.push({ ...toWorkout(gen, exercises, dow, ws), ...tag });
   }
   return out;
 }

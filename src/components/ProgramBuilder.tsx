@@ -22,7 +22,6 @@ import {
   addExerciseBlock,
   addItemToBlock,
   addNoteBlock,
-  addWorkout,
   copyWeekProgramming,
   deleteWorkout,
   duplicateWorkout,
@@ -43,6 +42,12 @@ import {
   swapItemExercise,
   swapExerciseEverywhere,
   countExerciseInProgram,
+  clearProgram,
+  removePlan,
+  removeUntaggedWorkouts,
+  removableWorkout,
+  engagedWorkoutIds,
+  useLogsForClient,
   useClient,
   useExercises,
   useProgramForClient,
@@ -52,7 +57,7 @@ import type { Block, BlockMode, BlockType, Exercise, ProgramItem, ScoreType, Wor
 import { pushRecent } from "@/lib/recents";
 import { youtubeId, youtubeThumb } from "@/lib/youtube";
 import { DOW_LONG, todayDow, weekLabel, weekStartIso } from "@/lib/week";
-import { Plus, Repeat } from "lucide-react";
+import { Plus, Repeat, Trash2 } from "lucide-react";
 import { Button, Card, EmptyState, Fab, Pill } from "./ui";
 import ExercisePickerModal from "./ExercisePickerModal";
 import VideoPicker from "./VideoPicker";
@@ -144,6 +149,7 @@ type VideoState = {
 export default function ProgramBuilder({ clientId }: { clientId: string }) {
   const program = useProgramForClient(clientId);
   const client = useClient(clientId);
+  const logs = useLogsForClient(clientId);
   const exercises = useExercises();
   const byId = exMap(exercises);
 
@@ -154,6 +160,7 @@ export default function ProgramBuilder({ clientId }: { clientId: string }) {
   const [video, setVideo] = useState<VideoState>(null);
   const [swap, setSwap] = useState<SwapState>(null);
   const [applyingPlan, setApplyingPlan] = useState(false);
+  const [managing, setManaging] = useState(false);
   const [editingName, setEditingName] = useState(false);
   // a week the coach has "copied", ready to paste into another week
   const [copied, setCopied] = useState<{ ws: string; label: string } | null>(null);
@@ -165,6 +172,13 @@ export default function ProgramBuilder({ clientId }: { clientId: string }) {
   const workouts = workoutsForWeek(program, weekStart);
   const marked = new Set(workouts.map((w) => w.dow));
   const dayWorkouts = workouts.filter((w) => w.dow === day);
+  // Management acts only on upcoming, unengaged workouts; past sessions and any
+  // work the athlete has logged are kept as history. The sheet's counts mirror
+  // exactly what removal will delete.
+  const engaged = engagedWorkoutIds(logs);
+  const removableWorkouts = (program?.workouts ?? []).filter(removableWorkout(engaged));
+  const totalWorkouts = removableWorkouts.length;
+  const planGroups = groupPlans(removableWorkouts);
   // past weeks are read-only history unless the coach unlocks the week to edit it
   const isPast = weekOffset < 0;
   const readOnly = isPast && !unlocked.has(weekStart);
@@ -270,15 +284,7 @@ export default function ProgramBuilder({ clientId }: { clientId: string }) {
         <Card className="p-5 text-center">
           <p className="text-slate text-sm mb-3">Rest day — nothing scheduled.</p>
           <div className="flex flex-col gap-2 items-stretch max-w-xs mx-auto">
-            <Button onClick={() => addWorkout(clientId, DOW_LONG[day], day, weekStart)}>
-              + Add {DOW_LONG[day]} workout
-            </Button>
-            <Button variant="outline" onClick={() => setGenerating(true)}>
-              Generate a workout
-            </Button>
-            <Button variant="outline" onClick={() => setApplyingPlan(true)}>
-              Apply a multi-week plan
-            </Button>
+            <Button onClick={() => setApplyingPlan(true)}>Add programming</Button>
           </div>
         </Card>
       ) : (
@@ -314,19 +320,34 @@ export default function ProgramBuilder({ clientId }: { clientId: string }) {
       )}
 
       {!readOnly && dayWorkouts.length > 0 && (
-        <div className="flex flex-col gap-2">
-          <Button variant="outline" className="w-full" onClick={() => setGenerating(true)}>
-            Build another workout
-          </Button>
-          <Button variant="outline" className="w-full" onClick={() => setApplyingPlan(true)}>
-            Apply a multi-week plan
-          </Button>
-        </div>
+        <Button variant="outline" className="w-full" onClick={() => setApplyingPlan(true)}>
+          Add programming
+        </Button>
+      )}
+
+      {!readOnly && totalWorkouts > 0 && (
+        <button
+          onClick={() => setManaging(true)}
+          className="mx-auto flex items-center gap-1.5 text-[13px] font-semibold text-slate hover:text-ink py-1"
+        >
+          <Trash2 size={14} /> Manage / remove programming
+        </button>
+      )}
+
+      {managing && totalWorkouts > 0 && (
+        <ManageProgramSheet
+          clientId={clientId}
+          plans={planGroups.plans}
+          untagged={planGroups.untagged}
+          total={totalWorkouts}
+          athlete={client?.name?.split(" ")[0] ?? "this athlete"}
+          onClose={() => setManaging(false)}
+        />
       )}
 
       {!readOnly && client && (
         <div className="fixed bottom-24 right-4 z-30" style={{ marginBottom: "env(safe-area-inset-bottom)" }}>
-          <Fab label="Generate a workout" onClick={() => setGenerating(true)}>
+          <Fab label="Add programming" onClick={() => setApplyingPlan(true)}>
             <Plus size={26} />
           </Fab>
         </div>
@@ -1126,6 +1147,136 @@ function SwapConfirm({
           {swap.count > 1 && (
             <Button variant="outline" onClick={onEverywhere}>
               Everywhere in program ({swap.count})
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type PlanGroup = { planKey: string; planName: string; count: number; weeks: number };
+
+// Group a program's workouts by the plan that created them; everything without
+// a planKey (single sessions, AI, hand-built) lands in `untagged`.
+function groupPlans(workouts: Workout[]): { plans: PlanGroup[]; untagged: number } {
+  const map = new Map<string, { planKey: string; planName: string; count: number; weeks: Set<string> }>();
+  let untagged = 0;
+  for (const w of workouts) {
+    if (w.planKey) {
+      const g =
+        map.get(w.planKey) ??
+        { planKey: w.planKey, planName: w.planName ?? "Plan", count: 0, weeks: new Set<string>() };
+      g.count++;
+      if (w.weekStart) g.weeks.add(w.weekStart);
+      map.set(w.planKey, g);
+    } else {
+      untagged++;
+    }
+  }
+  return {
+    plans: [...map.values()].map((g) => ({ planKey: g.planKey, planName: g.planName, count: g.count, weeks: g.weeks.size })),
+    untagged,
+  };
+}
+
+// Scoped removal: take out one applied plan, the ad-hoc "other" workouts, or
+// everything. Each removal is reactive — when the program empties, the parent
+// unmounts this sheet.
+function ManageProgramSheet({
+  clientId,
+  plans,
+  untagged,
+  total,
+  athlete,
+  onClose,
+}: {
+  clientId: string;
+  plans: PlanGroup[];
+  untagged: number;
+  total: number;
+  athlete: string;
+  onClose: () => void;
+}) {
+  const [armClearAll, setArmClearAll] = useState(false);
+  useEffect(() => {
+    if (!armClearAll) return;
+    const t = setTimeout(() => setArmClearAll(false), 3000);
+    return () => clearTimeout(t);
+  }, [armClearAll]);
+  const label = "text-[11px] font-semibold uppercase tracking-wide text-slate/60";
+  return (
+    <div
+      data-noswipe
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm sm:p-4"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-shell w-full sm:max-w-sm max-h-[85dvh] rounded-t-3xl sm:rounded-3xl border border-line shadow-hero animate-pop overflow-hidden flex flex-col"
+      >
+        <div className="px-4 py-3 border-b border-line flex items-center justify-between shrink-0">
+          <h2 className="font-bold">Manage programming</h2>
+          <button onClick={onClose} className="text-slate text-2xl leading-none px-2" aria-label="Close">
+            ×
+          </button>
+        </div>
+
+        <div className="overflow-y-auto px-4 py-3 space-y-4 min-h-0">
+          <p className="text-[12px] text-slate">
+            Remove a specific plan, the ad-hoc workouts, or everything upcoming for {athlete}. Past
+            and already-logged sessions are kept as history. This can&apos;t be undone.
+          </p>
+
+          {plans.length > 0 && (
+            <div className="space-y-2">
+              <p className={label}>Applied plans</p>
+              {plans.map((p) => (
+                <div key={p.planKey} className="flex items-center gap-2 rounded-xl border border-line bg-surface p-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-sm truncate">{p.planName}</p>
+                    <p className="text-[11px] text-slate">
+                      {p.count} {p.count === 1 ? "session" : "sessions"}
+                      {p.weeks > 0 ? ` · ${p.weeks} wk` : ""}
+                    </p>
+                  </div>
+                  <ConfirmX title="Remove" onConfirm={() => removePlan(clientId, p.planKey)} />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {untagged > 0 && (
+            <div className="space-y-2">
+              <p className={label}>Other workouts</p>
+              <div className="flex items-center gap-2 rounded-xl border border-line bg-surface p-3">
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-sm">
+                    {untagged} {untagged === 1 ? "workout" : "workouts"}
+                  </p>
+                  <p className="text-[11px] text-slate">Single sessions, AI &amp; hand-built</p>
+                </div>
+                <ConfirmX title="Remove" onConfirm={() => removeUntaggedWorkouts(clientId)} />
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="px-4 py-3 border-t border-line shrink-0">
+          {armClearAll ? (
+            <Button
+              variant="danger"
+              className="w-full"
+              onClick={() => {
+                clearProgram(clientId);
+                onClose();
+              }}
+            >
+              Tap again to clear all {total}
+            </Button>
+          ) : (
+            <Button variant="danger" className="w-full" onClick={() => setArmClearAll(true)}>
+              Clear all upcoming ({total})
             </Button>
           )}
         </div>

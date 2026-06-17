@@ -38,8 +38,9 @@ export default function BulkProgramModal({
 
   const applyPlan = () => {
     if (!plan) return;
+    const tag = { planKey: uid("plan"), planName: plan.name };
     for (const c of clients) {
-      addWorkouts(c.id, buildPlanWorkouts(plan, exercises, (w) => weekStartIsoFrom(startDate, w)));
+      addWorkouts(c.id, buildPlanWorkouts(plan, exercises, (w) => weekStartIsoFrom(startDate, w), tag));
     }
     onClose();
   };

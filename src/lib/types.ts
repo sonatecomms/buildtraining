@@ -126,6 +126,11 @@ export interface Workout {
   // hasn't been customized. A week with any weekStart-stamped workouts is "custom"
   // and shows only those (the default is overridden for that week).
   weekStart?: string;
+  // Provenance: stamped when a multi-week plan (preset or custom) is applied, so
+  // the coach can remove that whole plan later without touching other workouts.
+  // Unstamped workouts (single sessions, AI-generated, hand-built) are "other".
+  planKey?: string; // unique per application batch
+  planName?: string; // label, e.g. "8-Week Bench Specialization"
 }
 
 export interface Program {

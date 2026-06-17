@@ -52,6 +52,7 @@ export default function CustomPlanBuilder({
 
   const apply = () => {
     if (!valid.length) return;
+    const tag = { planKey: uid("plan"), planName: planName.trim() || "Custom plan" };
     for (const c of clients) {
       const out: Workout[] = [];
       for (let w = 0; w < weeks; w++) {
@@ -63,6 +64,7 @@ export default function CustomPlanBuilder({
             dow: s.dow,
             weekStart: ws,
             blocks: s.items.map((it) => ({ id: uid("b"), type: "single" as const, items: [JSON.parse(JSON.stringify(it))] })),
+            ...tag,
           });
         }
       }
