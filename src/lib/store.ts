@@ -280,6 +280,13 @@ export function addWorkoutObject(clientId: string, workout: Workout) {
   saveProgram({ ...prog, workouts: [...prog.workouts, workout] });
 }
 
+// Append many workouts in one write (used when applying a multi-week plan).
+export function addWorkouts(clientId: string, workouts: Workout[]) {
+  if (!workouts.length) return;
+  const prog = ensureProgram(clientId);
+  saveProgram({ ...prog, workouts: [...prog.workouts, ...workouts] });
+}
+
 export function renameWorkout(clientId: string, workoutId: string, name: string) {
   const prog = ensureProgram(clientId);
   saveProgram({

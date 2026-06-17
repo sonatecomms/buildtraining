@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { Plus, Trash2, Sparkles } from "lucide-react";
-import { addWorkoutObject, uid, useExercises } from "@/lib/store";
+import { addWorkoutObject, addWorkouts, uid, useExercises } from "@/lib/store";
 import { weekStartIso } from "@/lib/week";
+import { PROGRAM_TEMPLATES, buildPlanWorkouts, planSessionCount, type ProgramTemplate } from "@/lib/programTemplates";
 import type { Client, ProgramItem, Workout } from "@/lib/types";
 import ExercisePickerModal from "./ExercisePickerModal";
 import { Button } from "./ui";
@@ -24,10 +25,21 @@ export default function BulkProgramModal({
 }) {
   const exercises = useExercises();
   const byId = useMemo(() => Object.fromEntries(exercises.map((e) => [e.id, e])), [exercises]);
+  const [tab, setTab] = useState<"plan" | "session">("plan");
+  const [plan, setPlan] = useState<ProgramTemplate | null>(null);
   const [name, setName] = useState("");
   const [items, setItems] = useState<ProgramItem[]>([]);
   const [dow, setDow] = useState(new Date().getDay());
   const [pickerOpen, setPickerOpen] = useState(false);
+  const who = `${clients.length} ${clients.length === 1 ? "athlete" : "athletes"}`;
+
+  const applyPlan = () => {
+    if (!plan) return;
+    for (const c of clients) {
+      addWorkouts(c.id, buildPlanWorkouts(plan, exercises, (w) => weekStartIso(w)));
+    }
+    onClose();
+  };
 
   const addItem = (exId: string) =>
     setItems((cur) => [...cur, { id: uid("i"), exerciseId: exId, sets: 3, reps: "8", rest: "90s" }]);
@@ -71,6 +83,46 @@ export default function BulkProgramModal({
           </div>
 
           <div className="overflow-y-auto px-4 py-3 min-h-0 flex-1 space-y-3 overscroll-contain">
+            {/* mode: a multi-week plan, or a single session */}
+            <div className="grid grid-cols-2 gap-1 bg-field rounded-xl p-1">
+              {(["plan", "session"] as const).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setTab(m)}
+                  className={`rounded-lg py-1.5 text-xs font-semibold transition-colors ${
+                    tab === m ? "bg-forest text-bone" : "text-slate"
+                  }`}
+                >
+                  {m === "plan" ? "Multi-week plan" : "Single session"}
+                </button>
+              ))}
+            </div>
+
+            {tab === "plan" ? (
+              <div className="space-y-2">
+                {PROGRAM_TEMPLATES.map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => setPlan(t)}
+                    className={`w-full text-left rounded-xl border p-3 transition-colors ${
+                      plan?.id === t.id ? "border-forest bg-surface" : "border-line bg-surface/60 hover:bg-surface"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-semibold text-sm">{t.name}</span>
+                      <span className="text-[11px] text-slate shrink-0">
+                        {t.weeks} wk · {t.daysPerWeek}×
+                      </span>
+                    </div>
+                    <p className="text-[12px] text-slate mt-0.5">{t.blurb}</p>
+                    <p className="text-[11px] text-slate/70 mt-1">
+                      {planSessionCount(t)} sessions · starts this week
+                    </p>
+                  </button>
+                ))}
+              </div>
+            ) : (
+            <>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -154,12 +206,20 @@ export default function BulkProgramModal({
             >
               <Sparkles size={14} /> Use AI generator instead
             </button>
+            </>
+            )}
           </div>
 
           <div className="px-4 py-3 border-t border-line shrink-0">
-            <Button className="w-full" onClick={assign} disabled={items.length === 0}>
-              Assign to {clients.length}
-            </Button>
+            {tab === "plan" ? (
+              <Button className="w-full" onClick={applyPlan} disabled={!plan}>
+                {plan ? `Apply to ${who}` : "Select a plan"}
+              </Button>
+            ) : (
+              <Button className="w-full" onClick={assign} disabled={items.length === 0}>
+                Assign to {clients.length}
+              </Button>
+            )}
           </div>
         </div>
       </div>
