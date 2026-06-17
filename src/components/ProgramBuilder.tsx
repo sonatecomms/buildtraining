@@ -40,6 +40,9 @@ import {
   setItemVideo,
   setWorkoutDow,
   updateItem,
+  swapItemExercise,
+  swapExerciseEverywhere,
+  countExerciseInProgram,
   useClient,
   useExercises,
   useProgramForClient,
@@ -49,12 +52,13 @@ import type { Block, BlockMode, BlockType, Exercise, ProgramItem, ScoreType, Wor
 import { pushRecent } from "@/lib/recents";
 import { youtubeId, youtubeThumb } from "@/lib/youtube";
 import { DOW_LONG, todayDow, weekLabel, weekStartIso } from "@/lib/week";
-import { Plus } from "lucide-react";
+import { Plus, Repeat } from "lucide-react";
 import { Button, Card, EmptyState, Fab, Pill } from "./ui";
 import ExercisePickerModal from "./ExercisePickerModal";
 import VideoPicker from "./VideoPicker";
 import WeekStrip from "./WeekStrip";
 import WorkoutGeneratorModal from "./WorkoutGeneratorModal";
+import BulkProgramModal from "./BulkProgramModal";
 
 const BLOCK_LABEL: Record<BlockType, string> = {
   single: "Single",
@@ -114,7 +118,19 @@ function ConfirmX({ onConfirm, title = "Delete" }: { onConfirm: () => void; titl
 type PickerState =
   | { kind: "newBlock"; workoutId: string }
   | { kind: "addToBlock"; workoutId: string; blockId: string }
+  | { kind: "swap"; workoutId: string; blockId: string; itemId: string; fromExerciseId: string }
   | null;
+
+type SwapState = {
+  workoutId: string;
+  blockId: string;
+  itemId: string;
+  fromExerciseId: string;
+  toExerciseId: string;
+  fromName: string;
+  toName: string;
+  count: number;
+} | null;
 
 type VideoState = {
   workoutId: string;
@@ -136,6 +152,8 @@ export default function ProgramBuilder({ clientId }: { clientId: string }) {
   const [generating, setGenerating] = useState(false);
   const [picker, setPicker] = useState<PickerState>(null);
   const [video, setVideo] = useState<VideoState>(null);
+  const [swap, setSwap] = useState<SwapState>(null);
+  const [applyingPlan, setApplyingPlan] = useState(false);
   const [editingName, setEditingName] = useState(false);
   // a week the coach has "copied", ready to paste into another week
   const [copied, setCopied] = useState<{ ws: string; label: string } | null>(null);
@@ -258,6 +276,9 @@ export default function ProgramBuilder({ clientId }: { clientId: string }) {
             <Button variant="outline" onClick={() => setGenerating(true)}>
               Generate a workout
             </Button>
+            <Button variant="outline" onClick={() => setApplyingPlan(true)}>
+              Apply a multi-week plan
+            </Button>
           </div>
         </Card>
       ) : (
@@ -282,14 +303,25 @@ export default function ProgramBuilder({ clientId }: { clientId: string }) {
                 fallback: byId[item.exerciseId]?.youtubeUrl,
               });
             }}
+            onSwap={(blockId, itemId) => {
+              const block = w.blocks.find((b) => b.id === blockId);
+              const item = block?.items.find((it) => it.id === itemId);
+              if (!item) return;
+              setPicker({ kind: "swap", workoutId: w.id, blockId, itemId, fromExerciseId: item.exerciseId });
+            }}
           />
         ))
       )}
 
       {!readOnly && dayWorkouts.length > 0 && (
-        <Button variant="outline" className="w-full" onClick={() => setGenerating(true)}>
-          Build another workout
-        </Button>
+        <div className="flex flex-col gap-2">
+          <Button variant="outline" className="w-full" onClick={() => setGenerating(true)}>
+            Build another workout
+          </Button>
+          <Button variant="outline" className="w-full" onClick={() => setApplyingPlan(true)}>
+            Apply a multi-week plan
+          </Button>
+        </div>
       )}
 
       {!readOnly && client && (
@@ -311,12 +343,58 @@ export default function ProgramBuilder({ clientId }: { clientId: string }) {
 
       {picker && (
         <ExercisePickerModal
-          title={picker.kind === "addToBlock" ? "Add to group" : "Add movement"}
+          title={
+            picker.kind === "swap"
+              ? "Swap movement"
+              : picker.kind === "addToBlock"
+                ? "Add to group"
+                : "Add movement"
+          }
           onClose={() => setPicker(null)}
           onPick={(ex) => {
             pushRecent(ex.id);
+            if (picker.kind === "swap") {
+              setSwap({
+                workoutId: picker.workoutId,
+                blockId: picker.blockId,
+                itemId: picker.itemId,
+                fromExerciseId: picker.fromExerciseId,
+                toExerciseId: ex.id,
+                fromName: byId[picker.fromExerciseId]?.name ?? "Movement",
+                toName: ex.name,
+                count: countExerciseInProgram(clientId, picker.fromExerciseId),
+              });
+              setPicker(null);
+              return;
+            }
             if (picker.kind === "newBlock") addExerciseBlock(clientId, picker.workoutId, ex.id);
             else addItemToBlock(clientId, picker.workoutId, picker.blockId, ex.id);
+          }}
+        />
+      )}
+
+      {swap && (
+        <SwapConfirm
+          swap={swap}
+          onClose={() => setSwap(null)}
+          onJustThis={() => {
+            swapItemExercise(clientId, swap.workoutId, swap.blockId, swap.itemId, swap.toExerciseId);
+            setSwap(null);
+          }}
+          onEverywhere={() => {
+            swapExerciseEverywhere(clientId, swap.fromExerciseId, swap.toExerciseId);
+            setSwap(null);
+          }}
+        />
+      )}
+
+      {applyingPlan && client && (
+        <BulkProgramModal
+          clients={[client]}
+          onClose={() => setApplyingPlan(false)}
+          onUseAI={() => {
+            setApplyingPlan(false);
+            setGenerating(true);
           }}
         />
       )}
@@ -393,6 +471,7 @@ function WorkoutCard({
   onPickNew,
   onPickAdd,
   onEditVideo,
+  onSwap,
 }: {
   clientId: string;
   workout: Workout;
@@ -400,6 +479,7 @@ function WorkoutCard({
   onPickNew: () => void;
   onPickAdd: (blockId: string) => void;
   onEditVideo: (blockId: string, itemId: string) => void;
+  onSwap: (blockId: string, itemId: string) => void;
 }) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -525,6 +605,7 @@ function WorkoutCard({
                 byId={byId}
                 onAddToBlock={() => onPickAdd(block.id)}
                 onEditVideo={(itemId) => onEditVideo(block.id, itemId)}
+                onSwap={(itemId) => onSwap(block.id, itemId)}
               />
             ))}
           </div>
@@ -558,6 +639,7 @@ function SortableBlock({
   byId,
   onAddToBlock,
   onEditVideo,
+  onSwap,
 }: {
   clientId: string;
   workoutId: string;
@@ -566,6 +648,7 @@ function SortableBlock({
   byId: Record<string, Exercise>;
   onAddToBlock: () => void;
   onEditVideo: (itemId: string) => void;
+  onSwap: (itemId: string) => void;
 }) {
   const [grouping, setGrouping] = useState(false);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -792,6 +875,7 @@ function SortableBlock({
               item={item}
               ex={byId[item.exerciseId]}
               onEditVideo={() => onEditVideo(item.id)}
+              onSwap={() => onSwap(item.id)}
             />
           ))}
         </div>
@@ -844,6 +928,7 @@ function ItemRow({
   item,
   ex,
   onEditVideo,
+  onSwap,
 }: {
   clientId: string;
   workoutId: string;
@@ -851,6 +936,7 @@ function ItemRow({
   item: ProgramItem;
   ex?: Exercise;
   onEditVideo: () => void;
+  onSwap: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
@@ -927,7 +1013,24 @@ function ItemRow({
         <Field label="Reps" value={item.reps} onChange={(v) => updateItem(clientId, workoutId, blockId, item.id, { reps: v })} />
         <Field label="Rest" value={item.rest} onChange={(v) => updateItem(clientId, workoutId, blockId, item.id, { rest: v })} />
       </div>
-      {showNote ? (
+      <div className="flex items-center gap-4 mt-2 pl-0.5">
+        <button
+          onClick={onSwap}
+          className="flex items-center gap-1 text-xs text-slate hover:text-accent font-medium"
+          title="Swap exercise, keep the sets/reps/rest"
+        >
+          <Repeat size={12} /> Swap
+        </button>
+        {!showNote && (
+          <button
+            onClick={() => setShowNote(true)}
+            className="text-xs text-slate hover:text-accent font-medium"
+          >
+            ＋ cue / note
+          </button>
+        )}
+      </div>
+      {showNote && (
         <textarea
           defaultValue={item.notes ?? ""}
           autoFocus={!item.notes}
@@ -936,13 +1039,6 @@ function ItemRow({
           rows={2}
           className="w-full mt-2 rounded-lg bg-field border border-line px-2.5 py-1.5 text-xs outline-none focus:border-forest resize-y"
         />
-      ) : (
-        <button
-          onClick={() => setShowNote(true)}
-          className="text-xs text-slate hover:text-accent font-medium mt-2 pl-0.5"
-        >
-          ＋ cue / note
-        </button>
       )}
     </div>
   );
@@ -983,5 +1079,57 @@ function Field({
         }`}
       />
     </label>
+  );
+}
+
+// Confirm a movement swap: keep the rep scheme, replace the exercise — either on
+// just this slot, or on every occurrence across the whole program.
+function SwapConfirm({
+  swap,
+  onClose,
+  onJustThis,
+  onEverywhere,
+}: {
+  swap: NonNullable<SwapState>;
+  onClose: () => void;
+  onJustThis: () => void;
+  onEverywhere: () => void;
+}) {
+  return (
+    <div
+      data-noswipe
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm sm:p-4"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-shell w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl border border-line shadow-hero animate-pop overflow-hidden"
+      >
+        <div className="px-4 py-3 border-b border-line flex items-center justify-between">
+          <h2 className="font-bold">Swap movement</h2>
+          <button onClick={onClose} className="text-slate text-2xl leading-none px-2" aria-label="Close">
+            ×
+          </button>
+        </div>
+        <div className="px-4 py-4 space-y-1.5">
+          <p className="text-sm">
+            <span className="font-semibold">{swap.fromName}</span>
+            <span className="text-slate"> → </span>
+            <span className="font-semibold text-accent">{swap.toName}</span>
+          </p>
+          <p className="text-[12px] text-slate">
+            Same sets, reps and rest — only the exercise changes.
+          </p>
+        </div>
+        <div className="px-4 pb-4 flex flex-col gap-2">
+          <Button onClick={onJustThis}>Just this one</Button>
+          {swap.count > 1 && (
+            <Button variant="outline" onClick={onEverywhere}>
+              Everywhere in program ({swap.count})
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

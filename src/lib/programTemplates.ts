@@ -98,6 +98,74 @@ export const PROGRAM_TEMPLATES: ProgramTemplate[] = [
       ];
     },
   },
+  {
+    id: "beginner-12",
+    name: "12-Week Beginner Barbell",
+    weeks: 12,
+    daysPerWeek: 3,
+    blurb: "Linear strength for new lifters — add a little weight every session.",
+    week: (w) => [
+      { dow: 1, gen: { name: `Squat day · Wk ${w + 1}`, blocks: [strength("Back Squat", 3, "5 · add 5 lb", "180s"), strength("Barbell Bench Press", 3, "5 · add 5 lb", "180s"), strength("Conventional Deadlift", 1, "5 · add 10 lb", "210s")] } },
+      { dow: 3, gen: { name: `Press day · Wk ${w + 1}`, blocks: [strength("Back Squat", 3, "5 · add 5 lb", "180s"), strength("Overhead Press", 3, "5 · add 5 lb", "180s"), strength("Barbell Row", 3, "5", "120s")] } },
+      { dow: 5, gen: { name: `Squat day · Wk ${w + 1}`, blocks: [strength("Back Squat", 3, "5 · add 5 lb", "180s"), strength("Barbell Bench Press", 3, "5 · add 5 lb", "180s"), strength("Pull-Up", 3, "AMRAP", "120s")] } },
+    ],
+  },
+  {
+    id: "hypertrophy-6",
+    name: "6-Week Hypertrophy Block",
+    weeks: 6,
+    daysPerWeek: 4,
+    blurb: "Upper/lower volume to add lean mass — work the 8-12 rep range.",
+    week: (w) => [
+      { dow: 1, gen: { name: `Upper A · Wk ${w + 1}`, blocks: [strength("Barbell Bench Press", 4, "8", "120s"), strength("Barbell Row", 4, "10", "90s"), strength("Incline DB Press", 3, "12", "75s"), strength("Lat Pulldown", 3, "12", "75s"), strength("Lateral Raise", 3, "15", "45s")] } },
+      { dow: 2, gen: { name: `Lower A · Wk ${w + 1}`, blocks: [strength("Back Squat", 4, "8", "150s"), strength("Romanian Deadlift", 3, "10", "120s"), strength("Walking Lunge", 3, "12/leg", "90s"), strength("Standing Calf Raise", 4, "15", "45s")] } },
+      { dow: 4, gen: { name: `Upper B · Wk ${w + 1}`, blocks: [strength("Overhead Press", 4, "8", "120s"), strength("Pull-Up", 4, "8-10", "90s"), strength("Dips", 3, "12", "75s"), strength("DB Biceps Curl", 3, "12", "60s"), strength("Triceps Pushdown", 3, "15", "45s")] } },
+      { dow: 5, gen: { name: `Lower B · Wk ${w + 1}`, blocks: [strength("Conventional Deadlift", 4, "6", "180s"), strength("Hip Thrust", 3, "12", "90s"), strength("Leg Curl", 3, "12", "60s"), strength("Hanging Leg Raise", 3, "12", "60s")] } },
+    ],
+  },
+  {
+    id: "bench-8",
+    name: "8-Week Bench Specialization",
+    weeks: 8,
+    daysPerWeek: 3,
+    blurb: "Bring up your bench — heavy, volume and speed work each week.",
+    week: (w) => {
+      const pct = Math.min(95, 70 + w * 3);
+      return [
+        { dow: 1, gen: { name: `Heavy Bench · Wk ${w + 1}`, blocks: [strength("Barbell Bench Press", 5, `3 @ ${pct}%`, "180s"), strength("Overhead Press", 3, "6", "120s"), strength("Dips", 3, "AMRAP", "90s")] } },
+        { dow: 3, gen: { name: `Volume Bench · Wk ${w + 1}`, blocks: [strength("Incline DB Press", 4, "10", "90s"), strength("Barbell Row", 4, "10", "90s"), strength("Triceps Pushdown", 4, "12", "60s"), strength("Face Pull", 3, "15", "45s")] } },
+        { dow: 5, gen: { name: `Speed Bench · Wk ${w + 1}`, blocks: [strength("Barbell Bench Press", 8, "3 @ 60% · fast", "90s"), strength("Pull-Up", 4, "8", "90s"), strength("Lateral Raise", 3, "15", "45s")] } },
+      ];
+    },
+  },
+  {
+    id: "squat-10",
+    name: "10-Week Squat Builder",
+    weeks: 10,
+    daysPerWeek: 3,
+    blurb: "Add to your squat with heavy, volume and a technique day.",
+    week: (w) => {
+      const pct = Math.min(92, Math.round(70 + w * 2.5));
+      return [
+        { dow: 1, gen: { name: `Heavy Squat · Wk ${w + 1}`, blocks: [strength("Back Squat", 5, `3 @ ${pct}%`, "210s"), strength("Romanian Deadlift", 3, "8", "120s"), strength("Hanging Leg Raise", 3, "12", "60s")] } },
+        { dow: 3, gen: { name: `Front Squat · Wk ${w + 1}`, blocks: [strength("Front Squat", 4, "5", "180s"), strength("Walking Lunge", 3, "10/leg", "90s"), strength("Standing Calf Raise", 4, "15", "45s")] } },
+        { dow: 5, gen: { name: `Volume Squat · Wk ${w + 1}`, blocks: [strength("Back Squat", 5, "8 @ 65%", "150s"), strength("Leg Curl", 3, "12", "60s"), strength("Plank", 3, "45s", "45s")] } },
+      ];
+    },
+  },
+  {
+    id: "engine-8",
+    name: "8-Week Conditioning Engine",
+    weeks: 8,
+    daysPerWeek: 4,
+    blurb: "Build a bigger gas tank — intervals, tempo and mixed-modal metcons.",
+    week: (w) => [
+      { dow: 1, gen: { name: `Intervals · Wk ${w + 1}`, blocks: [{ kind: "note", title: "Rowing intervals", text: `${5 + Math.floor(w / 2)} × 500m, rest 2:00`, logResult: true, scoreType: "time" }, strength("Back Squat", 3, "5", "150s")] } },
+      { dow: 2, gen: { name: `Tempo · Wk ${w + 1}`, blocks: [{ kind: "note", title: "Tempo run / bike", text: `${20 + w * 2} min @ conversational-hard` }] } },
+      { dow: 4, gen: { name: `Metcon · Wk ${w + 1}`, blocks: [{ kind: "note", title: `AMRAP ${12 + w} min`, text: "10 cal row · 10 KB swing · 10 burpees", logResult: true, scoreType: "rounds", levels: true }, strength("Barbell Bench Press", 3, "8", "120s")] } },
+      { dow: 6, gen: { name: `Long & Easy · Wk ${w + 1}`, blocks: [{ kind: "note", title: "Zone-2 cardio", text: `${30 + w * 3} min easy — nose breathing` }] } },
+    ],
+  },
 ];
 
 /** Every workout for a plan, stamped across consecutive weeks from `weekIso(w)`. */

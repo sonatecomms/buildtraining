@@ -7,6 +7,7 @@ import type {
   DB,
   Exercise,
   Program,
+  ProgramItem,
   ScoreType,
   Workout,
   WorkoutLog,
@@ -486,6 +487,58 @@ export function updateItem(
         : b,
     ),
   }));
+}
+
+// Swap a movement's exercise but keep its rep scheme (sets/reps/rest/notes).
+// Variant + per-use video are exercise-specific, so they're cleared.
+const swapped = (it: ProgramItem, newExerciseId: string): ProgramItem => ({
+  ...it,
+  exerciseId: newExerciseId,
+  variant: undefined,
+  youtubeUrl: undefined,
+});
+
+export function swapItemExercise(
+  clientId: string,
+  workoutId: string,
+  blockId: string,
+  itemId: string,
+  newExerciseId: string,
+) {
+  mutateWorkout(clientId, workoutId, (w) => ({
+    ...w,
+    blocks: w.blocks.map((b) =>
+      b.id === blockId
+        ? { ...b, items: b.items.map((it) => (it.id === itemId ? swapped(it, newExerciseId) : it)) }
+        : b,
+    ),
+  }));
+}
+
+// Swap every occurrence of an exercise across the whole program, keeping each
+// movement's rep scheme. Returns how many it changed.
+export function swapExerciseEverywhere(clientId: string, fromExerciseId: string, newExerciseId: string) {
+  const prog = ensureProgram(clientId);
+  saveProgram({
+    ...prog,
+    workouts: prog.workouts.map((w) => ({
+      ...w,
+      blocks: w.blocks.map((b) => ({
+        ...b,
+        items: b.items.map((it) => (it.exerciseId === fromExerciseId ? swapped(it, newExerciseId) : it)),
+      })),
+    })),
+  });
+}
+
+// How many times an exercise appears across a client's whole program.
+export function countExerciseInProgram(clientId: string, exerciseId: string): number {
+  const prog = getDB().programs.find((p) => p.clientId === clientId);
+  if (!prog) return 0;
+  return prog.workouts.reduce(
+    (n, w) => n + w.blocks.reduce((m, b) => m + b.items.filter((it) => it.exerciseId === exerciseId).length, 0),
+    0,
+  );
 }
 
 export function removeItem(clientId: string, workoutId: string, blockId: string, itemId: string) {
