@@ -26,7 +26,7 @@ export default function BulkProgramModal({
 }) {
   const exercises = useExercises();
   const byId = useMemo(() => Object.fromEntries(exercises.map((e) => [e.id, e])), [exercises]);
-  const [tab, setTab] = useState<"plan" | "session">("plan");
+  const [tab, setTab] = useState<"plan" | "session">("session");
   const [plan, setPlan] = useState<ProgramTemplate | null>(null);
   const [creating, setCreating] = useState(false);
   const [startDate, setStartDate] = useState("");
@@ -101,7 +101,7 @@ export default function BulkProgramModal({
           <div className="overflow-y-auto px-4 py-3 min-h-0 flex-1 space-y-3 overscroll-contain">
             {/* mode: a multi-week plan, or a single session */}
             <div className="grid grid-cols-2 gap-1 bg-field rounded-xl p-1">
-              {(["plan", "session"] as const).map((m) => (
+              {(["session", "plan"] as const).map((m) => (
                 <button
                   key={m}
                   onClick={() => setTab(m)}
