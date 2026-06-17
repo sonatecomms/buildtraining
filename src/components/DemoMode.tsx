@@ -7,7 +7,7 @@
 // Coach⇄Athlete master switch and the school skinner. Normal users (real login)
 // never see any of this.
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { ClipboardList, UserRound, LogOut } from "lucide-react";
 import { buildDemoDB } from "@/lib/seed";
@@ -121,12 +121,26 @@ export function DemoRoot({ children }: { children: React.ReactNode }) {
 // controls so they never cover page content) above the coach or athlete view.
 function DemoApp({ children }: { children: React.ReactNode }) {
   const { role } = useDemo();
-  const seeded = useRef(false);
-  if (!seeded.current) {
-    // hydrate synchronously on first render so no empty-state flashes through
+  const pathname = usePathname();
+  const router = useRouter();
+  // A returning presenter reloads /demo and is restored as active — but the
+  // /demo route renders no app content (its page is null), so the coach home
+  // would sit empty until a tab nav landed on "/". Send them to "/" so the
+  // first screen (the roster) loads immediately.
+  useEffect(() => {
+    if (pathname === "/demo") router.replace("/");
+  }, [pathname, router]);
+  // Seed in a layout effect (before paint) rather than during render: a
+  // render-phase store mutation notifies subscribers illegally, so the first
+  // screen's data hooks miss the seed until a later event (e.g. a tab switch)
+  // forces a re-read. Gating on `seeded` lets the app subtree mount only after
+  // the store is populated, so every hook reads real data on first paint.
+  const [seeded, setSeeded] = useState(false);
+  useLayoutEffect(() => {
     hydrate(buildDemoDB());
-    seeded.current = true;
-  }
+    setSeeded(true);
+  }, []);
+  if (!seeded) return null;
   return (
     <>
       <DemoBar />
