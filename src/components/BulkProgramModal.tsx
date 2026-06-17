@@ -3,10 +3,11 @@
 import { useMemo, useState } from "react";
 import { Plus, Trash2, Sparkles } from "lucide-react";
 import { addWorkoutObject, addWorkouts, uid, useExercises } from "@/lib/store";
-import { weekStartIso } from "@/lib/week";
+import { weekStartIso, weekStartIsoFrom } from "@/lib/week";
 import { PROGRAM_TEMPLATES, buildPlanWorkouts, planSessionCount, type ProgramTemplate } from "@/lib/programTemplates";
 import type { Client, ProgramItem, Workout } from "@/lib/types";
 import ExercisePickerModal from "./ExercisePickerModal";
+import CustomPlanBuilder from "./CustomPlanBuilder";
 import { Button } from "./ui";
 
 const DOWS = ["S", "M", "T", "W", "T", "F", "S"];
@@ -27,6 +28,8 @@ export default function BulkProgramModal({
   const byId = useMemo(() => Object.fromEntries(exercises.map((e) => [e.id, e])), [exercises]);
   const [tab, setTab] = useState<"plan" | "session">("plan");
   const [plan, setPlan] = useState<ProgramTemplate | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [startDate, setStartDate] = useState("");
   const [name, setName] = useState("");
   const [items, setItems] = useState<ProgramItem[]>([]);
   const [dow, setDow] = useState(new Date().getDay());
@@ -36,7 +39,7 @@ export default function BulkProgramModal({
   const applyPlan = () => {
     if (!plan) return;
     for (const c of clients) {
-      addWorkouts(c.id, buildPlanWorkouts(plan, exercises, (w) => weekStartIso(w)));
+      addWorkouts(c.id, buildPlanWorkouts(plan, exercises, (w) => weekStartIsoFrom(startDate, w)));
     }
     onClose();
   };
@@ -63,6 +66,18 @@ export default function BulkProgramModal({
     }
     onClose();
   };
+
+  if (creating) {
+    return (
+      <CustomPlanBuilder
+        clients={clients}
+        startDate={startDate}
+        setStartDate={setStartDate}
+        onClose={onClose}
+        onBack={() => setCreating(false)}
+      />
+    );
+  }
 
   return (
     <>
@@ -100,6 +115,15 @@ export default function BulkProgramModal({
 
             {tab === "plan" ? (
               <div className="space-y-2">
+                <label className="flex items-center justify-between gap-2 rounded-xl bg-field border border-line px-3 py-2">
+                  <span className="text-[12px] font-semibold text-slate">Start date</span>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="bg-transparent text-sm outline-none text-ink"
+                  />
+                </label>
                 {PROGRAM_TEMPLATES.map((t) => (
                   <button
                     key={t.id}
@@ -120,6 +144,12 @@ export default function BulkProgramModal({
                     </p>
                   </button>
                 ))}
+                <button
+                  onClick={() => setCreating(true)}
+                  className="w-full rounded-xl border border-dashed border-line text-accent font-semibold py-2.5 text-sm active:scale-[0.99] transition-transform"
+                >
+                  + Build a custom plan
+                </button>
               </div>
             ) : (
             <>

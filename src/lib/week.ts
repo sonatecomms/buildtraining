@@ -73,6 +73,16 @@ export function weekStartIso(offset: number): string {
   return isoDate(weekDatesForOffset(offset)[0]);
 }
 
+// yyyy-mm-dd of the Sunday anchoring week `w` of a plan that starts on the week
+// containing `startISO` (yyyy-mm-dd; empty → this week). Used to apply a plan
+// from a chosen calendar start date.
+export function weekStartIsoFrom(startISO: string | undefined, w: number): string {
+  const base = startISO ? new Date(startISO + "T00:00:00") : new Date();
+  const sunday = weekDates(base)[0];
+  sunday.setDate(sunday.getDate() + w * 7);
+  return isoDate(sunday);
+}
+
 // Friendly label for the week strip: "This week" / "Last week" / "Next week",
 // else a "May 25 – 31" date range.
 export function weekLabel(offset: number): string {
