@@ -3,6 +3,7 @@ import { League_Spartan, Poppins } from "next/font/google";
 import "./globals.css";
 import ServiceWorker from "@/components/ServiceWorker";
 import { IntroSplash } from "@/components/IntroSplash";
+import { WhatsNewModal } from "@/components/WhatsNewModal";
 import { SchoolThemeProvider } from "@/components/SchoolThemeProvider";
 import { DemoModeProvider, DemoRoot } from "@/components/DemoMode";
 
@@ -47,6 +48,7 @@ export default function RootLayout({
             component itself decides when to dismiss (and skips under reduced
             motion / after the first launch this session). */}
         <IntroSplash />
+        <WhatsNewModal />
         <SchoolThemeProvider>
           <DemoModeProvider>
             <DemoRoot>{children}</DemoRoot>
