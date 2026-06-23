@@ -12,8 +12,9 @@ import {
   workoutsForWeek,
 } from "@/lib/store";
 import { flushPush } from "@/lib/sync";
-import type { Client, Exercise, ItemResult, ProgramItem, ScoreType, Workout, WorkoutLog } from "@/lib/types";
+import type { Client, Exercise, ItemResult, ProgramItem, ScoreType, SetLog, Workout, WorkoutLog } from "@/lib/types";
 import { METCON_LEVELS } from "@/lib/types";
+import { entryHasData, loggedSets, setChips } from "@/lib/sets";
 import { youtubeId } from "@/lib/youtube";
 import { calsPerMin, runPace, speedMph } from "@/lib/activities";
 import { parseRest, formatClock } from "@/lib/rest";
@@ -122,6 +123,7 @@ export default function TrainView({
     // logging real data implicitly checks the movement off — so an athlete who
     // fills in their sets never has to remember to also tap the circle.
     const meaningful =
+      patch.sets?.some((s) => s.weight?.trim() || s.reps?.trim()) ||
       patch.weight || patch.setsDone || patch.repsDone || patch.duration || patch.distance || patch.calories || patch.intensity || patch.feeling || patch.note || patch.rounds || patch.level;
     if (meaningful) setDone((d) => (d.has(itemId) ? d : new Set(d).add(itemId)));
   };
@@ -161,13 +163,15 @@ export default function TrainView({
     running.blocks.forEach((b) => b.items.forEach((it) => (exOf[it.id] = it.exerciseId)));
     const extraIds = new Set(extras.map((x) => x.id));
     extras.forEach((x) => (exOf[x.id] = x.exerciseId));
+    // drop blank set rows (padding the athlete never filled in) before saving
+    const trimSets = (e: ItemResult): ItemResult =>
+      e.sets ? { ...e, sets: e.sets.filter((s) => s.weight?.trim() || s.reps?.trim()) } : e;
     // keep results that carry data — plus every movement the athlete added
     // themselves, even with no numbers yet: adding it is intent, so it must
     // survive Finish to stay editable/deletable when the session is reopened.
-    const hasData = (e: ItemResult) =>
-      e.weight || e.setsDone || e.repsDone || e.duration || e.distance || e.calories || e.intensity || e.feeling || e.note || e.rounds || e.level;
     const entries = Object.values(results)
-      .filter((e) => extraIds.has(e.itemId) || hasData(e))
+      .map(trimSets)
+      .filter((e) => extraIds.has(e.itemId) || entryHasData(e))
       .map((e) => ({ ...e, exerciseId: exOf[e.itemId], extra: extraIds.has(e.itemId) || undefined }));
     // extras the athlete added but never typed into have no results row at all —
     // append a bare entry so they persist (and can later be edited or removed).
@@ -651,7 +655,7 @@ function RunnerItem({
   const output = activity ? calsPerMin(r.duration, r.calories) : null;
   // Collapse by default so the runner reads as a scannable checklist instead of a
   // wall of inputs; auto-open extras (just added) and anything already logged.
-  const hasData = !!(r.weight || r.setsDone || r.repsDone || r.duration || r.distance || r.calories || r.intensity || r.feeling || r.note);
+  const hasData = entryHasData(r);
   const [open, setOpen] = useState<boolean>(isExtra || hasData);
   const [playing, setPlaying] = useState(false);
 
@@ -770,13 +774,17 @@ function RunnerItem({
               )}
             </div>
           ) : (
-            <div className={`grid ${bodyweight ? "grid-cols-2" : "grid-cols-3"} gap-2`}>
-              {!bodyweight && (
-                <LogField label="Weight" value={r.weight} placeholder="lbs" inputMode="decimal" onChange={(v) => onChange({ weight: v })} />
-              )}
-              <LogField label="Sets" value={r.setsDone} placeholder={String(item.sets)} inputMode="numeric" onChange={(v) => onChange({ setsDone: v })} />
-              <LogField label="Reps" value={r.repsDone} placeholder={item.reps} inputMode="numeric" onChange={(v) => onChange({ repsDone: v })} />
-            </div>
+            <SetEditor
+              // seed from the per-set log; fall back to synthesizing rows from an
+              // older flat log so reopening an old session shows its numbers
+              sets={r.sets ?? loggedSets(r)}
+              prescribedSets={item.sets}
+              prescribedReps={item.reps}
+              bodyweight={bodyweight}
+              // writing sets supersedes the flat fields — clear them so nothing
+              // gets double-counted in PRs / volume
+              onChange={(sets) => onChange({ sets, weight: undefined, setsDone: undefined, repsDone: undefined })}
+            />
           )}
           {restSeconds != null && onRest && (
             <button
@@ -1009,6 +1017,86 @@ function MetricField({
         onChange={(e) => onChange({ [m.field]: e.target.value } as Partial<ItemResult>)}
         className="w-full min-w-0 mt-0.5 rounded-lg bg-surface border border-line px-2 py-1.5 text-sm outline-none focus:border-forest"
       />
+    </div>
+  );
+}
+
+// Per-set logger for strength movements: a row per working set, each with its own
+// weight + reps. Seeded with the prescribed number of (empty) rows so the athlete
+// can fill each set as they go — no guarantee they finish all of them, or hold the
+// same weight across them. They can add or remove sets too (their own extra work).
+function SetEditor({
+  sets,
+  prescribedSets,
+  prescribedReps,
+  bodyweight,
+  onChange,
+}: {
+  sets: SetLog[];
+  prescribedSets: number;
+  prescribedReps: string;
+  bodyweight?: boolean;
+  onChange: (sets: SetLog[]) => void;
+}) {
+  // show at least the prescribed number of rows; pad with blanks the athlete can
+  // ignore (blank rows are trimmed on Finish, so they never become saved data)
+  const rows: SetLog[] = [...sets];
+  while (rows.length < Math.max(1, prescribedSets)) rows.push({});
+
+  const patch = (i: number, key: keyof SetLog, val: string) =>
+    onChange(rows.map((s, idx) => (idx === i ? { ...s, [key]: val } : s)));
+  const addSet = () => onChange([...rows, {}]);
+  const removeSet = (i: number) => onChange(rows.filter((_, idx) => idx !== i));
+
+  const cols = bodyweight ? "grid-cols-[2.5rem_1fr_2rem]" : "grid-cols-[2.5rem_1fr_1fr_2rem]";
+  const inputCls =
+    "w-full min-w-0 rounded-lg bg-surface border border-line px-2 py-1.5 text-sm outline-none focus:border-forest";
+
+  return (
+    <div className="space-y-1.5">
+      <div className={`grid ${cols} gap-2 items-center px-0.5`}>
+        <span className="text-[10px] uppercase tracking-wide text-slate">Set</span>
+        {!bodyweight && <span className="text-[10px] uppercase tracking-wide text-slate">Weight</span>}
+        <span className="text-[10px] uppercase tracking-wide text-slate">Reps</span>
+        <span />
+      </div>
+      {rows.map((s, i) => (
+        <div key={i} className={`grid ${cols} gap-2 items-center`}>
+          <span className="text-sm font-medium text-slate tabular-nums text-center">{i + 1}</span>
+          {!bodyweight && (
+            <input
+              value={s.weight ?? ""}
+              placeholder="lbs"
+              inputMode="decimal"
+              aria-label={`Set ${i + 1} weight`}
+              onChange={(e) => patch(i, "weight", e.target.value)}
+              className={inputCls}
+            />
+          )}
+          <input
+            value={s.reps ?? ""}
+            placeholder={prescribedReps || "reps"}
+            inputMode="numeric"
+            aria-label={`Set ${i + 1} reps`}
+            onChange={(e) => patch(i, "reps", e.target.value)}
+            className={inputCls}
+          />
+          <button
+            onClick={() => removeSet(i)}
+            disabled={rows.length <= 1}
+            className="text-slate text-lg leading-none px-1 disabled:opacity-30 hover:text-brick active:text-brick"
+            aria-label={`Remove set ${i + 1}`}
+          >
+            ✕
+          </button>
+        </div>
+      ))}
+      <button
+        onClick={addSet}
+        className="w-full rounded-lg border border-dashed border-line py-1.5 text-xs font-medium text-slate hover:text-accent hover:border-accent/40 transition-colors"
+      >
+        + Add set
+      </button>
     </div>
   );
 }
@@ -1455,10 +1543,10 @@ function ReviewItem({
   r?: ItemResult;
   isExtra?: boolean;
 }) {
-  // chips summarizing the athlete's logged response
+  // chips summarizing the athlete's logged response — one per set (collapsed when
+  // identical), so the coach sees each set's weight × reps, not just a top line
   const chips: string[] = [];
-  if (r?.weight) chips.push(r.weight);
-  if (r?.setsDone || r?.repsDone) chips.push(`${r.setsDone ?? "?"}×${r.repsDone ?? "?"}`);
+  if (r) chips.push(...setChips(loggedSets(r)));
   if (r?.duration) chips.push(r.duration);
   if (r?.distance) chips.push(r.distance);
   if (r?.calories) chips.push(`${r.calories} cal`);

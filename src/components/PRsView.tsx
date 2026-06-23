@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useExercises, useLogsForClient } from "@/lib/store";
 import type { Client } from "@/lib/types";
 import { relativeDate, daysAgo } from "@/lib/week";
+import { topSet } from "@/lib/sets";
 import { Card, EmptyState, Hero, Pill } from "./ui";
 import PercentageCalculator from "./PercentageCalculator";
 
@@ -20,14 +21,12 @@ export default function PRsView({ client }: { client: Client }) {
   for (const log of logs) {
     for (const e of log.entries ?? []) {
       if (!e.exerciseId) continue;
-      // first numeric token only — so "135-145" or "2x45" don't concatenate into
-      // a garbage PR like 135145
-      const m = (e.weight ?? "").match(/\d+(?:\.\d+)?/);
-      const w = m ? parseFloat(m[0]) : NaN;
-      if (!isFinite(w) || w <= 0) continue;
+      // heaviest single set the athlete logged (handles per-set + old flat logs)
+      const ts = topSet(e);
+      if (!ts) continue;
       const cur = best[e.exerciseId];
-      if (!cur || w > cur.weight) {
-        best[e.exerciseId] = { exId: e.exerciseId, weight: w, reps: e.repsDone, date: log.date };
+      if (!cur || ts.weight > cur.weight) {
+        best[e.exerciseId] = { exId: e.exerciseId, weight: ts.weight, reps: ts.reps, date: log.date };
       }
     }
   }

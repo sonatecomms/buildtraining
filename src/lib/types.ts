@@ -170,10 +170,22 @@ export interface Client {
   createdAt: string;
 }
 
+// One working set the athlete logged: the weight used and the reps completed.
+// Strength movements collect an array of these (a barbell lift is rarely four
+// identical sets — reps drop off, weight ramps), so each set is its own row.
+export interface SetLog {
+  weight?: string; // free text: "135", "BW", "red band"
+  reps?: string; // reps completed this set
+}
+
 // What the athlete actually did for one movement during a session.
 export interface ItemResult {
   itemId: string;
   exerciseId?: string; // captured at log time so PRs survive program edits
+  // Per-set log for strength movements: one row per set actually performed, each
+  // with its own weight + reps. Preferred over the flat weight/setsDone/repsDone
+  // below, which remain for activities, metcons, and pre-per-set logs.
+  sets?: SetLog[];
   weight?: string; // free text: "135", "BW", "red band"
   setsDone?: string;
   repsDone?: string;

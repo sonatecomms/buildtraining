@@ -15,6 +15,7 @@ import type {
 import { buildSeedDB } from "./seed";
 import { cancelPendingPush, schedulePush } from "./sync";
 import { isoDate, isUpcomingWorkout, weekStartIso } from "./week";
+import { setVolume } from "./sets";
 
 const KEY = "fitcoach.db.v2";
 
@@ -774,16 +775,11 @@ export function computeStreak(logs: WorkoutLog[], weeklyTarget: number): StreakI
   const points = totalSessions * 50 + longest * 25;
   const level = Math.floor(points / 500) + 1;
 
-  // total weight moved across every logged set: weight × sets × reps (free-text
-  // fields parsed leniently; non-numeric loads like "BW"/bands just don't count)
+  // total weight moved, summed per set (weight × reps) across every logged set;
+  // non-numeric loads like "BW"/bands just don't count
   let totalVolume = 0;
   for (const l of logs) {
-    for (const e of l.entries ?? []) {
-      const w = parseFloat(e.weight ?? "");
-      const reps = parseFloat(e.repsDone ?? "");
-      const sets = parseFloat(e.setsDone ?? "") || 1;
-      if (w > 0 && reps > 0) totalVolume += w * reps * sets;
-    }
+    for (const e of l.entries ?? []) totalVolume += setVolume(e);
   }
 
   const badges: Badge[] = [

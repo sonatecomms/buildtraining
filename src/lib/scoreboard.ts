@@ -1,4 +1,5 @@
 import type { Client, WorkoutLog } from "./types";
+import { topSet } from "./sets";
 
 // The five tracked barbell lifts, in scoreboard order.
 export type LiftKey = "ex-clean" | "ex-bench" | "ex-backsquat" | "ex-deadlift" | "ex-ohp";
@@ -24,9 +25,9 @@ export function bestEntry(
   for (const l of logs) {
     if (l.clientId !== clientId || !l.entries) continue;
     for (const e of l.entries) {
-      if (e.exerciseId !== exId || !e.weight) continue;
-      const w = parseFloat(e.weight);
-      if (!Number.isNaN(w) && (!best || w > best.weight)) best = { weight: w, date: l.date };
+      if (e.exerciseId !== exId) continue;
+      const w = topSet(e)?.weight; // heaviest set across the per-set log
+      if (w != null && (!best || w > best.weight)) best = { weight: w, date: l.date };
     }
   }
   return best;
