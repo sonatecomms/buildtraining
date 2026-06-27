@@ -33,6 +33,7 @@ import InstallGuide from "./InstallGuide";
 import ExerciseList from "./ExerciseList";
 import IntervalTimer, { type TimerResult } from "./IntervalTimer";
 import MessageThread from "./MessageThread";
+import { useUnread } from "@/lib/messages";
 import { NavBar } from "./NavBar";
 import { useAppGestures } from "@/lib/useAppGestures";
 import { PullIndicator } from "./PullIndicator";
@@ -56,6 +57,10 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
   const { session } = useSession();
   const [justSet, setJustSet] = useState(false);
   const [view, setView] = useState<View>("train");
+  const unread = useUnread(clientId, "athlete");
+  const navItems = NAV.map((it) =>
+    it.id === "coach" ? { ...it, badge: unread > 0 && view !== "coach" } : it,
+  );
 
   // Swipe walks between the bottom-nav views in tab order; pull-down refreshes.
   const { ref: swipeRef, pull, refreshing } = useAppGestures<HTMLDivElement>({
@@ -178,7 +183,7 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
         )}
       </main>
 
-      <NavBar items={NAV} activeId={view} onSelect={(id) => setView(id as View)} />
+      <NavBar items={navItems} activeId={view} onSelect={(id) => setView(id as View)} />
     </div>
   );
 }

@@ -3,6 +3,14 @@
 export const buildDate = "2026-06-27";
 export const commits: { sha: string; subject: string }[] = [
   {
+    "sha": "c183f81",
+    "subject": "exercise history detail + coach↔athlete messaging"
+  },
+  {
+    "sha": "7b50296",
+    "subject": "Fix timer audio regression: reuse one shared AudioContext"
+  },
+  {
     "sha": "f4491e1",
     "subject": "timer count-in, skip final rest, halfway voice, 3-2-1 ticks, finish confetti"
   },
@@ -113,13 +121,5 @@ export const commits: { sha: string; subject: string }[] = [
   {
     "sha": "1530da9",
     "subject": "Move weekly goal ring into the header; v52"
-  },
-  {
-    "sha": "f7c42df",
-    "subject": "Fill greeting dead space with a today's-date badge; v51"
-  },
-  {
-    "sha": "c6bc07c",
-    "subject": "Fix Build-a-workout coach toggle rendering; v50"
   }
 ];

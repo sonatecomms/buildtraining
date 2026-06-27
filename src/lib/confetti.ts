@@ -60,7 +60,10 @@ export function confetti(opts?: { count?: number; duration?: number }) {
   const parts: Particle[] = [];
   for (let i = 0; i < count; i++) {
     const left = i % 2 === 0;
-    const angle = (left ? -1 : 1) * (Math.PI / 4) + (Math.random() - 0.5) * 0.9;
+    // Fire upward and INWARD: the left cannon (at x≈10%) angles right, the right
+    // cannon (at x≈90%) angles left, so the burst fills the screen instead of
+    // immediately flying off the near edge.
+    const angle = (left ? 1 : -1) * (Math.PI / 4) + (Math.random() - 0.5) * 0.9;
     const speed = 9 + Math.random() * 9;
     parts.push({
       x: left ? W * 0.1 : W * 0.9,

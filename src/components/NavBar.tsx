@@ -13,6 +13,7 @@ export interface NavItem {
   label: string;
   icon: LucideIcon; // crisp line icon (chrome); emoji is reserved for moments
   href?: string; // present → renders a <Link> (coach, route-based nav)
+  badge?: boolean; // small unread dot on the icon (e.g. new coach message)
 }
 
 interface Rect {
@@ -117,8 +118,14 @@ export function NavBar({
               className={`build-nav-stack${popped ? " build-nav-pop" : ""}`}
               style={popped ? { animationDelay: `${i * 0.1}s` } : undefined}
             >
-              <span className="build-nav-ico">
+              <span className="build-nav-ico relative">
                 <Icon size={22} strokeWidth={1.75} aria-hidden />
+                {t.badge && (
+                  <span
+                    aria-hidden
+                    className="absolute -top-0.5 -right-1 w-2.5 h-2.5 rounded-full bg-brick ring-2 ring-surface"
+                  />
+                )}
               </span>
               <span className="build-nav-label">{t.label}</span>
             </span>

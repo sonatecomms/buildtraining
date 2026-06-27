@@ -10,6 +10,7 @@ import ProgramBuilder from "@/components/ProgramBuilder";
 import ProfileEditor from "@/components/ProfileEditor";
 import TrainView from "@/components/TrainView";
 import MessageThread from "@/components/MessageThread";
+import { useUnread } from "@/lib/messages";
 
 type Tab = "program" | "profile" | "train" | "messages";
 const TABS: { id: Tab; label: string; icon: LucideIcon }[] = [
@@ -26,6 +27,7 @@ export default function ClientPage() {
   // Where the back arrow returns to — defaults to the roster, but ?from=numbers
   // (a scoreboard tap) sends them back to the scoreboard.
   const [back, setBack] = useState({ href: "/", label: "Athletes" });
+  const unread = useUnread(client?.id, "coach");
 
   // Allow deep-linking a tab via ?tab=train|profile|program (set after mount to
   // avoid a hydration mismatch with the server-rendered default).
@@ -60,15 +62,24 @@ export default function ClientPage() {
         {TABS.map((t) => {
           const Icon = t.icon;
           const active = tab === t.id;
+          const showDot = t.id === "messages" && unread > 0 && tab !== "messages";
           return (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`inline-flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest/40 ${
+              className={`flex flex-col items-center justify-center gap-1 rounded-xl px-1 py-2.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest/40 ${
                 active ? "bg-forest text-bone" : "text-slate"
               }`}
             >
-              <Icon size={16} />
+              <span className="relative">
+                <Icon size={18} />
+                {showDot && (
+                  <span
+                    aria-hidden
+                    className="absolute -top-1 -right-1.5 w-2.5 h-2.5 rounded-full bg-brick ring-2 ring-surface"
+                  />
+                )}
+              </span>
               {t.label}
             </button>
           );

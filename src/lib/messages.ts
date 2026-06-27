@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 // Coach ↔ athlete direct messaging. Self-contained: it talks to Supabase
 // directly (its own realtime channel) rather than riding the whole-DB
 // upsert/prune sync, which would risk deleting the other party's messages.
@@ -149,6 +151,10 @@ export function subscribeThread(clientId: string, onMessage: (m: Message) => voi
 // Mark the OTHER party's unread messages in this thread as read.
 export async function markThreadRead(clientId: string, me: Sender): Promise<void> {
   const other: Sender = me === "athlete" ? "coach" : "athlete";
+  const fireRead = () => {
+    if (typeof window !== "undefined")
+      window.dispatchEvent(new CustomEvent("build-msgs-read", { detail: clientId }));
+  };
   const sb = getSupabase();
   if (!sb || !syncActive()) {
     const t = localThread(clientId);
@@ -160,6 +166,7 @@ export async function markThreadRead(clientId: string, me: Sender): Promise<void
       }
     }
     if (changed) localSave(clientId, t);
+    fireRead();
     return;
   }
   await sb
@@ -168,10 +175,40 @@ export async function markThreadRead(clientId: string, me: Sender): Promise<void
     .eq("client_id", clientId)
     .eq("sender", other)
     .is("read_at", null);
+  fireRead();
 }
 
 // How many unread messages from the other party are waiting in this thread.
 export function unreadFor(messages: Message[], me: Sender): number {
   const other: Sender = me === "athlete" ? "coach" : "athlete";
   return messages.filter((m) => m.sender === other && !m.readAt).length;
+}
+
+export async function unreadCount(clientId: string, me: Sender): Promise<number> {
+  return unreadFor(await fetchThread(clientId), me);
+}
+
+// Live unread count for a thread, for the nav/tab badge. Refreshes on a new
+// incoming message and when the thread is marked read elsewhere in the app.
+export function useUnread(clientId: string | undefined, me: Sender): number {
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    if (!clientId) return;
+    let live = true;
+    const refresh = () => unreadCount(clientId, me).then((c) => live && setN(c));
+    refresh();
+    const unsub = subscribeThread(clientId, (m) => {
+      if (m.sender !== me) refresh();
+    });
+    const onRead = (e: Event) => {
+      if ((e as CustomEvent).detail === clientId) refresh();
+    };
+    window.addEventListener("build-msgs-read", onRead);
+    return () => {
+      live = false;
+      unsub();
+      window.removeEventListener("build-msgs-read", onRead);
+    };
+  }, [clientId, me]);
+  return n;
 }
