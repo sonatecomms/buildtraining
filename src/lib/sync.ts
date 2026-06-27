@@ -32,6 +32,15 @@ export function syncActive(): boolean {
   return Boolean(getSupabase() && coachId);
 }
 
+// Current identity, for features (e.g. messaging) that write their own rows
+// outside the whole-DB sync and need to stamp coach_id / sender correctly.
+export function currentCoachId(): string | null {
+  return coachId;
+}
+export function currentMode(): "coach" | "athlete" | null {
+  return mode;
+}
+
 // Live updates: fire `onChange` whenever the coach's / athlete's rows change in
 // the cloud (so the other side updates without a refresh). Returns an unsubscribe.
 export function startRealtime(onChange: () => void): () => void {

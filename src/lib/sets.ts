@@ -35,6 +35,15 @@ export function topSet(e: ItemResult): { weight: number; reps?: string } | undef
   return best;
 }
 
+/** Epley estimated one-rep max from a top set: weight × (1 + reps/30), rounded.
+ *  A single rep returns the weight as-is; non-numeric/zero loads return 0. */
+export function est1RM(weight: number, reps?: string): number {
+  if (!(weight > 0)) return 0;
+  const r = parseFloat(reps ?? "");
+  if (!(r > 0) || r === 1) return Math.round(weight);
+  return Math.round(weight * (1 + r / 30));
+}
+
 /** Total pounds moved across the logged sets (weight × reps, summed). Non-numeric
  *  loads like "BW"/bands just don't count. */
 export function setVolume(e: ItemResult): number {

@@ -22,7 +22,7 @@ import {
   toLoginId,
 } from "@/lib/login";
 import type { Client } from "@/lib/types";
-import { Dumbbell, Timer, Calculator, BookOpen, User, type LucideIcon } from "lucide-react";
+import { Dumbbell, Timer, Calculator, BookOpen, MessageCircle, User, type LucideIcon } from "lucide-react";
 import { getSupabase } from "@/lib/supabase";
 import { Avatar, Button } from "./ui";
 import TrainView from "./TrainView";
@@ -32,12 +32,13 @@ import PRsView from "./PRsView";
 import InstallGuide from "./InstallGuide";
 import ExerciseList from "./ExerciseList";
 import IntervalTimer, { type TimerResult } from "./IntervalTimer";
+import MessageThread from "./MessageThread";
 import { NavBar } from "./NavBar";
 import { useAppGestures } from "@/lib/useAppGestures";
 import { PullIndicator } from "./PullIndicator";
 import { useSession } from "./SessionProvider";
 
-type View = "train" | "timer" | "prs" | "library" | "settings";
+type View = "train" | "timer" | "prs" | "library" | "coach" | "settings";
 
 // Bottom nav. "You" (Profile + Settings) is also reachable via the header avatar.
 const NAV: { id: View; label: string; icon: LucideIcon }[] = [
@@ -45,6 +46,7 @@ const NAV: { id: View; label: string; icon: LucideIcon }[] = [
   { id: "timer", label: "Timer", icon: Timer },
   { id: "prs", label: "Numbers", icon: Calculator },
   { id: "library", label: "Library", icon: BookOpen },
+  { id: "coach", label: "Coach", icon: MessageCircle },
   { id: "settings", label: "You", icon: User },
 ];
 
@@ -144,6 +146,11 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
           <>
             <h1 className="text-2xl font-bold mb-4">Movement library</h1>
             <ExerciseList exercises={exercises} />
+          </>
+        ) : view === "coach" ? (
+          <>
+            <h1 className="text-2xl font-bold mb-4">Your coach</h1>
+            <MessageThread client={client} me="athlete" />
           </>
         ) : (
           <>

@@ -7,11 +7,13 @@ import { relativeDate, daysAgo } from "@/lib/week";
 import { topSet } from "@/lib/sets";
 import { Card, EmptyState, Hero, Pill } from "./ui";
 import PercentageCalculator from "./PercentageCalculator";
+import ExerciseHistory from "./ExerciseHistory";
 
 // Personal records from the athlete's logged weights: the heaviest load recorded
 // per movement (parsed from the free-text weight field), with reps and date.
 export default function PRsView({ client }: { client: Client }) {
   const [max, setMax] = useState("");
+  const [historyEx, setHistoryEx] = useState<{ id: string; name: string } | null>(null);
   const logs = useLogsForClient(client.id);
   const exercises = useExercises();
   const exById = Object.fromEntries(exercises.map((e) => [e.id, e]));
@@ -59,7 +61,7 @@ export default function PRsView({ client }: { client: Client }) {
       <div className="mt-6">
         <h2 className="text-lg font-bold mb-1">Personal records</h2>
         <p className="text-slate text-sm mb-3">
-          Your heaviest logged load per movement{prs.length ? " — tap one to load it into the calculator." : "."}
+          Your heaviest logged load per movement{prs.length ? " — tap one to see its full history." : "."}
         </p>
 
         {prs.length === 0 ? (
@@ -75,10 +77,7 @@ export default function PRsView({ client }: { client: Client }) {
               return (
                 <Card
                   key={p.exId}
-                  onClick={() => {
-                    setMax(String(p.weight));
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }}
+                  onClick={() => setHistoryEx({ id: p.exId, name: exById[p.exId].name })}
                   className={`p-3 flex items-center gap-3 cursor-pointer active:scale-[0.99] transition-transform ${
                     fresh ? "border-green/50" : ""
                   }`}
@@ -101,6 +100,19 @@ export default function PRsView({ client }: { client: Client }) {
           </div>
         )}
       </div>
+
+      {historyEx && (
+        <ExerciseHistory
+          client={client}
+          exerciseId={historyEx.id}
+          exName={historyEx.name}
+          onClose={() => setHistoryEx(null)}
+          onUseMax={(w) => {
+            setMax(String(w));
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -4,16 +4,18 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useClient } from "@/lib/store";
-import { ChevronLeft, ClipboardList, Flame, User, type LucideIcon } from "lucide-react";
+import { ChevronLeft, ClipboardList, Flame, MessageCircle, User, type LucideIcon } from "lucide-react";
 import { Avatar, EmptyState } from "@/components/ui";
 import ProgramBuilder from "@/components/ProgramBuilder";
 import ProfileEditor from "@/components/ProfileEditor";
 import TrainView from "@/components/TrainView";
+import MessageThread from "@/components/MessageThread";
 
-type Tab = "program" | "profile" | "train";
+type Tab = "program" | "profile" | "train" | "messages";
 const TABS: { id: Tab; label: string; icon: LucideIcon }[] = [
   { id: "program", label: "Program", icon: ClipboardList },
   { id: "train", label: "Train", icon: Flame },
+  { id: "messages", label: "Chat", icon: MessageCircle },
   { id: "profile", label: "Profile", icon: User },
 ];
 
@@ -30,7 +32,7 @@ export default function ClientPage() {
   useEffect(() => {
     const sp = new URLSearchParams(window.location.search);
     const t = sp.get("tab");
-    if (t === "train" || t === "profile" || t === "program") setTab(t);
+    if (t === "train" || t === "profile" || t === "program" || t === "messages") setTab(t);
     if (sp.get("from") === "numbers") setBack({ href: "/numbers", label: "Scoreboard" });
   }, []);
 
@@ -54,7 +56,7 @@ export default function ClientPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-1 p-1 rounded-2xl bg-surface border border-line shadow-card mb-4">
+      <div className="grid grid-cols-4 gap-1 p-1 rounded-2xl bg-surface border border-line shadow-card mb-4">
         {TABS.map((t) => {
           const Icon = t.icon;
           const active = tab === t.id;
@@ -76,6 +78,7 @@ export default function ClientPage() {
       {tab === "program" && <ProgramBuilder clientId={client.id} />}
       {tab === "profile" && <ProfileEditor client={client} />}
       {tab === "train" && <TrainView client={client} coachView />}
+      {tab === "messages" && <MessageThread client={client} me="coach" />}
     </div>
   );
 }

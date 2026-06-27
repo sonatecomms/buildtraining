@@ -3,6 +3,10 @@
 export const buildDate = "2026-06-27";
 export const commits: { sha: string; subject: string }[] = [
   {
+    "sha": "f4491e1",
+    "subject": "timer count-in, skip final rest, halfway voice, 3-2-1 ticks, finish confetti"
+  },
+  {
     "sha": "84d0dc4",
     "subject": "Per-set logging: weight + reps per set, for prescribed and athlete-added work"
   },
@@ -117,9 +121,5 @@ export const commits: { sha: string; subject: string }[] = [
   {
     "sha": "c6bc07c",
     "subject": "Fix Build-a-workout coach toggle rendering; v50"
-  },
-  {
-    "sha": "03654fe",
-    "subject": "Emptied own-work sessions reset to +add, don't celebrate or extend streak; v49"
   }
 ];
