@@ -2,34 +2,51 @@
 // the Vibration API are unavailable (older browsers, desktop), so callers never
 // have to guard.
 
+// ONE shared AudioContext for the whole app. Creating a fresh context per beep
+// (the old approach) exhausts the browser's small concurrent-context cap once a
+// timer fires many cues in quick succession — count-in ticks, 3-2-1s, beeps,
+// chime — after which every new sound silently fails. A single reused context,
+// resumed on a user gesture, avoids that and is also what iOS/Safari needs.
+let ctx: AudioContext | null = null;
+
 function audioCtx(): AudioContext | null {
   if (typeof window === "undefined") return null;
+  if (ctx) return ctx;
   const Ctx =
     window.AudioContext ??
     (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-  return Ctx ? new Ctx() : null;
+  ctx = Ctx ? new Ctx() : null;
+  return ctx;
+}
+
+// Resume the shared context from within a user gesture (e.g. the Start tap) so
+// later timer-driven cues are allowed to play, especially on iOS/Safari.
+export function unlockAudio() {
+  const c = audioCtx();
+  if (c && c.state === "suspended") void c.resume().catch(() => {});
 }
 
 // Play a sequence of short sine tones, 0.18s apart.
 function tones(freqs: number[]) {
   try {
-    const ctx = audioCtx();
-    if (!ctx) return;
-    const now = ctx.currentTime;
+    const c = audioCtx();
+    if (!c) return;
+    if (c.state === "suspended") void c.resume().catch(() => {});
+    const now = c.currentTime;
     freqs.forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
+      const osc = c.createOscillator();
+      const gain = c.createGain();
       osc.type = "sine";
       osc.frequency.value = freq;
       const start = now + i * 0.18;
       gain.gain.setValueAtTime(0, start);
       gain.gain.linearRampToValueAtTime(0.25, start + 0.02);
       gain.gain.exponentialRampToValueAtTime(0.001, start + 0.35);
-      osc.connect(gain).connect(ctx.destination);
+      osc.connect(gain).connect(c.destination);
       osc.start(start);
       osc.stop(start + 0.4);
     });
-    setTimeout(() => void ctx.close(), 1200);
+    // Keep the shared context open — do NOT close it after each cue.
   } catch {}
 }
 

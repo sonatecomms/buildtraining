@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { formatClock } from "@/lib/rest";
-import { beep, chime, buzz, tick, go, say } from "@/lib/sound";
+import { beep, chime, buzz, tick, go, say, unlockAudio } from "@/lib/sound";
 import { confetti } from "@/lib/confetti";
 import { Button } from "./ui";
 
@@ -63,6 +63,7 @@ export default function IntervalTimer({ onLog }: { onLog?: (r: TimerResult) => v
   const halfRef = useRef(false);
 
   const build = () => {
+    unlockAudio(); // resume the shared audio context from this user gesture
     const list: Seg[] = [];
     let nm = "";
     let up = false;
