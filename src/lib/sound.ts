@@ -43,6 +43,30 @@ export function beep() {
   tones([988]);
 }
 
+// Higher, brighter click for the final 3-2-1 countdown before a boundary.
+export function tick() {
+  tones([1320]);
+}
+
+// Rising two-tone "go" — end of the count-in, work starts.
+export function go() {
+  tones([784, 1175]);
+}
+
+// Speak a short phrase (e.g. "halfway through"). No-op without speech support.
+export function say(text: string) {
+  try {
+    const s = window.speechSynthesis;
+    if (!s) return;
+    s.cancel(); // don't let cues queue up behind each other
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = 1;
+    u.pitch = 1;
+    u.volume = 1;
+    s.speak(u);
+  } catch {}
+}
+
 // Vibrate, if supported.
 export function buzz(pattern: number | number[]) {
   try {

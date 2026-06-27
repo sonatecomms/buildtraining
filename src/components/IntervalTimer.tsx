@@ -2,8 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { formatClock } from "@/lib/rest";
-import { beep, chime, buzz } from "@/lib/sound";
+import { beep, chime, buzz, tick, go, say } from "@/lib/sound";
+import { confetti } from "@/lib/confetti";
 import { Button } from "./ui";
+
+const COUNT_IN = 10; // seconds of "get ready" before a structured timer starts
 
 type Mode = "amrap" | "emom" | "interval" | "countdown" | "stopwatch";
 
@@ -38,10 +41,12 @@ export default function IntervalTimer({ onLog }: { onLog?: (r: TimerResult) => v
   const [workSec, setWorkSec] = useState(20);
   const [restSec, setRestSec] = useState(10);
   const [intRounds, setIntRounds] = useState(8);
+  const [skipFinalRest, setSkipFinalRest] = useState(true);
   const [cdMin, setCdMin] = useState(5);
   const [cdSec, setCdSec] = useState(0);
 
-  const [phase, setPhase] = useState<"setup" | "run">("setup");
+  const [phase, setPhase] = useState<"setup" | "countin" | "run">("setup");
+  const [countin, setCountin] = useState(COUNT_IN);
   const [segs, setSegs] = useState<Seg[]>([]);
   const [total, setTotal] = useState(0);
   const [countUp, setCountUp] = useState(false);
@@ -55,6 +60,7 @@ export default function IntervalTimer({ onLog }: { onLog?: (r: TimerResult) => v
 
   const prevIdx = useRef(0);
   const doneRef = useRef(false);
+  const halfRef = useRef(false);
 
   const build = () => {
     const list: Seg[] = [];
@@ -71,7 +77,9 @@ export default function IntervalTimer({ onLog }: { onLog?: (r: TimerResult) => v
     } else if (mode === "interval") {
       for (let i = 0; i < intRounds; i++) {
         list.push({ dur: workSec, round: i + 1, kind: "work" });
-        if (restSec > 0) list.push({ dur: restSec, round: i + 1, kind: "rest" });
+        const isLast = i === intRounds - 1;
+        if (restSec > 0 && !(skipFinalRest && isLast))
+          list.push({ dur: restSec, round: i + 1, kind: "rest" });
       }
       nm = `Intervals ${workSec}/${restSec} ×${intRounds}`;
     } else if (mode === "countdown") {
@@ -93,8 +101,35 @@ export default function IntervalTimer({ onLog }: { onLog?: (r: TimerResult) => v
     setLogged(false);
     prevIdx.current = 0;
     doneRef.current = false;
-    setPhase("run");
+    halfRef.current = false;
+    // Stopwatch starts on demand; structured timers get a 10s count-in.
+    if (up) {
+      setPhase("run");
+    } else {
+      setCountin(COUNT_IN);
+      setPhase("countin");
+    }
   };
+
+  // ---------- count-in ----------
+  // 3-2-1 ticks while counting down, then "go" hands off to the run phase.
+  useEffect(() => {
+    if (phase !== "countin") return;
+    const id = setInterval(() => {
+      setCountin((c) => {
+        const next = c - 1;
+        if (next <= 0) {
+          go();
+          setElapsed(0);
+          setPhase("run");
+          return 0;
+        }
+        if (next <= 3) tick();
+        return next;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [phase]);
 
   // locate the current segment for segment-based modes
   const locate = () => {
@@ -115,31 +150,44 @@ export default function IntervalTimer({ onLog }: { onLog?: (r: TimerResult) => v
     if (phase !== "run" || !running) return;
     if (finished) return;
     const id = setInterval(() => {
-      setElapsed((e) => {
-        const next = e + 1;
-        if (!countUp) {
-          // segment boundary → beep
-          let acc = 0;
-          let idx = segs.length - 1;
-          for (let i = 0; i < segs.length; i++) {
-            if (next < acc + segs[i].dur) {
-              idx = i;
-              break;
-            }
-            acc += segs[i].dur;
-          }
-          if (next < total && idx > prevIdx.current) {
-            prevIdx.current = idx;
-            beep();
-            buzz(50);
-          }
-          return next >= total ? total : next;
-        }
-        return next;
-      });
+      setElapsed((e) => (countUp ? e + 1 : Math.min(total, e + 1)));
     }, 1000);
     return () => clearInterval(id);
-  }, [phase, running, finished, countUp, segs, total]);
+  }, [phase, running, finished, countUp, total]);
+
+  // Audio/voice cues react to the clock so they fire once per second (and never
+  // double-fire from a state updater): new-segment beep, "halfway through" at
+  // the midpoint, and 3-2-1 ticks before each boundary / the finish.
+  useEffect(() => {
+    if (phase !== "run" || countUp || elapsed <= 0) return;
+
+    if (!halfRef.current && total > 0 && elapsed >= Math.floor(total / 2) && elapsed < total) {
+      halfRef.current = true;
+      say("halfway through");
+    }
+
+    // locate the current segment + where it ends
+    let acc = 0;
+    let idx = segs.length - 1;
+    let segEnd = total;
+    for (let i = 0; i < segs.length; i++) {
+      if (elapsed < acc + segs[i].dur) {
+        idx = i;
+        segEnd = acc + segs[i].dur;
+        break;
+      }
+      acc += segs[i].dur;
+    }
+
+    if (idx > prevIdx.current && elapsed < total) {
+      prevIdx.current = idx;
+      beep();
+      buzz(50);
+    }
+
+    const remain = segEnd - elapsed;
+    if (remain === 3 || remain === 2 || remain === 1) tick();
+  }, [phase, countUp, elapsed, segs, total]);
 
   // finish cue once
   useEffect(() => {
@@ -148,6 +196,7 @@ export default function IntervalTimer({ onLog }: { onLog?: (r: TimerResult) => v
     setRunning(false);
     chime();
     buzz([120, 60, 120]);
+    confetti();
   }, [finished]);
 
   const reset = () => {
@@ -158,6 +207,7 @@ export default function IntervalTimer({ onLog }: { onLog?: (r: TimerResult) => v
     setLogged(false);
     prevIdx.current = 0;
     doneRef.current = false;
+    halfRef.current = false;
   };
 
   const log = () => {
@@ -234,6 +284,25 @@ export default function IntervalTimer({ onLog }: { onLog?: (r: TimerResult) => v
               <NumRow label="Work (sec)" value={workSec} set={setWorkSec} min={1} step={5} />
               <NumRow label="Rest (sec)" value={restSec} set={setRestSec} min={0} step={5} />
               <NumRow label="Rounds" value={intRounds} set={setIntRounds} min={1} />
+              {restSec > 0 && (
+                <label className="flex items-center justify-between gap-3">
+                  <span className="text-sm font-medium">Skip final rest</span>
+                  <button
+                    role="switch"
+                    aria-checked={skipFinalRest}
+                    onClick={() => setSkipFinalRest((v) => !v)}
+                    className={`inline-flex items-center h-7 w-12 rounded-full p-1 transition-colors ${
+                      skipFinalRest ? "bg-forest" : "bg-field border border-line"
+                    }`}
+                  >
+                    <span
+                      className={`h-5 w-5 rounded-full bg-surface shadow-card transition-transform ${
+                        skipFinalRest ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </label>
+              )}
             </>
           )}
           {mode === "countdown" && (
@@ -252,6 +321,33 @@ export default function IntervalTimer({ onLog }: { onLog?: (r: TimerResult) => v
 
         <Button className="w-full" onClick={build}>
           Start {MODES.find((m) => m.id === mode)?.label}
+        </Button>
+      </div>
+    );
+  }
+
+  // ---------- count-in ----------
+  if (phase === "countin") {
+    return (
+      <div className="space-y-4">
+        <div className="text-center">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate">{name}</p>
+        </div>
+        <div className="rounded-3xl border border-line bg-surface p-6">
+          <p className="text-center text-sm font-semibold text-slate">Get ready</p>
+          <p
+            role="status"
+            aria-live="assertive"
+            className={`text-center font-display tabular-nums leading-none my-3 ${
+              countin <= 3 ? "text-8xl text-forest animate-pop" : "text-7xl"
+            }`}
+          >
+            {Math.max(0, countin)}
+          </p>
+          <p className="text-center text-sm text-slate">starting in…</p>
+        </div>
+        <Button variant="outline" className="w-full" onClick={reset}>
+          Cancel
         </Button>
       </div>
     );
