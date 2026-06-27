@@ -33,10 +33,10 @@ export default function MessageThread({
   const scrollToEnd = () =>
     requestAnimationFrame(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight }));
 
-  // initial load + mark the other party's messages read
+  // initial load + mark the other party's messages read. `loading` starts true;
+  // the component remounts per client, so no synchronous reset is needed here.
   useEffect(() => {
     let live = true;
-    setLoading(true);
     fetchThread(client.id).then((msgs) => {
       if (!live) return;
       setMessages(msgs);
@@ -74,7 +74,7 @@ export default function MessageThread({
   };
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-15rem)] min-h-[20rem] rounded-2xl border border-line bg-surface overflow-hidden">
+    <div className="flex flex-col h-[68svh] max-h-[36rem] min-h-[18rem] rounded-2xl border border-line bg-surface overflow-hidden">
       <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain p-3 space-y-2.5">
         {loading ? (
           <p className="text-center text-sm text-slate py-8">Loading…</p>

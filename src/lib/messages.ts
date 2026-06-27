@@ -67,16 +67,21 @@ function localSave(clientId: string, msgs: Message[]) {
 export async function fetchThread(clientId: string): Promise<Message[]> {
   const sb = getSupabase();
   if (!sb || !syncActive()) return localThread(clientId);
-  const { data, error } = await sb
-    .from("messages")
-    .select("*")
-    .eq("client_id", clientId)
-    .order("created_at", { ascending: true });
-  if (error) {
-    console.warn("fetch messages failed", error.message);
+  try {
+    const { data, error } = await sb
+      .from("messages")
+      .select("*")
+      .eq("client_id", clientId)
+      .order("created_at", { ascending: true });
+    if (error) {
+      console.warn("fetch messages failed", error.message);
+      return [];
+    }
+    return (data ?? []).map((r) => fromRow(r as Row));
+  } catch (e) {
+    console.warn("fetch messages threw", e);
     return [];
   }
-  return (data ?? []).map((r) => fromRow(r as Row));
 }
 
 export async function sendMessage(
@@ -135,17 +140,28 @@ export function subscribeThread(clientId: string, onMessage: (m: Message) => voi
       if (typeof window !== "undefined") window.removeEventListener("build-msgs", handler);
     };
   }
-  const ch = sb
-    .channel(`msgs-${clientId}`)
-    .on(
-      "postgres_changes",
-      { event: "INSERT", schema: "public", table: "messages", filter: `client_id=eq.${clientId}` },
-      (payload) => onMessage(fromRow(payload.new as Row)),
-    )
-    .subscribe();
-  return () => {
-    sb.removeChannel(ch);
-  };
+  // Unique channel name per subscriber: the same thread is subscribed from BOTH
+  // the open MessageThread and the nav/tab unread badge, and two channels with
+  // the same topic can collide. A sync throw here would otherwise propagate out
+  // of the effect to the route error boundary, so guard it.
+  try {
+    const ch = sb
+      .channel(`msgs-${clientId}-${Math.random().toString(36).slice(2)}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages", filter: `client_id=eq.${clientId}` },
+        (payload) => onMessage(fromRow(payload.new as Row)),
+      )
+      .subscribe();
+    return () => {
+      try {
+        sb.removeChannel(ch);
+      } catch {}
+    };
+  } catch (e) {
+    console.warn("subscribe messages failed", e);
+    return () => {};
+  }
 }
 
 // Mark the OTHER party's unread messages in this thread as read.

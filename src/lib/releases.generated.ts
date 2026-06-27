@@ -3,6 +3,10 @@
 export const buildDate = "2026-06-27";
 export const commits: { sha: string; subject: string }[] = [
   {
+    "sha": "7b43d17",
+    "subject": "fix confetti, coach tab spacing, unread message badge"
+  },
+  {
     "sha": "c183f81",
     "subject": "exercise history detail + coach↔athlete messaging"
   },
@@ -117,9 +121,5 @@ export const commits: { sha: string; subject: string }[] = [
   {
     "sha": "51fbfbe",
     "subject": "White-label demo: school skinner + master demo login"
-  },
-  {
-    "sha": "1530da9",
-    "subject": "Move weekly goal ring into the header; v52"
   }
 ];

@@ -62,6 +62,18 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
     it.id === "coach" ? { ...it, badge: unread > 0 && view !== "coach" } : it,
   );
 
+  // App-icon badge on the installed PWA (Android/desktop; iOS Safari doesn't
+  // support it yet). Shows the unread coach-message count on the home-screen tile.
+  useEffect(() => {
+    const nav = navigator as Navigator & {
+      setAppBadge?: (n?: number) => Promise<void>;
+      clearAppBadge?: () => Promise<void>;
+    };
+    if (typeof navigator === "undefined" || !("setAppBadge" in navigator)) return;
+    if (unread > 0) nav.setAppBadge?.(unread).catch(() => {});
+    else nav.clearAppBadge?.().catch(() => {});
+  }, [unread]);
+
   // Swipe walks between the bottom-nav views in tab order; pull-down refreshes.
   const { ref: swipeRef, pull, refreshing } = useAppGestures<HTMLDivElement>({
     onSwipe: (dir) => {
