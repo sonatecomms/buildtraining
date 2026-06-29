@@ -19,20 +19,29 @@ export default function BulkProgramModal({
   clients,
   onClose,
   onUseAI,
+  dow: dowProp,
+  weekStart: weekStartProp,
 }: {
   clients: Client[];
   onClose: () => void;
   onUseAI: () => void;
+  // The day + week the coach is viewing in the builder. A single session lands
+  // on this exact slot so "Add programming" schedules where they're looking —
+  // not always today/this week. Defaults keep standalone callers working.
+  dow?: number;
+  weekStart?: string;
 }) {
   const exercises = useExercises();
   const byId = useMemo(() => Object.fromEntries(exercises.map((e) => [e.id, e])), [exercises]);
   const [tab, setTab] = useState<"plan" | "session">("session");
   const [plan, setPlan] = useState<ProgramTemplate | null>(null);
   const [creating, setCreating] = useState(false);
-  const [startDate, setStartDate] = useState("");
+  // A multi-week plan offered from a future week defaults its start date to that
+  // week; the single-session day defaults to the selected weekday.
+  const [startDate, setStartDate] = useState(weekStartProp ?? "");
   const [name, setName] = useState("");
   const [items, setItems] = useState<ProgramItem[]>([]);
-  const [dow, setDow] = useState(new Date().getDay());
+  const [dow, setDow] = useState(dowProp ?? new Date().getDay());
   const [pickerOpen, setPickerOpen] = useState(false);
   const who = `${clients.length} ${clients.length === 1 ? "athlete" : "athletes"}`;
 
@@ -53,7 +62,9 @@ export default function BulkProgramModal({
 
   const assign = () => {
     if (!items.length) return;
-    const weekStart = weekStartIso(0);
+    // Land on the week the coach is viewing (passed from the builder); fall back
+    // to this week for standalone callers.
+    const weekStart = weekStartProp ?? weekStartIso(0);
     const blocks = items.map((it) => ({ id: uid("b"), type: "single" as const, items: [it] }));
     for (const c of clients) {
       const w: Workout = {

@@ -412,6 +412,8 @@ export default function ProgramBuilder({ clientId }: { clientId: string }) {
       {applyingPlan && client && (
         <BulkProgramModal
           clients={[client]}
+          dow={day}
+          weekStart={weekStart}
           onClose={() => setApplyingPlan(false)}
           onUseAI={() => {
             setApplyingPlan(false);
