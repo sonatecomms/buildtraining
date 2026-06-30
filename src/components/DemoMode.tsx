@@ -24,6 +24,35 @@ const DEMO_PASS = "Sonate-Skins-44281";
 const STORAGE_KEY = "build.demoMode";
 const DEMO_CLIENT_ID = "client-jordan"; // the seeded athlete (Jordan Rivera)
 
+// Demo data persists so a presenter's edits (e.g. programming they add live)
+// survive a reload or a Coach⇄Athlete switch. We only lay down the seed when
+// it isn't already present — tracked by a versioned flag. Bump SEED_VERSION
+// whenever buildDemoDB() changes so resuming presenters pick up the new seed.
+const SEED_KEY = "build.demoSeed";
+const SEED_VERSION = "1";
+
+// Seed the demo store, but only when needed. `force` always reseeds (a fresh
+// login or an explicit reset); otherwise we keep whatever is persisted so a
+// reload resumes the demo where the presenter left off. hydrate() notifies the
+// store, so a forced reseed updates the UI without a reload.
+function seedDemoIfNeeded(force = false) {
+  let needs = force;
+  if (!needs) {
+    try {
+      needs = localStorage.getItem(SEED_KEY) !== SEED_VERSION;
+    } catch {
+      needs = true; // storage unavailable — safest to lay down a clean seed
+    }
+  }
+  if (!needs) return; // persisted demo data stands; the store lazy-loads it
+  hydrate(buildDemoDB());
+  try {
+    localStorage.setItem(SEED_KEY, SEED_VERSION);
+  } catch {
+    /* ignore */
+  }
+}
+
 export function DemoModeProvider({ children }: { children: React.ReactNode }) {
   const [active, setActive] = useState(false);
   const [role, setRoleState] = useState<DemoRole>("coach");
@@ -70,6 +99,10 @@ export function DemoModeProvider({ children }: { children: React.ReactNode }) {
   const enter = useCallback(
     (user: string, pass: string) => {
       if (user.trim().toLowerCase() !== DEMO_USER || pass !== DEMO_PASS) return false;
+      // Logging in starts a fresh demo (clean seed). Reloads, by contrast,
+      // resume — so edits made during a demo survive, but each new sign-in (or
+      // exit + sign back in) hands the next audience a clean slate.
+      seedDemoIfNeeded(true);
       setActive(true);
       setRoleState("coach");
       persist("coach");
@@ -137,7 +170,9 @@ function DemoApp({ children }: { children: React.ReactNode }) {
   // the store is populated, so every hook reads real data on first paint.
   const [seeded, setSeeded] = useState(false);
   useLayoutEffect(() => {
-    hydrate(buildDemoDB());
+    // Resume: keep persisted demo data (incl. live edits) across reloads and
+    // role switches; only lay down the seed if none is present yet.
+    seedDemoIfNeeded(false);
     setSeeded(true);
   }, []);
   if (!seeded) return null;
