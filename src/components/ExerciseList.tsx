@@ -56,9 +56,14 @@ const catMeta = (c: string) => CAT_META[c] ?? { dot: "#5c6f76", glyph: "🎬" };
 export default function ExerciseList({
   exercises,
   onPick,
+  stickyTop = "var(--demo-bar, 0px)",
 }: {
   exercises: Exercise[];
   onPick?: (ex: Exercise) => void;
+  // Where the search + filters pin. The full-page list clears the floating demo
+  // bar (default); inside a modal there's no demo bar in the scroll container, so
+  // callers pass "0px" to pin flush under the modal's own title.
+  stickyTop?: string;
 }) {
   const recents = useRecents();
   // Category dots take their hue from the selected school's two colors; the
@@ -178,7 +183,7 @@ export default function ExerciseList({
           (and never slip behind the on-screen keyboard). */}
       <div
         className="sticky z-10 bg-shell pt-3 pb-2 -mx-1 px-1"
-        style={{ top: "var(--demo-bar, 0px)" }}
+        style={{ top: stickyTop }}
       >
         <div className="relative">
           <Search

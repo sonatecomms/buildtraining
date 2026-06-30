@@ -35,6 +35,7 @@ export default function ExercisePickerModal({
         >
           <ExerciseList
             exercises={exercises}
+            stickyTop="0px"
             onPick={(ex) => {
               onPick(ex);
               onClose();

@@ -209,8 +209,11 @@ export default function BulkProgramModal({
                     <Field label="Sets">
                       <input
                         type="number"
-                        value={it.sets}
-                        onChange={(e) => update(it.id, { sets: +e.target.value || 0 })}
+                        inputMode="numeric"
+                        // Show blank (not a stubborn leading 0) while the field is
+                        // empty; parse on change so "08" can't accumulate.
+                        value={it.sets || ""}
+                        onChange={(e) => update(it.id, { sets: e.target.value === "" ? 0 : Math.max(0, parseInt(e.target.value, 10) || 0) })}
                         className="w-full rounded-lg bg-field border border-line px-2 py-1.5 text-sm outline-none focus:border-forest"
                       />
                     </Field>

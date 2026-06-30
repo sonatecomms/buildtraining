@@ -160,7 +160,7 @@ export default function CustomPlanBuilder({
                       </button>
                     </div>
                     <div className="grid grid-cols-3 gap-2 mt-1.5">
-                      <input type="number" value={it.sets} onChange={(e) => setItem(s.id, it.id, { sets: +e.target.value || 0 })} aria-label="Sets" className="w-full rounded-md bg-surface border border-line px-2 py-1 text-sm outline-none focus:border-forest" />
+                      <input type="number" inputMode="numeric" value={it.sets || ""} onChange={(e) => setItem(s.id, it.id, { sets: e.target.value === "" ? 0 : Math.max(0, parseInt(e.target.value, 10) || 0) })} aria-label="Sets" placeholder="sets" className="w-full rounded-md bg-surface border border-line px-2 py-1 text-sm outline-none focus:border-forest" />
                       <input value={it.reps} onChange={(e) => setItem(s.id, it.id, { reps: e.target.value })} placeholder="reps" className="w-full rounded-md bg-surface border border-line px-2 py-1 text-sm outline-none focus:border-forest" />
                       <input value={it.rest} onChange={(e) => setItem(s.id, it.id, { rest: e.target.value })} placeholder="rest" className="w-full rounded-md bg-surface border border-line px-2 py-1 text-sm outline-none focus:border-forest" />
                     </div>
