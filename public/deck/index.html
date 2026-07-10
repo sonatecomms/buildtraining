@@ -73,6 +73,9 @@
   .slide.dark ul.clean li::before{background:var(--green-light)}
   .quote{font-size:1.1rem;color:var(--muted);margin-top:1.4rem;font-style:italic}
   .slide.dark .quote{color:rgba(216,231,212,.6)}
+  /* follow-on sentence in a spaced stack: one sentence per paragraph, with air between */
+  p.gap{margin-top:1.1rem}
+  p.quote.gap{margin-top:.7rem}
   /* spec card */
   .spec{background:var(--white);border:1px solid var(--line);border-radius:8px;padding:1.4rem 1.6rem}
   .slide.dark .spec{background:var(--forest-mid);border-color:rgba(255,255,255,.12)}
@@ -231,14 +234,16 @@
       <div class="card"><div class="k">The summer blind spot</div><div class="v">June and July decide the season, and there is no way to know who actually trained.</div></div>
       <div class="card"><div class="k">Apps that don't fit</div><div class="v">Coaching apps are built for personal trainers and priced per client. Nothing about them is team.</div></div>
     </div>
-    <p class="mt" style="font-size:1.05rem">Every one of these is a re-key or a guess, and the only person who can see the whole program is the coach who wrote it.<br/>BUILD puts the plan, the logging, and the board in one place.</p>
+    <p class="mt" style="font-size:1.05rem">Every one of these is a re-key or a guess, and the only person who can see the whole program is the coach who wrote it.</p>
+    <p class="gap" style="font-size:1.05rem">BUILD puts the plan, the logging, and the board in one place.</p>
   </section>
 
   <!-- 3 WHAT IT IS -->
   <section class="slide dark">
     <div class="eyebrow">What it is</div>
     <h2 class="mt">You program it. They log it.<br/>The board keeps itself.</h2>
-    <p class="mt">Every athlete's training runs through the same four-step loop.<br/>BUILD runs all of it in one app, on the phones your athletes already carry.</p>
+    <p class="mt">Every athlete's training runs through the same four-step loop.</p>
+    <p class="gap">BUILD runs all of it in one app, on the phones your athletes already carry.</p>
     <div class="rail">
       <div class="step on program">1 &middot; Program</div>
       <div class="step on train">2 &middot; Train</div>
@@ -277,7 +282,8 @@
       <div class="card"><div class="k">A direct line to you</div><div class="v">Chat with the coach inside the app, with unread badges so nothing gets missed.</div></div>
       <div class="card"><div class="k">Installs like an app</div><div class="v">Straight to the home screen from the browser. No app store, no accounts to buy, works on whatever phone they have.</div></div>
     </div>
-    <p class="mt" style="font-size:1.05rem">And when the last set is logged, it celebrates.<br/>Small thing. They notice.</p>
+    <p class="mt" style="font-size:1.05rem">And when the last set is logged, it celebrates.</p>
+    <p class="gap" style="font-size:1.05rem">Small thing. They notice.</p>
   </section>
 
   <!-- 6 USE CASE -->
@@ -287,8 +293,8 @@
     <div class="two mt">
       <div>
         <p class="lead" style="font-size:1.45rem">At 3:05 you filter the roster to linemen and assign the week's lower day to all of them at once.</p>
-        <p class="lead" style="font-size:1.45rem;margin-top:1.1rem">By 4:30 they've logged it from the weight room floor, rest timers running.</p>
-        <p class="lead" style="font-size:1.45rem;margin-top:1.1rem">A squat PR lands on the board before you're home, and you send one message to the kid who earned it.</p>
+        <p class="lead gap" style="font-size:1.45rem">By 4:30 they've logged it from the weight room floor, rest timers running.</p>
+        <p class="lead gap" style="font-size:1.45rem">A squat PR lands on the board before you're home, and you send one message to the kid who earned it.</p>
       </div>
       <div class="spec">
         <div class="row"><span class="lab">Filter</span><span class="val">OL &middot; all classes</span></div>
@@ -327,14 +333,19 @@
     <div class="eyebrow">Your school, not ours</div>
     <h2 class="mt">It wears your colors.</h2>
     <div class="two mt">
-      <p class="lead" style="font-size:1.45rem">The whole app reskins to a school's colors, from the login screen to the scoreboard.<br/>This isn't a mockup feature: the live demo already carries seventeen area schools, and when we sit down, it's already dressed in yours.</p>
+      <div>
+        <p class="lead" style="font-size:1.45rem">The whole app reskins to a school's colors, from the login screen to the scoreboard.</p>
+        <p class="lead gap" style="font-size:1.45rem">This isn't a mockup feature: the live demo already carries seventeen area schools, and when we sit down, it's already dressed in yours.</p>
+      </div>
       <ul class="clean">
         <li>Your colors across every screen your athletes touch.</li>
         <li>Their home-screen icon is your program, not a vendor logo.</li>
         <li>The board reads like your record board, because it is.</li>
       </ul>
     </div>
-    <p class="quote">Kids don't buy into software.<br/>They buy into their program.<br/>The app should look like theirs.</p>
+    <p class="quote">Kids don't buy into software.</p>
+    <p class="quote gap">They buy into their program.</p>
+    <p class="quote gap">The app should look like theirs.</p>
   </section>
 
   <!-- 9 WHY IT MATTERS -->
@@ -347,14 +358,17 @@
       <div class="card"><div class="k">Time back</div><div class="v">Program a unit once instead of printing forty sheets and answering forty texts.</div></div>
       <div class="card"><div class="k">Continuity</div><div class="v">Programs and records live in the system, through graduations and staff changes alike.</div></div>
     </div>
-    <p class="quote">The kid sees today's workout.<br/>You see the whole team.<br/>The board sees everything.</p>
+    <p class="quote">The kid sees today's workout.</p>
+    <p class="quote gap">You see the whole team.</p>
+    <p class="quote gap">The board sees everything.</p>
   </section>
 
   <!-- 10 LOCAL -->
   <section class="slide">
     <div class="eyebrow">Who's behind it</div>
     <h2 class="mt">Built ten minutes away.</h2>
-    <p class="mt">BUILD isn't a national vendor with a ticket queue.<br/>It's built and supported locally, which changes what "support" means.</p>
+    <p class="mt">BUILD isn't a national vendor with a ticket queue.</p>
+    <p class="gap">It's built and supported locally, which changes what "support" means.</p>
     <div class="grid c2" style="max-width:900px">
       <div class="card"><div class="k">A person, not a portal</div><div class="v">You talk to the developer directly. In person, in your building, when it's useful.</div></div>
       <div class="card"><div class="k">Your feedback becomes the app</div><div class="v">What your staff asks for gets built, in days, not on a corporate roadmap. The app is on version 81 because it grows exactly this way.</div></div>
@@ -377,13 +391,15 @@
   <section class="slide dark">
     <div class="eyebrow">Your turn</div>
     <h2 class="mt">Run it for a season.</h2>
-    <p class="lead mt" style="max-width:none">The demo is live today, seeded with a full team, already in your colors.<br/>Here's the shape of a pilot.</p>
+    <p class="lead mt" style="max-width:none">The demo is live today, seeded with a full team, already in your colors.</p>
+    <p class="lead gap" style="max-width:none">Here's the shape of a pilot.</p>
     <div class="grid c3 mt2">
       <div class="card"><div class="k">1 &middot; See it in your colors</div><div class="v">A hands-on demo with a seeded roster: program a group, log a workout, watch the board move.</div></div>
       <div class="card"><div class="k">2 &middot; Pilot one group</div><div class="v">Start with one team or an off-season lifting group. We set up the roster and your first cycle together.</div></div>
       <div class="card"><div class="k">3 &middot; Shape what ships</div><div class="v">Your staff's feedback sets the build order. The app grows around your program.</div></div>
     </div>
-    <p class="quote">Bring a workout you'd actually assign.<br/>We'll run it through, start to finish.</p>
+    <p class="quote">Bring a workout you'd actually assign.</p>
+    <p class="quote gap">We'll run it through, start to finish.</p>
   </section>
 
 </div>
