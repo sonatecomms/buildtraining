@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import { isIntroDone } from "@/lib/intro";
 import { nextGreeting, notoLottieUrl } from "@/lib/greeting";
 import { useSchoolTheme } from "./SchoolThemeProvider";
+import { useIsDemo } from "./demoContext";
 import { BUILD_DEFAULT } from "@/lib/schoolThemes";
 
 // lottie-react is only needed for the greeting flourish — code-split it out of
@@ -55,6 +56,7 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
   const client = useClient(clientId);
   const exercises = useExercises();
   const { session } = useSession();
+  const isDemo = useIsDemo();
   const [justSet, setJustSet] = useState(false);
   const [view, setView] = useState<View>("train");
   const unread = useUnread(clientId, "athlete");
@@ -175,22 +177,30 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
             <Collapsible title="Profile" icon="👤">
               <ProfileEditor client={client} coachView={false} />
             </Collapsible>
-            <Collapsible title="Your login" icon="🔑">
-              <YourLoginCard client={client} />
-            </Collapsible>
-            <Collapsible title="Change password" icon="🔒">
-              <ChangePasswordCard />
-            </Collapsible>
+            {/* Login/password/sign-out manage a real Supabase session; demo mode
+                has none, so they're hidden rather than left as dead ends. */}
+            {!isDemo && (
+              <>
+                <Collapsible title="Your login" icon="🔑">
+                  <YourLoginCard client={client} />
+                </Collapsible>
+                <Collapsible title="Change password" icon="🔒">
+                  <ChangePasswordCard />
+                </Collapsible>
+              </>
+            )}
             <Collapsible title="Install app" icon="📲">
               <InstallGuide embedded />
             </Collapsible>
-            <Button
-              variant="outline"
-              className="w-full mt-6"
-              onClick={() => getSupabase()?.auth.signOut()}
-            >
-              Sign out
-            </Button>
+            {!isDemo && (
+              <Button
+                variant="outline"
+                className="w-full mt-6"
+                onClick={() => getSupabase()?.auth.signOut()}
+              >
+                Sign out
+              </Button>
+            )}
           </>
         )}
       </main>

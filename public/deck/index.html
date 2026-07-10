@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>BUILD — Team Strength &amp; Conditioning</title>
+<link rel="icon" type="image/png" href="/icon-192.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@700;900&family=Poppins:wght@400;500;600;700&display=swap" />
+<!-- Type matches the app: League Spartan for display, Poppins for body. -->
+<style>
+  :root{
+    --forest:#19350C; --forest-mid:#264a14; --forest-deep:#0e2005;
+    --green:#357836; --green-text:#2c642d; --green-light:#9ed3a0; --green-pale:#d8e7d4; --bone:#E2E6DA;
+    --ink:#191918; --muted:#5C6F76; --line:#ccd3c2; --white:#fff;
+    --s-program:#357836; --s-train:#2F5563; --s-numbers:#A12323; --s-adjust:#5C6F76;
+    --display:"League Spartan",system-ui,sans-serif; --sans:"Poppins",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:var(--sans);background:#101408;color:var(--ink);-webkit-font-smoothing:antialiased;overflow:hidden}
+  .deck{height:100vh;width:100%;position:relative}
+  .slide{position:absolute;inset:0;display:none;flex-direction:column;justify-content:center;
+    padding:5.5vh 7vw;background:var(--bone);opacity:0;transition:opacity .25s ease}
+  .slide.active{display:flex;opacity:1}
+  .slide.dark{background-color:var(--forest);background-image:radial-gradient(120% 120% at 15% 0%,rgba(53,120,54,.28),transparent 55%),radial-gradient(90% 90% at 100% 100%,rgba(14,32,5,.9),transparent 60%);color:var(--green-pale)}
+  .slide > *:not(.mark){position:relative;z-index:1}
+  .mark{position:absolute;right:6vw;top:50%;transform:translateY(-50%);height:62%;width:auto;opacity:.10;z-index:0;pointer-events:none;user-select:none;color:var(--bone)}
+  .slide.dark h1,.slide.dark h2{color:#fff}
+  .eyebrow{font-family:var(--sans);text-transform:uppercase;letter-spacing:.22em;font-size:.72rem;font-weight:600;color:var(--green-text)}
+  .slide.dark .eyebrow{color:var(--green-light)}
+  h1{font-family:var(--display);font-weight:900;font-size:4.4rem;line-height:.98;letter-spacing:-.01em;text-transform:uppercase;color:var(--forest)}
+  h2{font-family:var(--display);font-weight:900;font-size:3rem;line-height:1;letter-spacing:-.015em;text-transform:uppercase;color:var(--forest);margin-bottom:.2em}
+  h3{font-family:var(--display);font-weight:900;font-size:1.5rem;text-transform:uppercase;color:var(--forest)}
+  h1,h2,h3,.eyebrow{text-wrap:balance}
+  p,.lead,.quote,.card .k,.card .v,.num,li,.spec .lab,.spec .val{text-wrap:pretty}
+  .slide.dark h3{color:#fff}
+  p{font-size:1.5rem;line-height:1.5;color:var(--muted);max-width:62ch}
+  .slide.dark p{color:rgba(216,231,212,.82)}
+  .lead{font-size:1.8rem;color:var(--ink)}
+  .slide.dark .lead{color:rgba(226,230,218,.94)}
+  .mt{margin-top:1.6rem}.mt2{margin-top:2.6rem}
+  .rule{height:3px;width:64px;background:var(--green);border-radius:2px;margin:1.4rem 0}
+  .slide.dark .rule{background:var(--green-light)}
+  /* pipeline rail */
+  .rail{display:flex;gap:0;margin:1.8rem 0;border-radius:8px;overflow:hidden;border:1px solid var(--line);max-width:760px}
+  .slide.dark .rail{border-color:rgba(255,255,255,.16)}
+  .rail .step{flex:1;padding:.7rem .9rem;background:var(--white);text-align:center;font-size:.82rem;font-weight:600;color:var(--muted);border-right:1px solid var(--line)}
+  .slide.dark .rail .step{background:var(--forest-mid);color:rgba(255,255,255,.6);border-color:rgba(255,255,255,.12)}
+  .rail .step:last-child{border-right:none}
+  .rail .step.on{color:#fff}
+  .rail .step.on.program{background:var(--s-program)} .rail .step.on.train{background:var(--s-train)}
+  .rail .step.on.numbers{background:var(--s-numbers)} .rail .step.on.adjust{background:var(--s-adjust)}
+  /* grids */
+  .grid{display:grid;gap:1rem;margin-top:1.8rem}
+  .grid.c3{grid-template-columns:repeat(3,1fr)} .grid.c4{grid-template-columns:repeat(4,1fr)} .grid.c2{grid-template-columns:repeat(2,1fr)}
+  .card{background:var(--white);border:1px solid var(--line);border-radius:8px;padding:1.3rem 1.4rem}
+  .slide.dark .card{background:var(--forest-mid);border-color:rgba(255,255,255,.12)}
+  .card .k{font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:1.05rem;letter-spacing:.01em;color:var(--forest);margin-bottom:.3rem}
+  .slide.dark .card .k{color:#fff}
+  .card .v{font-size:1.12rem;color:var(--muted);line-height:1.45}
+  .slide.dark .card .v{color:rgba(216,231,212,.72)}
+  .num{font-family:var(--display);font-weight:900;font-size:2.2rem;color:var(--green-text);line-height:1}
+  .slide.dark .num{color:var(--green-light)}
+  .two{display:grid;grid-template-columns:1.05fr 1fr;gap:3.2rem;align-items:center}
+  .pill{display:inline-block;padding:.3rem .8rem;border-radius:8px;background:var(--green-pale);color:var(--green-text);font-size:.8rem;font-weight:600}
+  .slide.dark .pill{background:rgba(158,211,160,.16);color:var(--green-light)}
+  ul.clean{list-style:none;margin-top:1rem}
+  ul.clean li{font-size:1.42rem;color:var(--ink);padding:.45rem 0 .45rem 1.6rem;position:relative;line-height:1.4}
+  .slide.dark ul.clean li{color:rgba(226,230,218,.9)}
+  ul.clean li::before{content:"";position:absolute;left:0;top:.85rem;width:9px;height:9px;border-radius:50%;background:var(--green)}
+  .slide.dark ul.clean li::before{background:var(--green-light)}
+  .quote{font-size:1.1rem;color:var(--muted);margin-top:1.4rem;font-style:italic}
+  .slide.dark .quote{color:rgba(216,231,212,.6)}
+  /* spec card */
+  .spec{background:var(--white);border:1px solid var(--line);border-radius:8px;padding:1.4rem 1.6rem}
+  .slide.dark .spec{background:var(--forest-mid);border-color:rgba(255,255,255,.12)}
+  .spec .row{display:flex;justify-content:space-between;gap:1rem;padding:.55rem 0;border-bottom:1px dashed var(--line);font-size:1.2rem}
+  .slide.dark .spec .row{border-color:rgba(255,255,255,.12)}
+  .spec .row:last-child{border-bottom:none}
+  .spec .row .lab{color:var(--muted)} .slide.dark .spec .row .lab{color:rgba(216,231,212,.65)}
+  .spec .row .val{font-weight:600;color:var(--ink);text-align:right} .slide.dark .spec .row .val{color:#fff}
+  /* footer + nav */
+  .foot{position:fixed;bottom:18px;left:7vw;right:7vw;display:flex;justify-content:space-between;align-items:center;
+    font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);z-index:5}
+  .foot .brand{display:flex;align-items:center;gap:.5rem;font-weight:600}
+  .foot .brand svg{height:16px;width:auto}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--green)}
+  .progress{position:fixed;top:0;left:0;height:3px;background:var(--green);z-index:6;transition:width .25s ease}
+  .hint{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);font-size:.66rem;color:var(--muted);opacity:.6;z-index:5;text-transform:uppercase;letter-spacing:.14em}
+  .logo-word{font-family:var(--display);font-weight:900;letter-spacing:.04em}
+  /* ── Responsive: 5 breakpoints, phones at <=767 ── */
+  @media (max-width:1366px){
+    h1{font-size:3.8rem} h2{font-size:2.6rem}
+    .slide{padding:5vh 6vw}
+  }
+  @media (max-width:1140px){
+    h1{font-size:3.2rem} h2{font-size:2.3rem}
+    p{font-size:1.35rem} .lead{font-size:1.55rem}
+    .grid.c4{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .two{gap:2.2rem}
+  }
+  @media (max-width:960px){
+    h1{font-size:2.9rem} h2{font-size:2rem}
+    .grid.c3,.grid.c4{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .two{grid-template-columns:1fr;gap:1.8rem}
+    .rail .step{font-size:.74rem;padding:.6rem .5rem}
+  }
+  @media (max-width:840px){
+    h1{font-size:2.6rem}
+    p{font-size:1.25rem} .lead{font-size:1.4rem}
+    .slide{padding:4.5vh 6vw}
+    .grid.c3{grid-template-columns:repeat(2,minmax(0,1fr))}
+  }
+  @media (max-width:767px){
+    /* Phones: each slide is a normal block, shown one at a time, vertically centered when
+       short and free to grow + scroll when long. */
+    html,body{overflow-x:hidden;max-width:100%}
+    body{height:auto;overflow-y:auto;scrollbar-width:none}
+    body::-webkit-scrollbar{display:none}
+    .progress,.hint{display:none}
+    .deck{position:relative;width:100%;max-width:100%;height:auto}
+    .slide{position:relative;display:none;width:100%;max-width:100%;height:auto;min-height:100svh;padding:11vh 26px 9vh}
+    .slide.active{display:flex;flex-direction:column;justify-content:center}
+    .slide>*{min-width:0;max-width:100%}
+    .mark{display:block;right:4%;bottom:6vh;top:auto;transform:none;height:30vh;width:auto;opacity:.07}
+    .eyebrow{font-size:.72rem;letter-spacing:.2em}
+    h1{font-size:2.5rem;line-height:1}
+    h2{font-size:2rem;margin-bottom:.35em}
+    h3{font-size:1.3rem}
+    p{font-size:1.15rem;line-height:1.55;max-width:100%}
+    .lead{font-size:1.35rem;line-height:1.5}
+    ul.clean li{font-size:1.15rem;padding:.55rem 0 .55rem 1.6rem}
+    .rule{margin:1.5rem 0}
+    .mt{margin-top:1.4rem} .mt2{margin-top:2.2rem}
+    .grid{gap:1.1rem;margin-top:1.7rem}
+    .grid,.grid.c2,.grid.c3,.grid.c4{grid-template-columns:minmax(0,1fr)}
+    .two{grid-template-columns:minmax(0,1fr);gap:1.6rem}
+    .card{padding:1.25rem 1.35rem}
+    .spec{padding:1.4rem 1.5rem}
+    .spec .row{font-size:1.05rem}
+    .rail{flex-wrap:nowrap;margin:1.6rem 0;max-width:100%}
+    .rail .step{font-size:.56rem;padding:.6rem .25rem;letter-spacing:0}
+    .num{font-size:2.4rem}
+    .foot{display:none}
+  }
+  @media print{
+    body{overflow:visible} .deck{height:auto}
+    .slide{display:flex!important;opacity:1!important;position:relative;height:100vh;page-break-after:always}
+    .foot,.hint,.progress{position:absolute}
+  }
+</style>
+</head>
+<body>
+<div class="progress" id="prog"></div>
+
+<!-- BUILD kettlebell-B mark, exact vector trace from the app (markPaths.ts). -->
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="bmark" viewBox="0 0 324 384">
+    <path fill-rule="evenodd" fill="currentColor" d="M 20.500 8.948 L 9.500 9.500 8.872 23.500 C 8.042 42.009, 8.027 349.574, 8.856 362.702 C 9.250 368.948, 10.004 373.408, 10.800 374.202 C 13.047 376.445, 202.534 376.063, 214.500 373.792 C 266.198 363.979, 301.580 332.597, 313.248 286.207 C 316.636 272.738, 316.370 245.390, 312.718 231.732 C 308.437 215.720, 299.132 199.243, 288.391 188.654 C 282.790 183.132, 267.852 172.707, 261.540 169.915 L 257.090 167.946 266.344 158.723 C 280.992 144.125, 289.282 129.587, 292.053 113.636 C 293.631 104.548, 292.760 80.484, 290.562 72.500 C 280.459 35.788, 245.070 11.886, 196.500 8.967 C 180.699 8.017, 39.336 8.002, 20.500 8.948 M 132 75.023 C 88.723 78.161, 67.134 93.128, 63.822 122.288 C 62.484 134.062, 63.549 139.423, 72.480 165.869 L 78.769 184.491 72.748 196.495 C 65.189 211.566, 63.295 217.066, 61.889 228.028 C 59.522 246.485, 63.995 268.616, 73.197 283.981 C 79.132 293.892, 89.844 305.319, 95.224 307.479 C 101.173 309.867, 122.646 310.916, 166.559 310.962 L 202.618 311 208.559 307.440 C 220.231 300.447, 230.130 288.244, 236.625 272.844 C 241.145 262.127, 242.323 253.591, 241.778 235.505 C 241.253 218.084, 239.503 211.605, 230.823 194.944 L 225.720 185.148 229.356 173.324 C 231.356 166.821, 234.546 156.489, 236.444 150.364 C 245.502 121.142, 239.624 101.055, 217.907 87.018 C 203.098 77.447, 167.368 72.458, 132 75.023 M 128.500 105.685 C 94.882 110.007, 86.380 120.633, 96.135 146.134 C 101.507 160.175, 103.650 161.026, 119.500 155.419 C 127.693 152.520, 131.816 151.702, 142.315 150.893 C 161.813 149.389, 171.980 150.852, 191.356 157.947 C 196.759 159.926, 197.396 159.971, 199.607 158.522 C 203.220 156.154, 206.588 150.392, 209.546 141.516 C 215.822 122.684, 209.431 112.459, 188.949 108.563 C 173.554 105.634, 140.968 104.083, 128.500 105.685"/>
+  </symbol>
+</svg>
+
+<div class="deck" id="deck">
+
+  <!-- 1 TITLE -->
+  <section class="slide dark active">
+    <svg class="mark" aria-hidden="true"><use href="#bmark"/></svg>
+    <div class="eyebrow">BUILD &middot; Team Strength &amp; Conditioning</div>
+    <h1 class="mt">The whole program,<br/>in every athlete's pocket.</h1>
+    <p class="lead mt">One app that carries a team's training from the coach's plan to the record board, with nothing printed, texted, or retyped in between.</p>
+    <div class="rule"></div>
+    <p style="font-size:1rem">Live today at buildtraining.vercel.app</p>
+  </section>
+
+  <!-- 2 PROBLEM -->
+  <section class="slide">
+    <div class="eyebrow">The problem</div>
+    <h2 class="mt">Game day runs on software.<br/>The weight room still runs on paper.</h2>
+    <div class="grid c3" style="margin-top:1.6rem">
+      <div class="card"><div class="k">Printed sheets</div><div class="v">Percentage charts and workout cards, re-printed every cycle, lost by Wednesday.</div></div>
+      <div class="card"><div class="k">The whiteboard</div><div class="v">The program lives on a wall. It gets erased weekly and only exists inside the building.</div></div>
+      <div class="card"><div class="k">The max board</div><div class="v">A poster or spreadsheet, retyped by hand every test day, out of date the rest of the year.</div></div>
+      <div class="card"><div class="k">The group text</div><div class="v">Workouts and changes go out by text and get buried under everything else.</div></div>
+      <div class="card"><div class="k">The summer blind spot</div><div class="v">June and July decide the season, and there is no way to know who actually trained.</div></div>
+      <div class="card"><div class="k">Apps that don't fit</div><div class="v">Coaching apps are built for personal trainers and priced per client. Nothing about them is team.</div></div>
+    </div>
+    <p class="mt" style="font-size:1.05rem">Every one of these is a re-key or a guess, and the only person who can see the whole program is the coach who wrote it. BUILD puts the plan, the logging, and the board in one place.</p>
+  </section>
+
+  <!-- 3 WHAT IT IS -->
+  <section class="slide dark">
+    <div class="eyebrow">What it is</div>
+    <h2 class="mt">You program it. They log it.<br/>The board keeps itself.</h2>
+    <p class="mt">Every athlete's training runs through the same four-step loop. BUILD runs all of it in one app, on the phones your athletes already carry.</p>
+    <div class="rail">
+      <div class="step on program">1 &middot; Program</div>
+      <div class="step on train">2 &middot; Train</div>
+      <div class="step on numbers">3 &middot; Numbers</div>
+      <div class="step on adjust">4 &middot; Adjust</div>
+    </div>
+    <p style="font-size:1rem">The same shape as the platforms pro and college staffs use, built and priced for a school program.</p>
+  </section>
+
+  <!-- 4 COACH SIDE -->
+  <section class="slide">
+    <div class="eyebrow">Your side of it</div>
+    <h2 class="mt">What the coach gets</h2>
+    <div class="grid c3">
+      <div class="card"><div class="k">A roster built for a team</div><div class="v">Every athlete carries positions and a class year. Filter by position, unit, or grade in one tap.</div></div>
+      <div class="card"><div class="k">Bulk programming</div><div class="v">Filter to the O-line, or the whole offense, and assign weeks of training to all of them in one pass.</div></div>
+      <div class="card"><div class="k">Real program structure</div><div class="v">Straight sets, supersets, circuits, and coach notes, built by drag and drop, week by week.</div></div>
+      <div class="card"><div class="k">An AI assistant</div><div class="v">Describe the focus, equipment, and time you have, and get a complete session to review before you assign it.</div></div>
+      <div class="card"><div class="k">The team scoreboard</div><div class="v">Clean, bench, squat, deadlift, press, and the five-lift total, ranked live for the whole roster.</div></div>
+      <div class="card"><div class="k">Training visibility</div><div class="v">See who logged, when, how it felt, and who's slipping, without asking a single kid.</div></div>
+      <div class="card"><div class="k">A line to every athlete</div><div class="v">Built-in messaging per athlete, so feedback lands next to the workout instead of in a group text.</div></div>
+      <div class="card"><div class="k">Exercise library</div><div class="v">50+ movements with video form demos, plus anything your program does that we haven't named yet.</div></div>
+      <div class="card"><div class="k">Percent-of-max calculator</div><div class="v">Every logged top set feeds an estimated 1RM, and percentages are one tap away on the floor.</div></div>
+    </div>
+  </section>
+
+  <!-- 5 ATHLETE SIDE -->
+  <section class="slide dark">
+    <div class="eyebrow">Their side of it</div>
+    <h2 class="mt">What your athletes get</h2>
+    <div class="grid c3">
+      <div class="card"><div class="k">The workout, not a PDF</div><div class="v">Today's session on their phone: tap through sets, enter weight and reps, done.</div></div>
+      <div class="card"><div class="k">A rest timer that coaches</div><div class="v">Count-in, halfway call, and a 3-2-1 by voice, so rest is rest and work is work.</div></div>
+      <div class="card"><div class="k">PRs without homework</div><div class="v">Every top set updates their records and estimated 1RM automatically. Nobody fills in a chart.</div></div>
+      <div class="card"><div class="k">Form on demand</div><div class="v">Every movement links to a video demo, for the kid who won't ask twice.</div></div>
+      <div class="card"><div class="k">A direct line to you</div><div class="v">Chat with the coach inside the app, with unread badges so nothing gets missed.</div></div>
+      <div class="card"><div class="k">Installs like an app</div><div class="v">Straight to the home screen from the browser. No app store, no accounts to buy, works on whatever phone they have.</div></div>
+    </div>
+    <p class="mt" style="font-size:1.05rem">And when the last set is logged, it celebrates. Small thing. They notice.</p>
+  </section>
+
+  <!-- 6 USE CASE -->
+  <section class="slide">
+    <div class="eyebrow">A Monday in the off-season</div>
+    <h2 class="mt">One lower day, whole O-line, one pass.</h2>
+    <div class="two mt">
+      <p class="lead" style="font-size:1.45rem">At 3:05 you filter the roster to linemen and assign the week's lower day to all of them at once. By 4:30 they've logged it from the weight room floor, rest timers running. A squat PR lands on the board before you're home, and you send one message to the kid who earned it.</p>
+      <div class="spec">
+        <div class="row"><span class="lab">Filter</span><span class="val">OL &middot; all classes</span></div>
+        <div class="row"><span class="lab">Assigned</span><span class="val">Lower day &middot; one tap, whole group</span></div>
+        <div class="row"><span class="lab">Logged</span><span class="val">Every set, with how it felt</span></div>
+        <div class="row"><span class="lab">Scoreboard</span><span class="val">Re-ranked automatically</span></div>
+        <div class="row"><span class="lab">Follow-up</span><span class="val">One message, in the app</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 NUMBERS -->
+  <section class="slide dark">
+    <div class="eyebrow">The board</div>
+    <h2 class="mt">The record board that updates itself.</h2>
+    <div class="two mt">
+      <ul class="clean">
+        <li>Five lifts every program tests: clean, bench, squat, deadlift, overhead press, plus the five-lift total.</li>
+        <li>Rank the roster by any lift or by total, top three up front.</li>
+        <li>Filter it by position, unit, or class to run position-group battles.</li>
+        <li>A top set logged on the floor moves the board the same day, not next test day.</li>
+        <li>The numbers stay. Four years of history that doesn't graduate with the seniors.</li>
+      </ul>
+      <div class="spec">
+        <div class="row"><span class="lab">1 &middot; Diego Santos</span><span class="val">1,540 total</span></div>
+        <div class="row"><span class="lab">2 &middot; Marcus Bell</span><span class="val">1,395 total</span></div>
+        <div class="row"><span class="lab">3 &middot; Liam O'Connor</span><span class="val">1,370 total</span></div>
+        <div class="row"><span class="lab">Metric</span><span class="val">5-lift total &middot; or any single lift</span></div>
+        <div class="row"><span class="lab">Updates</span><span class="val">Live, from logged sets</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8 YOUR COLORS -->
+  <section class="slide">
+    <div class="eyebrow">Your school, not ours</div>
+    <h2 class="mt">It wears your colors.</h2>
+    <div class="two mt">
+      <p class="lead" style="font-size:1.45rem">The whole app reskins to a school's colors, from the login screen to the scoreboard. This isn't a mockup feature: the live demo already carries seventeen area schools, and when we sit down, it's already dressed in yours.</p>
+      <ul class="clean">
+        <li>Your colors across every screen your athletes touch.</li>
+        <li>Their home-screen icon is your program, not a vendor logo.</li>
+        <li>The board reads like your record board, because it is.</li>
+      </ul>
+    </div>
+    <p class="quote">Kids don't buy into software. They buy into their program. The app should look like theirs.</p>
+  </section>
+
+  <!-- 9 WHY IT MATTERS -->
+  <section class="slide dark">
+    <div class="eyebrow">Why it matters</div>
+    <h2 class="mt">What the program gets.</h2>
+    <div class="grid c4">
+      <div class="card"><div class="k">Visibility</div><div class="v">Know who trained in June, not just who shows up in August.</div></div>
+      <div class="card"><div class="k">Buy-in</div><div class="v">The board turns lifting into a competition, and the competition runs itself.</div></div>
+      <div class="card"><div class="k">Time back</div><div class="v">Program a unit once instead of printing forty sheets and answering forty texts.</div></div>
+      <div class="card"><div class="k">Continuity</div><div class="v">Programs and records live in the system, through graduations and staff changes alike.</div></div>
+    </div>
+    <p class="quote">The kid sees today's workout. You see the whole team. The board sees everything.</p>
+  </section>
+
+  <!-- 10 LOCAL -->
+  <section class="slide">
+    <div class="eyebrow">Who's behind it</div>
+    <h2 class="mt">Built ten minutes away.</h2>
+    <p class="mt">BUILD isn't a national vendor with a ticket queue. It's built and supported locally, which changes what "support" means.</p>
+    <div class="grid c2" style="max-width:900px">
+      <div class="card"><div class="k">A person, not a portal</div><div class="v">You talk to the developer directly. In person, in your building, when it's useful.</div></div>
+      <div class="card"><div class="k">Your feedback becomes the app</div><div class="v">What your staff asks for gets built, in days, not on a corporate roadmap. The app is on version 81 because it grows exactly this way.</div></div>
+      <div class="card"><div class="k">Shaped to your program</div><div class="v">Your test lifts, your position groups, your testing calendar. It bends to how you already coach.</div></div>
+      <div class="card"><div class="k">Updates are instant, and free</div><div class="v">It's a web app: the moment something ships, every phone on the roster has it. No versions to chase, nothing to reinstall.</div></div>
+    </div>
+  </section>
+
+  <!-- 11 CLOSE -->
+  <section class="slide dark" style="justify-content:center;align-items:flex-start">
+    <svg class="mark" aria-hidden="true"><use href="#bmark"/></svg>
+    <div class="eyebrow">In one line</div>
+    <h1 class="mt">One app, built for how<br/>a team actually trains.</h1>
+    <p class="lead mt">From the coach's plan to the record board, on the phones your athletes already carry.</p>
+    <div class="rule"></div>
+    <p style="font-size:1rem">BUILD &middot; buildtraining.vercel.app</p>
+  </section>
+
+  <!-- 12 INVITATION -->
+  <section class="slide dark">
+    <div class="eyebrow">Your turn</div>
+    <h2 class="mt">Run it for a season.</h2>
+    <p class="lead mt" style="max-width:none">The demo is live today, seeded with a full team, already in your colors.<br/>Here's the shape of a pilot.</p>
+    <div class="grid c3 mt2">
+      <div class="card"><div class="k">1 &middot; See it in your colors</div><div class="v">A hands-on demo with a seeded roster: program a group, log a workout, watch the board move.</div></div>
+      <div class="card"><div class="k">2 &middot; Pilot one group</div><div class="v">Start with one team or an off-season lifting group. We set up the roster and your first cycle together.</div></div>
+      <div class="card"><div class="k">3 &middot; Shape what ships</div><div class="v">Your staff's feedback sets the build order. The app grows around your program.</div></div>
+    </div>
+    <p class="quote">Bring a workout you'd actually assign. We'll run it through, start to finish.</p>
+  </section>
+
+</div>
+
+<div class="foot">
+  <span class="brand"><svg style="color:var(--green)" aria-hidden="true" viewBox="0 0 324 384" width="16" height="19"><use href="#bmark"/></svg> <span class="logo-word">BUILD</span> &middot; Team Strength &amp; Conditioning</span>
+  <span><span id="cur">1</span> / <span id="tot">12</span></span>
+</div>
+<div class="hint">&larr; &rarr; or space to navigate</div>
+
+<script>
+  const slides=[...document.querySelectorAll('.slide')];
+  let i=0; const tot=slides.length;
+  document.getElementById('tot').textContent=tot;
+  const foot=document.querySelector('.foot');
+  function show(n){
+    i=Math.max(0,Math.min(tot-1,n));
+    slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+    document.getElementById('cur').textContent=i+1;
+    document.getElementById('prog').style.width=((i+1)/tot*100)+'%';
+    const dark=slides[i].classList.contains('dark');
+    foot.style.color=dark?'rgba(255,255,255,.55)':'';
+  }
+  function next(){show(i+1)} function prev(){show(i-1)}
+  function fromHash(){const n=parseInt(location.hash.replace('#',''),10);if(!isNaN(n))show(n-1)}
+  window.addEventListener('hashchange',fromHash);
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();next()}
+    if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();prev()}
+    if(e.key==='Home')show(0); if(e.key==='End')show(tot-1);
+  });
+  document.getElementById('deck').addEventListener('click',e=>{
+    const x=e.clientX/window.innerWidth; x>0.35?next():prev();
+  });
+  show(0); fromHash();
+</script>
+</body>
+</html>

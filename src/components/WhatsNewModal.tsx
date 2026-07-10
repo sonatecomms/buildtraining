@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { isIntroDone } from "@/lib/intro";
 import { whatsNewSince, BUILD_ID, buildDate } from "@/lib/releases";
 
@@ -15,10 +16,14 @@ const SHOW_DELAY = 450; // ms after the intro, so it lands on a settled screen
 
 export function WhatsNewModal() {
   const [highlights, setHighlights] = useState<string[] | null>(null);
+  const pathname = usePathname();
 
   useEffect(() => {
     let lastSeen: string | null = null;
     try {
+      // Release notes are for real users, never a pitch audience: stay quiet on
+      // the demo login screen and whenever a demo session is active.
+      if (pathname === "/demo" || window.localStorage.getItem("build.demoMode")) return;
       lastSeen = window.localStorage.getItem(STORAGE_KEY);
     } catch {
       return; // storage blocked — stay quiet rather than nag every load
@@ -43,7 +48,7 @@ export function WhatsNewModal() {
       window.clearTimeout(timer);
       window.removeEventListener("build:intro-done", reveal);
     };
-  }, []);
+  }, [pathname]);
 
   const dismiss = () => {
     try {

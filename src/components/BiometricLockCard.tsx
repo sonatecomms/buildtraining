@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react";
 import { biometricSupported, disableLock, enrollBiometric, isLockEnabled } from "@/lib/biometric";
 import { useSession } from "./SessionProvider";
+import { useIsDemo } from "./demoContext";
 import { Button, Card } from "./ui";
 
 // Face ID / Touch ID app-lock toggle, with success/failure feedback. Shared by the
 // Install guide and the athlete's Profile so the security setting is findable.
 export default function BiometricLockCard({ className = "" }: { className?: string }) {
   const { session } = useSession();
+  const isDemo = useIsDemo();
   const [bioOk, setBioOk] = useState(false);
   const [locked, setLocked] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -42,6 +44,10 @@ export default function BiometricLockCard({ className = "" }: { className?: stri
         : { text: "Couldn't enable Face ID. Make sure it's set up on this device, then try again.", bad: true },
     );
   };
+
+  // A demo session is throwaway: enabling a device-level biometric gate from it
+  // would lock the presenter's own machine out of the next launch. Hide it.
+  if (isDemo) return null;
 
   return (
     <Card className={`p-4 ${className}`}>
