@@ -149,10 +149,55 @@
     body{overflow:visible} .deck{height:auto}
     .slide{display:flex!important;opacity:1!important;position:relative;height:100vh;page-break-after:always}
     .foot,.hint,.progress{position:absolute}
+    .build-splash{display:none}
   }
+  /* ---------- launch splash: the kettlebell forges the B (ported from the app) ---------- */
+  .build-splash{position:fixed;inset:0;z-index:50;display:grid;place-items:center;cursor:pointer;
+    background:radial-gradient(circle at 50% 42%, #f4f6f0 0%, #e2e6da 72%);
+    animation:build-splash-out 1.9s ease forwards}
+  .build-splash-figure{position:relative;line-height:0;perspective:760px;perspective-origin:50% 38%}
+  .build-splash-mark{height:min(220px,26vh);width:auto;overflow:visible}
+  .build-splash-swing-layer{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+  .build-b{transform-box:fill-box;transform-origin:center;animation:build-b-impact .26s ease .74s both}
+  .build-impact-ring{transform-box:fill-box;transform-origin:center;opacity:0;animation:build-ring .5s ease-out .72s both}
+  .build-kb-swing{animation:build-kb-swing 1.05s cubic-bezier(.33,.04,.3,1) both, build-kb-shadow 1.05s ease both}
+  @keyframes build-kb-swing{
+    0%{transform:translateY(-10%) translateZ(-340px) rotateX(-52deg);opacity:0}
+    12%{opacity:1}
+    34%{transform:translateY(-3%) translateZ(-90px) rotateX(-20deg);opacity:1}
+    52%{transform:translateY(-12%) translateZ(180px) rotateX(30deg)}
+    72%{transform:translateY(0) translateZ(0) rotateX(-8deg)}
+    85%{transform:translateY(0) translateZ(0) rotateX(4deg)}
+    93%{transform:translateY(0) translateZ(0) rotateX(-1.4deg)}
+    100%{transform:translateY(0) translateZ(0) rotateX(0deg)}
+  }
+  @keyframes build-kb-shadow{
+    0%{filter:drop-shadow(0 10px 14px rgba(20,30,18,0))}
+    50%{filter:drop-shadow(0 30px 26px rgba(20,30,18,.30))}
+    72%,100%{filter:drop-shadow(0 0 0 rgba(20,30,18,0))}
+  }
+  @keyframes build-b-impact{0%{transform:scale(1)}40%{transform:scale(1.035)}100%{transform:scale(1)}}
+  @keyframes build-ring{0%{opacity:.35;transform:scale(.7)}100%{opacity:0;transform:scale(1.5)}}
+  @keyframes build-splash-out{0%,88%{opacity:1}100%{opacity:0}}
+  @media (prefers-reduced-motion: reduce){.build-splash{display:none}}
 </style>
 </head>
 <body>
+
+<!-- Launch splash: the kettlebell swings in and forges the B, exactly as the app opens.
+     The bell is splash-background-coloured so it reads as the cutout when it seats. -->
+<div class="build-splash" id="splash" role="presentation">
+  <div class="build-splash-figure">
+    <svg viewBox="0 0 324 384" class="build-splash-mark" aria-label="BUILD" role="img">
+      <path class="build-b" fill="var(--forest)" d="M 20.500 8.948 L 9.500 9.500 8.872 23.500 C 8.042 42.009, 8.027 349.574, 8.856 362.702 C 9.250 368.948, 10.004 373.408, 10.800 374.202 C 13.047 376.445, 202.534 376.063, 214.500 373.792 C 266.198 363.979, 301.580 332.597, 313.248 286.207 C 316.636 272.738, 316.370 245.390, 312.718 231.732 C 308.437 215.720, 299.132 199.243, 288.391 188.654 C 282.790 183.132, 267.852 172.707, 261.540 169.915 L 257.090 167.946 266.344 158.723 C 280.992 144.125, 289.282 129.587, 292.053 113.636 C 293.631 104.548, 292.760 80.484, 290.562 72.500 C 280.459 35.788, 245.070 11.886, 196.500 8.967 C 180.699 8.017, 39.336 8.002, 20.500 8.948"/>
+      <circle class="build-impact-ring" cx="151" cy="225" r="88" fill="none" stroke="var(--forest)" stroke-width="5"/>
+    </svg>
+    <svg viewBox="0 0 324 384" class="build-splash-swing-layer build-kb-swing" aria-hidden="true" style="transform-origin:46.605% 26.563%">
+      <path fill="#e2e6da" fill-rule="evenodd" d="M 132 75.023 C 88.723 78.161, 67.134 93.128, 63.822 122.288 C 62.484 134.062, 63.549 139.423, 72.480 165.869 L 78.769 184.491 72.748 196.495 C 65.189 211.566, 63.295 217.066, 61.889 228.028 C 59.522 246.485, 63.995 268.616, 73.197 283.981 C 79.132 293.892, 89.844 305.319, 95.224 307.479 C 101.173 309.867, 122.646 310.916, 166.559 310.962 L 202.618 311 208.559 307.440 C 220.231 300.447, 230.130 288.244, 236.625 272.844 C 241.145 262.127, 242.323 253.591, 241.778 235.505 C 241.253 218.084, 239.503 211.605, 230.823 194.944 L 225.720 185.148 229.356 173.324 C 231.356 166.821, 234.546 156.489, 236.444 150.364 C 245.502 121.142, 239.624 101.055, 217.907 87.018 C 203.098 77.447, 167.368 72.458, 132 75.023 M 128.500 105.685 C 94.882 110.007, 86.380 120.633, 96.135 146.134 C 101.507 160.175, 103.650 161.026, 119.500 155.419 C 127.693 152.520, 131.816 151.702, 142.315 150.893 C 161.813 149.389, 171.980 150.852, 191.356 157.947 C 196.759 159.926, 197.396 159.971, 199.607 158.522 C 203.220 156.154, 206.588 150.392, 209.546 141.516 C 215.822 122.684, 209.431 112.459, 188.949 108.563 C 173.554 105.634, 140.968 104.083, 128.500 105.685"/>
+    </svg>
+  </div>
+</div>
+
 <div class="progress" id="prog"></div>
 
 <!-- BUILD kettlebell-B mark, exact vector trace from the app (markPaths.ts). -->
@@ -346,6 +391,14 @@
 <div class="hint">&larr; &rarr; or space to navigate</div>
 
 <script>
+  // Launch splash: clears itself after the run (matches the CSS fade), tap to skip.
+  const splash=document.getElementById('splash');
+  if(splash){
+    const clear=()=>splash.remove();
+    splash.addEventListener('click',clear);
+    setTimeout(clear,1950);
+  }
+
   const slides=[...document.querySelectorAll('.slide')];
   let i=0; const tot=slides.length;
   document.getElementById('tot').textContent=tot;
