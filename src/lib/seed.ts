@@ -36,7 +36,7 @@ export const SEED_EXERCISES: Exercise[] = [
 
   { id: "ex-row-erg", name: "Rowing Erg", category: "Cardio", equipment: "Cardio Machine", primaryMuscle: "Full Body", activity: true, calories: true, youtubeUrl: "https://www.youtube.com/watch?v=H0r_ZPXJLtg" },
   { id: "ex-assaultbike", name: "Assault Bike", category: "Cardio", equipment: "Cardio Machine", primaryMuscle: "Full Body", activity: true, calories: true, speedUnit: "mph", youtubeUrl: "https://www.youtube.com/watch?v=zV2DPjFvtb4" },
-  { id: "ex-run", name: "Treadmill Run", category: "Cardio", equipment: "Cardio Machine", primaryMuscle: "Legs / Heart", activity: true, youtubeUrl: "" },
+  { id: "ex-run", name: "Treadmill Run", category: "Cardio", equipment: "Cardio Machine", primaryMuscle: "Legs / Heart", activity: true, youtubeUrl: "https://www.youtube.com/watch?v=aKfJJ1TuyE4" },
   { id: "ex-jumprope", name: "Jump Rope", category: "Cardio", equipment: "Other", primaryMuscle: "Calves / Heart", youtubeUrl: "https://www.youtube.com/watch?v=u3zgHI8QnqE" },
 
   { id: "ex-90-90", name: "90/90 Hip Switch", category: "Mobility", equipment: "Bodyweight", primaryMuscle: "Hips", youtubeUrl: "https://www.youtube.com/watch?v=lro-2Ny8Hgo" },
