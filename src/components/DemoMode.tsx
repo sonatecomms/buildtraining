@@ -29,7 +29,7 @@ const DEMO_CLIENT_ID = "client-jordan"; // the seeded athlete (Jordan Rivera)
 // it isn't already present — tracked by a versioned flag. Bump SEED_VERSION
 // whenever buildDemoDB() changes so resuming presenters pick up the new seed.
 const SEED_KEY = "build.demoSeed";
-const SEED_VERSION = "1";
+const SEED_VERSION = "2"; // v83: library-wide demo videos
 
 // Seed the demo store, but only when needed. `force` always reseeds (a fresh
 // login or an explicit reset); otherwise we keep whatever is persisted so a
