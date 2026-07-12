@@ -24,6 +24,15 @@ export default function ClientPage() {
   const params = useParams<{ id: string }>();
   const client = useClient(params.id);
   const [tab, setTab] = useState<Tab>("program");
+  // Mirror the active tab into ?tab= (replaceState — no nav, no history spam)
+  // so a pull-to-refresh reload comes back to the same tab via the deep-link
+  // restore below instead of resetting to Program.
+  const selectTab = (t: Tab) => {
+    setTab(t);
+    const sp = new URLSearchParams(window.location.search);
+    sp.set("tab", t);
+    history.replaceState(null, "", `${window.location.pathname}?${sp}`);
+  };
   // Where the back arrow returns to — defaults to the roster, but ?from=numbers
   // (a scoreboard tap) sends them back to the scoreboard.
   const [back, setBack] = useState({ href: "/", label: "Athletes" });
@@ -66,7 +75,7 @@ export default function ClientPage() {
           return (
             <button
               key={t.id}
-              onClick={() => setTab(t.id)}
+              onClick={() => selectTab(t.id)}
               className={`flex flex-col items-center justify-center gap-1 rounded-xl px-1 py-2.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest/40 ${
                 active ? "bg-forest text-bone" : "text-slate"
               }`}

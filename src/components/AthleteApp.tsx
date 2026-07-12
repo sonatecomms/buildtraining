@@ -36,7 +36,7 @@ import IntervalTimer, { type TimerResult } from "./IntervalTimer";
 import MessageThread from "./MessageThread";
 import { useUnread } from "@/lib/messages";
 import { NavBar } from "./NavBar";
-import { useAppGestures } from "@/lib/useAppGestures";
+import { stashRefreshView, takeRefreshView, useAppGestures } from "@/lib/useAppGestures";
 import { PullIndicator } from "./PullIndicator";
 import { useSession } from "./SessionProvider";
 
@@ -58,7 +58,13 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
   const { session } = useSession();
   const isDemo = useIsDemo();
   const [justSet, setJustSet] = useState(false);
-  const [view, setView] = useState<View>("train");
+  // A pull-to-refresh stashes the active view so the reload lands back on it
+  // (AthleteApp only mounts after client-side auth/demo gating, so reading
+  // sessionStorage in the initializer is safe — no SSR pass to mismatch).
+  const [view, setView] = useState<View>(() => {
+    const stashed = takeRefreshView();
+    return stashed && NAV.some((t) => t.id === stashed) ? (stashed as View) : "train";
+  });
   const unread = useUnread(clientId, "athlete");
   const navItems = NAV.map((it) =>
     it.id === "coach" ? { ...it, badge: unread > 0 && view !== "coach" } : it,
@@ -85,7 +91,10 @@ export default function AthleteApp({ clientId }: { clientId: string }) {
         return NAV[next].id;
       });
     },
-    onRefresh: () => location.reload(),
+    onRefresh: () => {
+      stashRefreshView(view);
+      location.reload();
+    },
   });
 
   // Save a finished standalone timer as a "your own work" session in the log.

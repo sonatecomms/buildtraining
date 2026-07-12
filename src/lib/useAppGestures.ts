@@ -12,6 +12,32 @@ const PULL_DAMP = 0.7; // resistance on the pull-to-refresh drag; lighter = shor
 export const PULL_TRIGGER = 52; // px (after damping) to fire a refresh (shared with the indicator)
 const PULL_MAX = 120; // px (after damping) the indicator travels
 
+// A pull-to-refresh reload keeps the URL but loses React state, so views whose
+// "page" is a state-held tab (athlete bottom nav) stash it here right before
+// reloading and take it back on the next mount. One-shot and keyed by path, so
+// normal launches and navigation are unaffected.
+const REFRESH_VIEW_KEY = "build:refreshView";
+
+export function stashRefreshView(view: string) {
+  try {
+    sessionStorage.setItem(REFRESH_VIEW_KEY, `${location.pathname}|${view}`);
+  } catch {
+    /* storage unavailable — refresh just lands on the default view */
+  }
+}
+
+export function takeRefreshView(): string | null {
+  try {
+    const raw = sessionStorage.getItem(REFRESH_VIEW_KEY);
+    if (!raw) return null;
+    sessionStorage.removeItem(REFRESH_VIEW_KEY);
+    const sep = raw.indexOf("|");
+    return raw.slice(0, sep) === location.pathname ? raw.slice(sep + 1) : null;
+  } catch {
+    return null;
+  }
+}
+
 // Walk up from the touch target: if any ancestor scrolls horizontally, this
 // gesture belongs to that scroller (week strip, filter chips, …), not us.
 function inHorizontalScroller(start: EventTarget | null): boolean {
