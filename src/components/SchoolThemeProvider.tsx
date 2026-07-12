@@ -12,6 +12,10 @@ import {
 
 const STORAGE_KEY = "build.schoolTheme";
 const MODE_KEY = "build.surfaceMode";
+// Snapshot of the computed vars for the pre-paint inline script in layout.tsx,
+// so a reload paints the saved skin from the first frame (no default-green
+// flash on the launch splash before hydration).
+export const VARS_KEY = "build.themeVars";
 
 type Ctx = {
   school: School;
@@ -29,21 +33,26 @@ export function useSchoolTheme(): Ctx {
 }
 
 export function SchoolThemeProvider({ children }: { children: React.ReactNode }) {
-  const [id, setId] = useState<string>(BUILD_DEFAULT.id);
-  const [mode, setModeState] = useState<SurfaceMode>("cream");
-
-  // Restore the demo selection on mount (client-only; SSR stays on the default
-  // brand + cream shell so first paint matches the served HTML).
-  useEffect(() => {
+  // Initialize straight from storage (SSR falls back to the default brand).
+  // Restoring in a mount effect would apply the default theme for one commit
+  // and undo the pre-paint inline script's work — the green-flash bug.
+  const [id, setId] = useState<string>(() => {
+    if (typeof window === "undefined") return BUILD_DEFAULT.id;
     try {
-      const savedId = localStorage.getItem(STORAGE_KEY);
-      if (savedId) setId(savedId);
-      const savedMode = localStorage.getItem(MODE_KEY);
-      if (savedMode === "light" || savedMode === "dark") setModeState(savedMode);
+      return localStorage.getItem(STORAGE_KEY) ?? BUILD_DEFAULT.id;
     } catch {
-      /* storage unavailable */
+      return BUILD_DEFAULT.id;
     }
-  }, []);
+  });
+  const [mode, setModeState] = useState<SurfaceMode>(() => {
+    if (typeof window === "undefined") return "cream";
+    try {
+      const saved = localStorage.getItem(MODE_KEY);
+      return saved === "light" || saved === "dark" ? saved : "cream";
+    } catch {
+      return "cream";
+    }
+  });
 
   // Apply the chosen school's brand + shell tokens to <html>. Inline custom
   // properties on the root element override the :root values Tailwind's @theme
@@ -60,6 +69,13 @@ export function SchoolThemeProvider({ children }: { children: React.ReactNode })
     // drives the dark-only hero override in globals.css
     if (mode === "dark") root.setAttribute("data-surface", "dark");
     else root.removeAttribute("data-surface");
+    // Persist the computed snapshot for the pre-paint script (default = none).
+    try {
+      if (id === BUILD_DEFAULT.id && mode === "cream") localStorage.removeItem(VARS_KEY);
+      else localStorage.setItem(VARS_KEY, JSON.stringify({ vars, dark: mode === "dark" }));
+    } catch {
+      /* ignore */
+    }
   }, [id, mode]);
 
   const setSchool = useCallback((next: string) => {

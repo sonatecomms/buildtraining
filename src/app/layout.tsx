@@ -44,6 +44,16 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${league.variable} ${poppins.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
+        {/* Pre-paint theme restore: a blocking classic script that re-applies
+            the saved school skin (snapshot written by SchoolThemeProvider under
+            build.themeVars) before the splash parses, so a themed demo device
+            never flashes the default green on launch. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              '(function(){try{var p=JSON.parse(localStorage.getItem("build.themeVars")||"null");if(!p||!p.vars)return;var r=document.documentElement;for(var k in p.vars)r.style.setProperty(k,p.vars[k]);if(p.dark){r.style.colorScheme="dark";r.setAttribute("data-surface","dark")}}catch(e){}})();',
+          }}
+        />
         {/* SSR-visible from first paint so the app never peeks through; the
             component itself decides when to dismiss (and skips under reduced
             motion / after the first launch this session). */}
