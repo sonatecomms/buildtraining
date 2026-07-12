@@ -14,8 +14,15 @@ export function PullIndicator({ pull, refreshing }: { pull: number; refreshing: 
   return (
     <div
       aria-hidden
-      className="fixed inset-x-0 top-0 z-30 flex justify-center pointer-events-none"
-      style={{ transform: `translateY(${(refreshing ? TRIGGER : pull) - 44}px)`, transition: "transform 0.2s ease-out" }}
+      // z-40 = the layer under the demo bar (z-50, stays on top) and above the
+      // app's sticky headers (z-30). In demo mode the bar reserves its height
+      // via --demo-bar, so the badge drops in below the bar, not behind it.
+      className="fixed inset-x-0 z-40 flex justify-center pointer-events-none"
+      style={{
+        top: "var(--demo-bar, 0px)",
+        transform: `translateY(${(refreshing ? TRIGGER : pull) - 44}px)`,
+        transition: "transform 0.2s ease-out",
+      }}
     >
       <div
         className="grid place-items-center w-9 h-9 rounded-full bg-surface border border-line"
